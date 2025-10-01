@@ -22,219 +22,131 @@ implements	VacuumCleanerImplementationI
 	public static final String			INBOUND_PORT_URI =
 												"VACUUM-CLEANER-INBOUND-PORT-URI";
 
-	/** when true, methods trace their actions.								*/
 	public static boolean				VERBOSE = false;
-	/** when tracing, x coordinate of the window relative position.			*/
 	public static int					X_RELATIVE_POSITION = 0;
-	/** when tracing, y coordinate of the window relative position.			*/
 	public static int					Y_RELATIVE_POSITION = 0;
 
 	public static final Measure<Double>	HIGH_POWER_IN_WATTS =
 											new Measure<Double>(
-														1100.0,
+														2000.0,
 														MeasurementUnit.WATTS);
+	
+	public static final Measure<Double>	MEDIUM_POWER_IN_WATTS =
+					new Measure<Double>(
+								1000.0,
+								MeasurementUnit.WATTS);
+	
 	public static final Measure<Double>	LOW_POWER_IN_WATTS =
 											new Measure<Double>(
-														660.0,
+														650.0,
 														MeasurementUnit.WATTS);
 	public static final Measure<Double>	VOLTAGE =
 											new Measure<Double>(
 														220.0,
 														MeasurementUnit.VOLTS);
 
-	/** initial state of the hair dryer.									*/
-	protected static final HairDryerState	INITIAL_STATE = HairDryerState.OFF;
-	/** initial mode of the hair dryer.										*/
-	protected static final HairDryerMode	INITIAL_MODE = HairDryerMode.LOW;
+	/** initial state of the vacuum cleaner								*/
+	protected static final VacuumCleanerState	INITIAL_STATE = VacuumCleanerState.OFF;
+	/** initial mode of the vacuum cleaner									*/
+	protected static final VacuumCleanerMode	INITIAL_MODE = VacuumCleanerMode.MEDIUM;
 
-	/** current state (on, off) of the hair dryer.							*/
-	protected HairDryerState			currentState;
-	/** current mode of operation (low, high) of the hair dryer.			*/
-	protected HairDryerMode				currentMode;
+	/** current state (on, off) of the vacuum cleaner.							*/
+	protected VacuumCleanerState			currentState;
+	/** current mode of operation (low, high) of the vacuum cleaner.			*/
+	protected VacuumCleanerMode				currentMode;
 
-	/** inbound port offering the <code>HairDryerCI</code> interface.		*/
-	protected HairDryerInboundPort		hdip;
+	/** inbound port offering the <code>VacuumCleanerCI</code> interface.		*/
+	protected VacuumCleanerInboundPort		vcdip;
 
-	// -------------------------------------------------------------------------
-	// Invariants
-	// -------------------------------------------------------------------------
-
-	/**
-	 * return true if the implementation invariants are observed, false otherwise.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code hd != null}
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 * @param hd	instance to be tested.
-	 * @return		true if the implementation invariants are observed, false otherwise.
-	 */
-	protected static boolean	implementationInvariants(VacuumCleaner hd)
+	protected static boolean	implementationInvariants(VacuumCleaner vc)
 	{
-		assert	hd != null : new PreconditionException("hd != null");
+		assert	vc != null : new PreconditionException("vc != null");
 
 		boolean ret = true;
 
 		ret &= AssertionChecking.checkInvariant(
 				INITIAL_STATE != null,
-				VacuumCleaner.class, hd,
+				VacuumCleaner.class, vc,
 				"INITIAL_STATE != null");
 		ret &= AssertionChecking.checkInvariant(
 				INITIAL_MODE != null,
-				VacuumCleaner.class, hd,
+				VacuumCleaner.class, vc,
 				"INITIAL_MODE != null");
 		ret &= AssertionChecking.checkInvariant(
-				hd.currentState != null,
-				VacuumCleaner.class, hd,
+				vc.currentState != null,
+				VacuumCleaner.class, vc,
 				"hd.currentState != null");
 		ret &= AssertionChecking.checkInvariant(
-				hd.currentMode != null,
-				VacuumCleaner.class, hd,
+				vc.currentMode != null,
+				VacuumCleaner.class, vc,
 				"hd.currentMode != null");
 		return ret;
 	}
-
-	/**
-	 * return true if the invariants are observed, false otherwise.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code hd != null}
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 * @param hd	instance to be tested.
-	 * @return		true if the invariants are observed, false otherwise.
-	 */
-	protected static boolean	invariants(VacuumCleaner hd)
+	
+	protected static boolean	invariants(VacuumCleaner vc)
 	{
-		assert	hd != null : new PreconditionException("hd != null");
+		assert	vc != null : new PreconditionException("hd != null");
 
 		boolean ret = true;
 		ret &= AssertionChecking.checkImplementationInvariant(
 				REFLECTION_INBOUND_PORT_URI != null &&
 									!REFLECTION_INBOUND_PORT_URI.isEmpty(),
-				VacuumCleaner.class, hd,
+				VacuumCleaner.class, vc,
 				"REFLECTION_INBOUND_PORT_URI != null && "
 								+ "!REFLECTION_INBOUND_PORT_URI.isEmpty()");
 		ret &= AssertionChecking.checkImplementationInvariant(
 				INBOUND_PORT_URI != null && !INBOUND_PORT_URI.isEmpty(),
-				VacuumCleaner.class, hd,
+				VacuumCleaner.class, vc,
 				"INBOUND_PORT_URI != null && !INBOUND_PORT_URI.isEmpty()");
 		ret &= AssertionChecking.checkImplementationInvariant(
 				X_RELATIVE_POSITION >= 0,
-				VacuumCleaner.class, hd,
+				VacuumCleaner.class, vc,
 				"X_RELATIVE_POSITION >= 0");
 		ret &= AssertionChecking.checkImplementationInvariant(
 				Y_RELATIVE_POSITION >= 0,
-				VacuumCleaner.class, hd,
+				VacuumCleaner.class, vc,
 				"Y_RELATIVE_POSITION >= 0");
 		return ret;
 	}
-
-	// -------------------------------------------------------------------------
-	// Constructors
-	// -------------------------------------------------------------------------
-
-	/**
-	 * create a hair dryer component.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code getState() == HairDryerState.OFF}
-	 * post	{@code getMode() == HairDryerMode.LOW}
-	 * </pre>
-	 * 
-	 * @throws Exception	<i>to do</i>.
-	 */
+	
 	protected			VacuumCleaner() throws Exception
 	{
 		this(INBOUND_PORT_URI);
 	}
-
-	/**
-	 * create a hair dryer component.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code hairDryerInboundPortURI != null && !hairDryerInboundPortURI.isEmpty()}
-	 * post	{@code getState() == HairDryerState.OFF}
-	 * post	{@code getMode() == HairDryerMode.LOW}
-	 * </pre>
-	 * 
-	 * @param hairDryerInboundPortURI	URI of the hair dryer inbound port.
-	 * @throws Exception				<i>to do</i>.
-	 */
-	protected			VacuumCleaner(String hairDryerInboundPortURI)
+	
+	protected			VacuumCleaner(String vacuumCleanerInboundPortURI)
 	throws Exception
 	{
-		this(REFLECTION_INBOUND_PORT_URI, hairDryerInboundPortURI);
+		this(REFLECTION_INBOUND_PORT_URI, vacuumCleanerInboundPortURI);
 	}
 
-	/**
-	 * create a hair dryer component with the given reflection innbound port
-	 * URI.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code reflectionInboundPortURI != null && !reflectionInboundPortURI.isEmpty()}
-	 * pre	{@code hairDryerInboundPortURI != null && !hairDryerInboundPortURI.isEmpty()}
-	 * post	{@code getState() == HairDryerState.OFF}
-	 * post	{@code getMode() == HairDryerMode.LOW}
-	 * </pre>
-	 *
-	 * @param reflectionInboundPortURI	URI of the reflection innbound port of the component.
-	 * @param hairDryerInboundPortURI	URI of the hair dryer inbound port.
-	 * @throws Exception				<i>to do</i>.
-	 */
+
 	protected			VacuumCleaner(
 		String reflectionInboundPortURI,
-		String hairDryerInboundPortURI
+		String vacuumCleanerInboundPortURI
 		) throws Exception
 	{
 		super(reflectionInboundPortURI, 1, 0);
-		this.initialise(hairDryerInboundPortURI);
+		this.initialise(vacuumCleanerInboundPortURI);
 	}
 
-	/**
-	 * initialise the hair dryer component.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code hairDryerInboundPortURI != null && !hairDryerInboundPortURI.isEmpty()}
-	 * post	{@code getState() == HairDryerState.OFF}
-	 * post	{@code getMode() == HairDryerMode.LOW}
-	 * </pre>
-	 * 
-	 * @param hairDryerInboundPortURI	URI of the hair dryer inbound port.
-	 * @throws Exception				<i>to do</i>.
-	 */
-	protected void		initialise(String hairDryerInboundPortURI)
+	protected void		initialise(String vacuumCleanerInboundPortURI)
 	throws Exception
 	{
-		assert	hairDryerInboundPortURI != null :
+		assert	vacuumCleanerInboundPortURI != null :
 					new PreconditionException(
-										"hairDryerInboundPortURI != null");
-		assert	!hairDryerInboundPortURI.isEmpty() :
+										"vacuumCleanerInboundPortURI != null");
+		assert	!vacuumCleanerInboundPortURI.isEmpty() :
 					new PreconditionException(
-										"!hairDryerInboundPortURI.isEmpty()");
+										"!vacuumCleanerInboundPortURI.isEmpty()");
 
 		this.currentState = INITIAL_STATE;
 		this.currentMode = INITIAL_MODE;
-		this.hdip = new HairDryerInboundPort(hairDryerInboundPortURI, this);
-		this.hdip.publishPort();
+		this.vcdip = new VacuumCleanerInboundPort(vacuumCleanerInboundPortURI, this);
+		this.vcdip.publishPort();
 
 		if (VacuumCleaner.VERBOSE) {
-			this.tracer.get().setTitle("Hair dryer component");
+			this.tracer.get().setTitle("Vacuum cleaner component");
 			this.tracer.get().setRelativePosition(X_RELATIVE_POSITION,
 												  Y_RELATIVE_POSITION);
 			this.toggleTracing();
@@ -242,134 +154,115 @@ implements	VacuumCleanerImplementationI
 
 		assert	VacuumCleaner.implementationInvariants(this) :
 				new ImplementationInvariantException(
-						"HairDryer.implementationInvariants(this)");
+						"VacuumCleaner.implementationInvariants(this)");
 		assert	VacuumCleaner.invariants(this) :
-				new InvariantException("HairDryer.invariants(this)");
+				new InvariantException("VacuumCleaner.invariants(this)");
 	}
 
-	// -------------------------------------------------------------------------
-	// Component life-cycle
-	// -------------------------------------------------------------------------
-
-	/**
-	 * @see fr.sorbonne_u.components.AbstractComponent#shutdown()
-	 */
 	@Override
 	public synchronized void	shutdown() throws ComponentShutdownException
 	{
 		try {
-			this.hdip.unpublishPort();
+			this.vcdip.unpublishPort();
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e) ;
 		}
 		super.shutdown();
 	}
-
-	// -------------------------------------------------------------------------
-	// Component services implementation
-	// -------------------------------------------------------------------------
-
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.hairdryer.HairDryerImplementationI#getState()
-	 */
+	
 	@Override
-	public HairDryerState	getState() throws Exception
+	public VacuumCleanerState	getState() throws Exception
 	{
 		if (VacuumCleaner.VERBOSE) {
-			this.traceMessage("Hair dryer returns its state : " +
+			this.traceMessage("Vacuum cleaner returns its state : " +
 													this.currentState + ".\n");
 		}
 
 		return this.currentState;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.hairdryer.HairDryerImplementationI#getMode()
-	 */
+	
 	@Override
-	public HairDryerMode	getMode() throws Exception
+	public VacuumCleanerMode	getMode() throws Exception
 	{
 		if (VacuumCleaner.VERBOSE) {
-			this.traceMessage("Hair dryer returns its mode : " +
+			this.traceMessage("Vacuum cleaner returns its mode : " +
 													this.currentMode + ".\n");
 		}
 
 		return this.currentMode;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.hairdryer.HairDryerImplementationI#turnOn()
-	 */
 	@Override
 	public void			turnOn() throws Exception
 	{
 		if (VacuumCleaner.VERBOSE) {
-			this.traceMessage("Hair dryer is turned on.\n");
+			this.traceMessage("Vacuum cleaner is turned on.\n");
 		}
 
-		assert	this.getState() == HairDryerState.OFF :
-				new PreconditionException("getState() == HairDryerState.OFF");
+		assert	this.getState() == VacuumCleanerState.OFF :
+				new PreconditionException("getState() == VacuumCleaner.OFF");
 
-		this.currentState = HairDryerState.ON;
-		this.currentMode = HairDryerMode.LOW;
+		this.currentState = VacuumCleanerState.ON;
+		this.currentMode = VacuumCleanerMode.MEDIUM;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.hairdryer.HairDryerImplementationI#turnOff()
-	 */
 	@Override
 	public void			turnOff() throws Exception
 	{
 		if (VacuumCleaner.VERBOSE) {
-			this.traceMessage("Hair dryer is turned off.\n");
+			this.traceMessage("Vacuum cleaner is turned off.\n");
 		}
 
-		assert	this.getState() == HairDryerState.ON :
-				new PreconditionException("getState() == HairDryerState.ON");
+		assert	this.getState() == VacuumCleanerState.ON :
+				new PreconditionException("getState() == VacuumCleanerState.ON");
 
-		this.currentState = HairDryerState.OFF;
+		this.currentState = VacuumCleanerState.OFF;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.hairdryer.HairDryerImplementationI#setHigh()
-	 */
 	@Override
 	public void			setHigh() throws Exception
 	{
 		if (VacuumCleaner.VERBOSE) {
-			this.traceMessage("Hair dryer is set high.\n");
+			this.traceMessage("Vacuum cleaner is set high.\n");
 		}
 
-		assert	this.getState() == HairDryerState.ON :
-				new PreconditionException("getState() == HairDryerState.ON");
-		assert	this.getMode() == HairDryerMode.LOW :
-				new PreconditionException("getMode() == HairDryerMode.LOW");
+		assert	this.getState() == VacuumCleanerState.ON :
+				new PreconditionException("getState() == VacuumCleanerState.ON");
+		assert	(this.getMode() == VacuumCleanerMode.LOW) ||  (this.getMode() == VacuumCleanerMode.MEDIUM):
+				new PreconditionException("(getMode() == VacuumCleanerMode.LOW) || (getMode() == VacuumCleanerMode.MEDIUM)");
 
-		this.currentMode = HairDryerMode.HIGH;
+		this.currentMode = VacuumCleanerMode.HIGH;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.hairdryer.HairDryerImplementationI#setLow()
-	 */
+	@Override
+	public void			setMedium() throws Exception
+	{
+		if (VacuumCleaner.VERBOSE) {
+			this.traceMessage("Vacuum cleaner is set medium.\n");
+		}
+
+		assert	this.getState() == VacuumCleanerState.ON :
+				new PreconditionException("getState() == VacuumCleanerState.ON");
+		assert	(this.getMode() == VacuumCleanerMode.HIGH) ||  (this.getMode() == VacuumCleanerMode.LOW):
+				new PreconditionException("(getMode() == VacuumCleanerMode.HIGH) || (getMode() == VacuumCleanerMode.MEDIUM)");
+
+		this.currentMode = VacuumCleanerMode.MEDIUM;
+	}
+
 	@Override
 	public void			setLow() throws Exception
 	{
 		if (VacuumCleaner.VERBOSE) {
-			this.traceMessage("Hair dryer is set low.\n");
+			this.traceMessage("Vacuum cleaner is set low.\n");
 		}
 
-		assert	this.getState() == HairDryerState.ON :
-				new PreconditionException("getState() == HairDryerState.ON");
-		assert	this.getMode() == HairDryerMode.HIGH :
-				new PreconditionException("getMode() == HairDryerMode.HIGH");
+		assert	this.getState() == VacuumCleanerState.ON :
+				new PreconditionException("getState() == VacuumCleanerState.ON");
+		assert	(this.getMode() == VacuumCleanerMode.HIGH) ||  (this.getMode() == VacuumCleanerMode.MEDIUM):
+				new PreconditionException("(getMode() == VacuumCleanerMode.HIGH) || (getMode() == VacuumCleanerMode.MEDIUM)");
 
-		this.currentMode = HairDryerMode.LOW;
-	}
-
-	@Override
-	public void setMedium() throws Exception {
-		// TODO Auto-generated method stub
-		
+		this.currentMode = VacuumCleanerMode.LOW;
 	}
 }
 // -----------------------------------------------------------------------------

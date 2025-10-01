@@ -68,9 +68,9 @@ extends		AbstractCVM
 
 	public				CVMUnitTest() throws Exception
 	{
-		HairDryerTester.VERBOSE = true;
-		HairDryerTester.X_RELATIVE_POSITION = 0;
-		HairDryerTester.Y_RELATIVE_POSITION = 0;
+		VacuumCleanerTester.VERBOSE = true;
+		VacuumCleanerTester.X_RELATIVE_POSITION = 0;
+		VacuumCleanerTester.Y_RELATIVE_POSITION = 0;
 		VacuumCleaner.VERBOSE = true;
 		VacuumCleaner.X_RELATIVE_POSITION = 1;
 		VacuumCleaner.Y_RELATIVE_POSITION = 0;
@@ -91,7 +91,7 @@ extends		AbstractCVM
 					new Object[]{});
 
 		AbstractComponent.createComponent(
-					HairDryerTester.class.getCanonicalName(),
+					VacuumCleanerTester.class.getCanonicalName(),
 					new Object[]{true});
 
 		super.deploy();
