@@ -1,10 +1,11 @@
-package fr.sorbonne_u.components.hem2025e1.equipments.water_heater;
+package fr.sorbonne_u.components.hem2025e1.equipments.kettle;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
 //
-// This software is a computer program whose purpose is to implement a mock-up
-// of household energy management system.
+// This software is a computer program whose purpose is to provide a
+// basic component programming model to program with components
+// real time distributed applications in the Java programming language.
 //
 // This software is governed by the CeCILL-C license under French law and
 // abiding by the rules of distribution of free software.  You can use,
@@ -32,21 +33,15 @@ package fr.sorbonne_u.components.hem2025e1.equipments.water_heater;
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
-import fr.sorbonne_u.components.cvm.AbstractCVM;
-import fr.sorbonne_u.components.AbstractComponent;
+import fr.sorbonne_u.alasca.physical_data.Measure;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>CVMUnitTest</code> performs unit tests for the thermostated
- * heater component.
+ * The interface <code>HeaterUserI</code> declares the signature of the heater
+ * component services corresponding to the actions a user can perform on the
+ * heater.
  *
  * <p><strong>Description</strong></p>
- * 
- * <p><strong>Implementation Invariants</strong></p>
- * 
- * <pre>
- * invariant	{@code true}	// no more invariant
- * </pre>
  * 
  * <p><strong>Invariants</strong></p>
  * 
@@ -54,58 +49,71 @@ import fr.sorbonne_u.components.AbstractComponent;
  * invariant	{@code true}	// no more invariant
  * </pre>
  * 
- * <p>Created on : 2021-09-13</p>
+ * <p>Created on : 2023-09-18</p>
  * 
  * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public class			CVMUnitTest
-extends		AbstractCVM
+public interface		HeaterUserI
+extends		HeaterExternalControlI
 {
-	// -------------------------------------------------------------------------
-	// Constructors
-	// -------------------------------------------------------------------------
-
-	public				CVMUnitTest() throws Exception
-	{
-		HeaterUnitTester.VERBOSE = true;
-		HeaterUnitTester.X_RELATIVE_POSITION = 0;
-		HeaterUnitTester.Y_RELATIVE_POSITION = 0;
-		Kettle.VERBOSE = true;
-		Kettle.X_RELATIVE_POSITION = 1;
-		Kettle.Y_RELATIVE_POSITION = 0;
-	}
-
-	// -------------------------------------------------------------------------
-	// CVM life-cycle
-	// -------------------------------------------------------------------------
+	/**
+	 * return true if the heater is currently running.
+	 * 
+	 * <p><strong>Contract</strong></p>
+	 * 
+	 * <pre>
+	 * pre	{@code true}	// no precondition.
+	 * post	{@code true}	// no postcondition.
+	 * </pre>
+	 *
+	 * @return				true if the heater is currently running.
+	 * @throws Exception	<i>to do</i>.
+	 */
+	public boolean		on() throws Exception;
 
 	/**
-	 * @see fr.sorbonne_u.components.cvm.AbstractCVM#deploy()
+	 * switch on the heater.
+	 * 
+	 * <p><strong>Contract</strong></p>
+	 * 
+	 * <pre>
+	 * pre	{@code !on()}
+	 * post	{@code on()}
+	 * </pre>
+	 *
+	 * @throws Exception	<i>to do</i>.
 	 */
-	@Override
-	public void			deploy() throws Exception
-	{
-		AbstractComponent.createComponent(
-				Kettle.class.getCanonicalName(),
-				new Object[]{});
+	public void			switchOn() throws Exception;
 
-		AbstractComponent.createComponent(
-				HeaterUnitTester.class.getCanonicalName(),
-				new Object[]{true});	// is unit test
+	/**
+	 * switch off the heater.
+	 * 
+	 * <p><strong>Contract</strong></p>
+	 * 
+	 * <pre>
+	 * pre	{@code on()}
+	 * post	{@code !on()}
+	 * </pre>
+	 *
+	 * @throws Exception	<i>to do</i>.
+	 */
+	public void			switchOff() throws Exception;
 
-		super.deploy();
-	}
-
-	public static void	main(String[] args)
-	{
-		try {
-			CVMUnitTest cvm = new CVMUnitTest();
-			cvm.startStandardLifeCycle(1000L);
-			Thread.sleep(100000L);
-			System.exit(0);
-		} catch (Throwable e) {
-			e.printStackTrace();
-		}
-	}
+	/**
+	 * set the target temperature.
+	 * 
+	 * <p><strong>Contract</strong></p>
+	 * 
+	 * <pre>
+	 * pre	{@code target != null && TEMPERATURE_UNIT.equals(target.getMeasurementUnit())}
+	 * pre	{@code target.getData() >= MIN_TARGET_TEMPERATURE.getData() && target.getData() <= MAX_TARGET_TEMPERATURE.getData()}
+	 * post	{@code getTargetTemperature().equals(target)}
+	 * </pre>
+	 *
+	 * @param target		the new target temperature.
+	 * @throws Exception	<i>to do</i>.
+	 */
+	public void			setTargetTemperature(Measure<Double> target)
+	throws Exception;
 }
 // -----------------------------------------------------------------------------

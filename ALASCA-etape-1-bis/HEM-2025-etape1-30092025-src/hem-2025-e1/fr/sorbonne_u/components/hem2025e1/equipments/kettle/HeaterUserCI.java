@@ -1,4 +1,4 @@
-package fr.sorbonne_u.components.hem2025e1.equipments.water_heater;
+package fr.sorbonne_u.components.hem2025e1.equipments.kettle;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -39,9 +39,8 @@ import fr.sorbonne_u.alasca.physical_data.SignalData;
 
 // -----------------------------------------------------------------------------
 /**
- * The component interface <code>HeaterInternalControlCI</code> declares the
- * signatures of services used by the thermostat to control the heating by the
- * heater.
+ * The component interface <code>HeaterUserCI</code> declares the signature
+ * of the services offered and that can be required by the user from the heater.
  *
  * <p><strong>Description</strong></p>
  * 
@@ -51,32 +50,57 @@ import fr.sorbonne_u.alasca.physical_data.SignalData;
  * invariant	{@code true}	// no more invariant
  * </pre>
  * 
- * <p>Created on : 2023-09-15</p>
+ * <p>Created on : 2023-09-18</p>
  * 
  * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public interface		HeaterInternalControlCI
+public interface		HeaterUserCI
 extends		OfferedCI,
 			RequiredCI,
-			HeaterInternalControlI
+			HeaterUserI
 {
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterInternalControlI#heating()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#on()
 	 */
 	@Override
-	public boolean		heating() throws Exception;
+	public boolean		on() throws Exception;
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterInternalControlI#startHeating()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#switchOn()
 	 */
 	@Override
-	public void			startHeating() throws Exception;
+	public void			switchOn() throws Exception;
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterInternalControlI#stopHeating()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#switchOff()
 	 */
 	@Override
-	public void			stopHeating() throws Exception;
+	public void			switchOff() throws Exception;
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#setTargetTemperature(fr.sorbonne_u.alasca.physical_data.Measure)
+	 */
+	@Override
+	public void			setTargetTemperature(Measure<Double> target)
+	throws Exception;
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#getMaxPowerLevel()
+	 */
+	public Measure<Double>	getMaxPowerLevel() throws Exception;
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#setCurrentPowerLevel(fr.sorbonne_u.alasca.physical_data.Measure)
+	 */
+	@Override
+	public void			setCurrentPowerLevel(Measure<Double> powerLevel)
+	throws Exception;
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#getCurrentPowerLevel()
+	 */
+	@Override
+	public SignalData<Double> getCurrentPowerLevel() throws Exception;
 
 	/**
 	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterTemperatureI#getTargetTemperature()
@@ -89,5 +113,6 @@ extends		OfferedCI,
 	 */
 	@Override
 	public SignalData<Double> getCurrentTemperature() throws Exception;
+
 }
 // -----------------------------------------------------------------------------

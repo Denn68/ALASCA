@@ -1,4 +1,4 @@
-package fr.sorbonne_u.components.hem2025e1.equipments.water_heater;
+package fr.sorbonne_u.components.hem2025e1.equipments.kettle;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -39,44 +39,44 @@ import fr.sorbonne_u.alasca.physical_data.SignalData;
 
 // -----------------------------------------------------------------------------
 /**
- * The component interface <code>HeaterExternalControlCI</code> declares the
- * signatures of services used by the household energy manager to adjust
- * the power consumption of the heater.
+ * The component interface <code>HeaterInternalControlCI</code> declares the
+ * signatures of services used by the thermostat to control the heating by the
+ * heater.
  *
  * <p><strong>Description</strong></p>
  * 
  * <p><strong>Invariants</strong></p>
  * 
  * <pre>
- * invariant	{@code getCurrentPowerLevel() <= getMaxPowerLevel()}
+ * invariant	{@code true}	// no more invariant
  * </pre>
  * 
- * <p>Created on : 2023-09-18</p>
+ * <p>Created on : 2023-09-15</p>
  * 
  * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public interface		HeaterExternalControlCI
-extends		RequiredCI,
-			OfferedCI,
-			HeaterExternalControlI
+public interface		HeaterInternalControlCI
+extends		OfferedCI,
+			RequiredCI,
+			HeaterInternalControlI
 {
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#getMaxPowerLevel()
-	 */
-	public Measure<Double>	getMaxPowerLevel() throws Exception;
-
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#setCurrentPowerLevel(fr.sorbonne_u.alasca.physical_data.Measure)
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterInternalControlI#heating()
 	 */
 	@Override
-	public void			setCurrentPowerLevel(Measure<Double> powerLevel)
-	throws Exception;
+	public boolean		heating() throws Exception;
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#getCurrentPowerLevel()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterInternalControlI#startHeating()
 	 */
 	@Override
-	public SignalData<Double> getCurrentPowerLevel() throws Exception;
+	public void			startHeating() throws Exception;
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterInternalControlI#stopHeating()
+	 */
+	@Override
+	public void			stopHeating() throws Exception;
 
 	/**
 	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterTemperatureI#getTargetTemperature()

@@ -1,4 +1,4 @@
-package fr.sorbonne_u.components.hem2025e1.equipments.water_heater;
+package fr.sorbonne_u.components.hem2025e1.equipments.kettle;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -35,8 +35,9 @@ package fr.sorbonne_u.components.hem2025e1.equipments.water_heater;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>HeaterUserJava4CI</code> extends the component interface
- * {@code HeaterUserCI} with signatures that can be used in Java 4.
+ * The class <code>HeaterExternalControlJava4CI</code> extends the component
+ * interface {@code HeaterExternalControlCI} with signatures that can be used
+ * in Java 4.
  *
  * <p><strong>Description</strong></p>
  * 
@@ -50,24 +51,9 @@ package fr.sorbonne_u.components.hem2025e1.equipments.water_heater;
  * 
  * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public interface		HeaterUserJava4CI
-extends		HeaterUserCI
+public interface		HeaterExternalControlJava4CI
+extends		HeaterExternalControlCI
 {
-	/**
-	 * set the target temperature by calling the synonymous method
-	 * {@code setTargetTemperature(Measure<Double>)}
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code target >= MIN_TARGET_TEMPERATURE.getData() && target <= MAX_TARGET_TEMPERATURE.getData()}
-	 * post	{@code getTargetTemperatureJava4().equals(target)}
-	 * </pre>
-	 *
-	 * @param target		target temperature in celsius.
-	 * @throws Exception	<i>to do</i>.
-	 */
-	public void			setTargetTemperatureJava4(double target) throws Exception;
 
 	/**
 	 * get the maximum power level by calling the synonymous method

@@ -1,4 +1,4 @@
-package fr.sorbonne_u.components.hem2025e1.equipments.water_heater;
+package fr.sorbonne_u.components.hem2025e1.equipments.kettle;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr

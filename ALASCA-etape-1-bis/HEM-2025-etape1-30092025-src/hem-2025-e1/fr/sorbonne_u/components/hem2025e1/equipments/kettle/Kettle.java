@@ -1,4 +1,4 @@
-package fr.sorbonne_u.components.hem2025e1.equipments.water_heater;
+package fr.sorbonne_u.components.hem2025e1.equipments.kettle;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -46,35 +46,27 @@ import fr.sorbonne_u.exceptions.PreconditionException;
 import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.alasca.physical_data.SignalData;
 
-@OfferedInterfaces(offered={HeaterUserJava4CI.class,
-							HeaterInternalControlCI.class,
-							HeaterExternalControlJava4CI.class})
+@OfferedInterfaces(offered={KettleUserJava4CI.class,
+							KettleInternalControlCI.class,
+							KettleExternalControlJava4CI.class})
 public class			Kettle
 extends		AbstractComponent
-implements	HeaterUserI,
-			HeaterInternalControlI
+implements	KettleUserI,
+			KettleInternalControlI
 {
 	// -------------------------------------------------------------------------
 	// Inner interfaces and types
 	// -------------------------------------------------------------------------
 
-	/**
-	 * The enumeration <code>HeaterState</code> describes the operation
-	 * states of the heater.
-	 *
-	 * <p><strong>Description</strong></p>
-	 * 
-	 * <p>Created on : 2021-09-10</p>
-	 * 
-	 * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
-	 */
-	protected static enum	WaterHeaterState
+	protected static enum	KettleState
 	{
-		/** heater is on.													*/
+		/** kettle is on.													*/
 		ON,
-		/** heater is heating.												*/
+		/** kettle is heating.												*/
 		HEATING,
-		/** heater is off.													*/
+		/** kettle keeps warm.												*/
+		KEEP_WARM,
+		/** kettle is off.													*/
 		OFF
 	}
 
@@ -84,29 +76,29 @@ implements	HeaterUserI,
 
 	// BCM4Java information
 
-	/** URI of the water heater inbound port used in tests.						*/
+	/** URI of the kettle inbound port used in tests.						*/
 	public static final String		REFLECTION_INBOUND_PORT_URI =
-															"Water-Heater-RIP-URI";	
+															"Kettle-RIP-URI";	
 
-	/** URI of the water heater port for user interactions.						*/
+	/** URI of the kettle port for user interactions.						*/
 	public static final String		USER_INBOUND_PORT_URI =
-												"WATER-HEATER-USER-INBOUND-PORT-URI";
-	/** URI of the water heater port for internal control.						*/
+												"KETTLE-USER-INBOUND-PORT-URI";
+	/** URI of the kettle port for internal control.						*/
 	public static final String		INTERNAL_CONTROL_INBOUND_PORT_URI =
-									"WATER-HEATER-INTERNAL-CONTROL-INBOUND-PORT-URI";
-	/** URI of the water heater port for internal control.						*/
+									"KETTLE-INTERNAL-CONTROL-INBOUND-PORT-URI";
+	/** URI of the kettle port for internal control.						*/
 	public static final String		EXTERNAL_CONTROL_INBOUND_PORT_URI =
-									"WATER-HEATER-EXTERNAL-CONTROL-INBOUND-PORT-URI";
+									"KETTLE-EXTERNAL-CONTROL-INBOUND-PORT-URI";
 
 
-	/** inbound port offering the <code>WaterHeaterUserCI</code> interface.		*/
-	protected WaterHeaterUserJava4InboundPort			whip;
-	/** inbound port offering the <code>WaterHeaterInternalControlCI</code>
+	/** inbound port offering the <code>KettleUserCI</code> interface.		*/
+	protected KettleUserJava4InboundPort			kip;
+	/** inbound port offering the <code>KettleInternalControlCI</code>
 	 *  interface.															*/
-	protected WaterHeaterInternalControlInboundPort		whicip;
-	/** inbound port offering the <code>WaterHeaterExternalControlCI</code>
+	protected KettleInternalControlInboundPort		kicip;
+	/** inbound port offering the <code>KettleExternalControlCI</code>
 	 *  interface.															*/
-	protected WaterHeaterExternalControlJava4InboundPort	whecip;
+	protected KettleExternalControlJava4InboundPort	kecip;
 
 	/** when true, methods trace their actions.								*/
 	public static boolean			VERBOSE = false;
@@ -129,9 +121,9 @@ implements	HeaterUserI,
 															10.0,
 															TEMPERATURE_UNIT));
 
-	/** current state (on, off) of the water heater.								*/
-	protected WaterHeaterState						currentState;
-	/**	current power level of the water heater.									*/
+	/** current state (on, off) of the kettle.								*/
+	protected KettleState						currentState;
+	/**	current power level of the kettle.									*/
 	protected SignalData<Double>				currentPowerLevel;
 	/** target temperature for the heating.									*/
 	protected Measure<Double>					targetTemperature;
@@ -240,7 +232,7 @@ implements	HeaterUserI,
 	// -------------------------------------------------------------------------
 
 	/**
-	 * create a new water heater.
+	 * create a new kettle.
 	 * 
 	 * <p><strong>Contract</strong></p>
 	 * 
@@ -258,109 +250,109 @@ implements	HeaterUserI,
 	}
 
 	/**
-	 * create a new water heater.
+	 * create a new kettle.
 	 * 
 	 * <p><strong>Contract</strong></p>
 	 * 
 	 * <pre>
-	 * pre	{@code heaterUserInboundPortURI != null && !heaterUserInboundPortURI.isEmpty()}
-	 * pre	{@code heaterInternalControlInboundPortURI != null && !heaterInternalControlInboundPortURI.isEmpty()}
-	 * pre	{@code heaterExternalControlInboundPortURI != null && !heaterExternalControlInboundPortURI.isEmpty()}
+	 * pre	{@code heaterUserInboundPortURI != null && !kettleUserInboundPortURI.isEmpty()}
+	 * pre	{@code heaterInternalControlInboundPortURI != null && !kettleInternalControlInboundPortURI.isEmpty()}
+	 * pre	{@code heaterExternalControlInboundPortURI != null && !kettleExternalControlInboundPortURI.isEmpty()}
 	 * post	{@code true}	// no postcondition.
 	 * </pre>
 	 * 
-	 * @param heaterUserInboundPortURI				URI of the inbound port to call the water heater component for user interactions.
-	 * @param heaterInternalControlInboundPortURI	URI of the inbound port to call the water heater component for internal control.
-	 * @param heaterExternalControlInboundPortURI	URI of the inbound port to call the water heater component for external control.
+	 * @param kettleUserInboundPortURI				URI of the inbound port to call the kettle component for user interactions.
+	 * @param kettleInternalControlInboundPortURI	URI of the inbound port to call the kettle component for internal control.
+	 * @param kettleExternalControlInboundPortURI	URI of the inbound port to call the kettle component for external control.
 	 * @throws Exception							<i>to do</i>.
 	 */
 	protected			Kettle(
-		String waterHeaterUserInboundPortURI,
-		String waterHeaterInternalControlInboundPortURI,
-		String waterHeaterExternalControlInboundPortURI
+		String kettleUserInboundPortURI,
+		String kettleInternalControlInboundPortURI,
+		String kettleExternalControlInboundPortURI
 		) throws Exception
 	{
 		super(1, 0);
-		this.initialise(waterHeaterUserInboundPortURI,
-						waterHeaterInternalControlInboundPortURI,
-						waterHeaterExternalControlInboundPortURI);
+		this.initialise(kettleUserInboundPortURI,
+						kettleInternalControlInboundPortURI,
+						kettleExternalControlInboundPortURI);
 	}
 
 	/**
-	 * create a new water heater.
+	 * create a new kettle.
 	 * 
 	 * <p><strong>Contract</strong></p>
 	 * 
 	 * <pre>
 	 * pre	{@code reflectionInboundPortURI != null && !reflectionInboundPortURI.isEmpty()}
-	 * pre	{@code heaterUserInboundPortURI != null && !heaterUserInboundPortURI.isEmpty()}
-	 * pre	{@code heaterInternalControlInboundPortURI != null && !heaterInternalControlInboundPortURI.isEmpty()}
-	 * pre	{@code heaterExternalControlInboundPortURI != null && !heaterExternalControlInboundPortURI.isEmpty()}
+	 * pre	{@code kettleUserInboundPortURI != null && !kettleUserInboundPortURI.isEmpty()}
+	 * pre	{@code kettleInternalControlInboundPortURI != null && !kettleInternalControlInboundPortURI.isEmpty()}
+	 * pre	{@code kettleExternalControlInboundPortURI != null && !kettleExternalControlInboundPortURI.isEmpty()}
 	 * post	{@code true}	// no postcondition.
 	 * </pre>
 	 * 
 	 * @param reflectionInboundPortURI				URI of the reflection inbound port of the component.
-	 * @param heaterUserInboundPortURI				URI of the inbound port to call the water heater component for user interactions.
-	 * @param heaterInternalControlInboundPortURI	URI of the inbound port to call the water heater component for internal control.
-	 * @param heaterExternalControlInboundPortURI	URI of the inbound port to call the water heater component for external control.
+	 * @param kettleUserInboundPortURI				URI of the inbound port to call the kettle component for user interactions.
+	 * @param kettleInternalControlInboundPortURI	URI of the inbound port to call the kettle component for internal control.
+	 * @param kettleExternalControlInboundPortURI	URI of the inbound port to call the kettle component for external control.
 	 * @throws Exception							<i>to do</i>.
 	 */
 	protected			Kettle(
 		String reflectionInboundPortURI,
-		String waterHeaterUserInboundPortURI,
-		String waterHeaterInternalControlInboundPortURI,
-		String waterHeaterExternalControlInboundPortURI
+		String kettleUserInboundPortURI,
+		String kettleInternalControlInboundPortURI,
+		String kettleExternalControlInboundPortURI
 		) throws Exception
 	{
 		super(reflectionInboundPortURI, 1, 0);
 
-		this.initialise(waterHeaterUserInboundPortURI,
-						waterHeaterInternalControlInboundPortURI,
-						waterHeaterExternalControlInboundPortURI);
+		this.initialise(kettleUserInboundPortURI,
+						kettleInternalControlInboundPortURI,
+						kettleExternalControlInboundPortURI);
 	}
 
 	/**
-	 * create a new thermostated water heater.
+	 * create a new thermostated kettle.
 	 * 
 	 * <p><strong>Contract</strong></p>
 	 * 
 	 * <pre>
-	 * pre	{@code heaterUserInboundPortURI != null && !heaterUserInboundPortURI.isEmpty()}
-	 * pre	{@code heaterInternalControlInboundPortURI != null && !heaterInternalControlInboundPortURI.isEmpty()}
-	 * pre	{@code heaterExternalControlInboundPortURI != null && !heaterExternalControlInboundPortURI.isEmpty()}
+	 * pre	{@code kettleUserInboundPortURI != null && !kettleUserInboundPortURI.isEmpty()}
+	 * pre	{@code kettleInternalControlInboundPortURI != null && !kettleInternalControlInboundPortURI.isEmpty()}
+	 * pre	{@code kettleExternalControlInboundPortURI != null && !kettleExternalControlInboundPortURI.isEmpty()}
 	 * post	{@code true}	// no postcondition.
 	 * </pre>
 	 *
-	 * @param heaterUserInboundPortURI				URI of the inbound port to call the water heater component for user interactions.
-	 * @param heaterInternalControlInboundPortURI	URI of the inbound port to call the water heater component for internal control.
-	 * @param heaterExternalControlInboundPortURI	URI of the inbound port to call the water heater component for external control.
+	 * @param kettleUserInboundPortURI				URI of the inbound port to call the kettle component for user interactions.
+	 * @param kettleInternalControlInboundPortURI	URI of the inbound port to call the kettle component for internal control.
+	 * @param kettleExternalControlInboundPortURI	URI of the inbound port to call the kettle component for external control.
 	 * @throws Exception							<i>to do</i>.
 	 */
 	protected void		initialise(
-		String waterHeaterUserInboundPortURI,
-		String waterHeaterInternalControlInboundPortURI,
-		String waterHeaterExternalControlInboundPortURI
+		String kettleUserInboundPortURI,
+		String kettleInternalControlInboundPortURI,
+		String kettleExternalControlInboundPortURI
 		) throws Exception
 	{
-		assert	waterHeaterUserInboundPortURI != null && !waterHeaterUserInboundPortURI.isEmpty();
-		assert	waterHeaterInternalControlInboundPortURI != null && !waterHeaterInternalControlInboundPortURI.isEmpty();
-		assert	waterHeaterExternalControlInboundPortURI != null && !waterHeaterExternalControlInboundPortURI.isEmpty();
+		assert	kettleUserInboundPortURI != null && !kettleUserInboundPortURI.isEmpty();
+		assert	kettleInternalControlInboundPortURI != null && !kettleInternalControlInboundPortURI.isEmpty();
+		assert	kettleExternalControlInboundPortURI != null && !kettleExternalControlInboundPortURI.isEmpty();
 
-		this.currentState = WaterHeaterState.OFF;
+		this.currentState = KettleState.OFF;
 		this.currentPowerLevel = new SignalData<>(MAX_POWER_LEVEL);
 		this.targetTemperature = STANDARD_TARGET_TEMPERATURE;
 
-		this.whip = new WaterHeaterUserJava4InboundPort(waterHeaterUserInboundPortURI, this);
-		this.whip.publishPort();
-		this.whicip = new HeaterInternalControlInboundPort(
-									waterHeaterInternalControlInboundPortURI, this);
-		this.whicip.publishPort();
-		this.whecip = new HeaterExternalControlJava4InboundPort(
-									waterHeaterExternalControlInboundPortURI, this);
-		this.whecip.publishPort();
+		this.kip = new KettleUserJava4InboundPort(kettleUserInboundPortURI, this);
+		this.kip.publishPort();
+		this.kicip = new KettleInternalControlInboundPort(
+									kettleInternalControlInboundPortURI, this);
+		this.kicip.publishPort();
+		this.kecip = new HeaterExternalControlJava4InboundPort(
+									kettleExternalControlInboundPortURI, this);
+		this.kecip.publishPort();
 
 		if (VERBOSE) {
-			this.tracer.get().setTitle("Heater component");
+			this.tracer.get().setTitle("Kettle component");
 			this.tracer.get().setRelativePosition(X_RELATIVE_POSITION,
 												  Y_RELATIVE_POSITION);
 			this.toggleTracing();		
@@ -368,9 +360,9 @@ implements	HeaterUserI,
 
 		assert	Kettle.implementationInvariants(this) :
 				new ImplementationInvariantException(
-						"Heater.implementationInvariants(this)");
+						"Kettle.implementationInvariants(this)");
 		assert	Kettle.invariants(this) :
-				new InvariantException("Heater.invariants(this)");
+				new InvariantException("Kettle.invariants(this)");
 	}
 
 	// -------------------------------------------------------------------------
@@ -384,9 +376,9 @@ implements	HeaterUserI,
 	public synchronized void	shutdown() throws ComponentShutdownException
 	{
 		try {
-			this.hip.unpublishPort();
-			this.hicip.unpublishPort();
-			this.hecip.unpublishPort();
+			this.kip.unpublishPort();
+			this.kicip.unpublishPort();
+			this.kecip.unpublishPort();
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e) ;
 		}
@@ -398,7 +390,7 @@ implements	HeaterUserI,
 	// -------------------------------------------------------------------------
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#on()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleUserI#on()
 	 */
 	@Override
 	public boolean		on() throws Exception
@@ -407,53 +399,54 @@ implements	HeaterUserI,
 			this.traceMessage("Heater returns its state: " +
 											this.currentState + ".\n");
 		}
-		return this.currentState == HeaterState.ON ||
-									this.currentState == HeaterState.HEATING;
+		return this.currentState == KettleState.ON ||
+									this.currentState == KettleState.HEATING ||
+									this.currentState == KettleState.KEEP_WARM;
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#switchOn()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleUserI#switchOn()
 	 */
 	@Override
 	public void			switchOn() throws Exception
 	{
 		if (Kettle.VERBOSE) {
-			this.traceMessage("Heater switches on.\n");
+			this.traceMessage("Kettle switches on.\n");
 		}
 
 		assert	!this.on() : new PreconditionException("!on()");
 
-		this.currentState = HeaterState.ON;
+		this.currentState = KettleState.ON;
 
 		assert	 this.on() : new PostconditionException("on()");
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#switchOff()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleUserI#switchOff()
 	 */
 	@Override
 	public void			switchOff() throws Exception
 	{
 		if (Kettle.VERBOSE) {
-			this.traceMessage("Heater switches off.\n");
+			this.traceMessage("Kettle switches off.\n");
 		}
 
 		assert	this.on() : new PreconditionException("on()");
 
-		this.currentState = HeaterState.OFF;
+		this.currentState = KettleState.OFF;
 
 		assert	 !this.on() : new PostconditionException("!on()");
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#setTargetTemperature(fr.sorbonne_u.alasca.physical_data.Measure)
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleUserI#setTargetTemperature(fr.sorbonne_u.alasca.physical_data.Measure)
 	 */
 	@Override
 	public void			setTargetTemperature(Measure<Double> target)
 	throws Exception
 	{
 		if (Kettle.VERBOSE) {
-			this.traceMessage("Heater sets a new target "
+			this.traceMessage("Kettle sets a new target "
 										+ "temperature: " + target + ".\n");
 		}
 
@@ -476,13 +469,13 @@ implements	HeaterUserI,
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterTemperatureI#getTargetTemperature()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleTemperatureI#getTargetTemperature()
 	 */
 	@Override
 	public Measure<Double>	getTargetTemperature() throws Exception
 	{
 		if (Kettle.VERBOSE) {
-			this.traceMessage("Heater returns its target"
+			this.traceMessage("Kettle returns water target"
 							+ " temperature " + this.targetTemperature + ".\n");
 		}
 
@@ -502,7 +495,7 @@ implements	HeaterUserI,
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterTemperatureI#getCurrentTemperature()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleTemperatureI#getCurrentTemperature()
 	 */
 	@Override
 	public SignalData<Double>	getCurrentTemperature() throws Exception
@@ -512,71 +505,121 @@ implements	HeaterUserI,
 		// Temporary implementation; would need a temperature sensor.
 		SignalData<Double> currentTemperature = FAKE_CURRENT_TEMPERATURE;
 		if (Kettle.VERBOSE) {
-			this.traceMessage("Heater returns the current"
-							+ " temperature " + currentTemperature + ".\n");
+			this.traceMessage("Kettle returns the current"
+							+ " water temperature " + currentTemperature + ".\n");
 		}
 
 		return  currentTemperature;
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterInternalControlI#heating()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleInternalControlI#heating()
 	 */
 	@Override
 	public boolean		heating() throws Exception
 	{
 		if (Kettle.VERBOSE) {
-			this.traceMessage("Heater returns its heating status " + 
-						(this.currentState == HeaterState.HEATING) + ".\n");
+			this.traceMessage("Kettle returns its heating status " + 
+						(this.currentState == KettleState.HEATING) + ".\n");
 		}
 
 		assert	this.on() : new PreconditionException("on()");
 
-		return this.currentState == HeaterState.HEATING;
+		return this.currentState == KettleState.HEATING;
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterInternalControlI#startHeating()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleInternalControlI#startHeating()
 	 */
 	@Override
 	public void			startHeating() throws Exception
 	{
 		if (Kettle.VERBOSE) {
-			this.traceMessage("Heater starts heating.\n");
+			this.traceMessage("Kettle starts heating.\n");
 		}
 		assert	this.on() : new PreconditionException("on()");
 		assert	!this.heating() : new PreconditionException("!heating()");
 
-		this.currentState = HeaterState.HEATING;
+		this.currentState = KettleState.HEATING;
 
 		assert	this.heating() : new PostconditionException("heating()");
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterInternalControlI#stopHeating()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleInternalControlI#stopHeating()
 	 */
 	@Override
 	public void			stopHeating() throws Exception
 	{
 		if (Kettle.VERBOSE) {
-			this.traceMessage("Heater stops heating.\n");
+			this.traceMessage("Kettle stops heating.\n");
 		}
 		assert	this.on() : new PreconditionException("on()");
 		assert	this.heating() : new PreconditionException("heating()");
 
-		this.currentState = HeaterState.ON;
+		this.currentState = KettleState.KEEP_WARM;
 
 		assert	!this.heating() : new PostconditionException("!heating()");
 	}
+	
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleInternalControlI#keepingWarm()
+	 */
+	@Override
+	public boolean		keepingWarm() throws Exception
+	{
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle returns its keeping warm status " + 
+						(this.currentState == KettleState.KEEP_WARM) + ".\n");
+		}
+
+		assert	this.on() : new PreconditionException("on()");
+
+		return this.currentState == KettleState.KEEP_WARM;
+	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#getMaxPowerLevel()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleInternalControlI#startKeepingWarm()
+	 */
+	@Override
+	public void			startKeepingWarm() throws Exception
+	{
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle starts keeping warm.\n");
+		}
+		assert	this.on() : new PreconditionException("on()");
+		assert	!this.keepingWarm() : new PreconditionException("!keepingWarm()");
+
+		this.currentState = KettleState.KEEP_WARM;
+
+		assert	this.keepingWarm() : new PostconditionException("keepingWarm()");
+	}
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleInternalControlI#stopHeating()
+	 */
+	@Override
+	public void			stopKeepingWarm() throws Exception
+	{
+		if (Kettle.VERBOSE) {
+			this.traceMessage("Kettle stops keeping warm.\n");
+		}
+		assert	this.on() : new PreconditionException("on()");
+		assert	this.keepingWarm() : new PreconditionException("keepingWarm()");
+
+		this.currentState = KettleState.ON;
+
+		assert	!this.keepingWarm() : new PostconditionException("!keepingWarm()");
+	}
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleExternalControlI#getMaxPowerLevel()
 	 */
 	@Override
 	public Measure<Double>	getMaxPowerLevel() throws Exception
 	{
 		if (Kettle.VERBOSE) {
-			this.traceMessage("Heater returns its max power level " + 
+			this.traceMessage("Kettle returns its max power level " + 
 					MAX_POWER_LEVEL + ".\n");
 		}
 
@@ -584,14 +627,14 @@ implements	HeaterUserI,
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#setCurrentPowerLevel(fr.sorbonne_u.alasca.physical_data.Measure)
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleExternalControlI#setCurrentPowerLevel(fr.sorbonne_u.alasca.physical_data.Measure)
 	 */
 	@Override
 	public void			setCurrentPowerLevel(Measure<Double> powerLevel)
 	throws Exception
 	{
 		if (Kettle.VERBOSE) {
-			this.traceMessage("Heater sets its power level to " + 
+			this.traceMessage("Kettle sets its power level to " + 
 														powerLevel + ".\n");
 		}
 
@@ -618,13 +661,13 @@ implements	HeaterUserI,
 	}
 
 	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#getCurrentPowerLevel()
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleExternalControlI#getCurrentPowerLevel()
 	 */
 	@Override
 	public SignalData<Double>	getCurrentPowerLevel() throws Exception
 	{
 		if (Kettle.VERBOSE) {
-			this.traceMessage("Heater returns its current power level " + 
+			this.traceMessage("Kettle returns its current power level " + 
 					this.currentPowerLevel + ".\n");
 		}
 

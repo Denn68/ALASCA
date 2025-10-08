@@ -1,4 +1,4 @@
-package fr.sorbonne_u.components.hem2025e1.equipments.water_heater;
+package fr.sorbonne_u.components.hem2025e1.equipments.kettle;
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr
@@ -39,51 +39,27 @@ import fr.sorbonne_u.alasca.physical_data.SignalData;
 
 // -----------------------------------------------------------------------------
 /**
- * The component interface <code>HeaterUserCI</code> declares the signature
- * of the services offered and that can be required by the user from the heater.
+ * The component interface <code>HeaterExternalControlCI</code> declares the
+ * signatures of services used by the household energy manager to adjust
+ * the power consumption of the heater.
  *
  * <p><strong>Description</strong></p>
  * 
  * <p><strong>Invariants</strong></p>
  * 
  * <pre>
- * invariant	{@code true}	// no more invariant
+ * invariant	{@code getCurrentPowerLevel() <= getMaxPowerLevel()}
  * </pre>
  * 
  * <p>Created on : 2023-09-18</p>
  * 
  * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public interface		HeaterUserCI
-extends		OfferedCI,
-			RequiredCI,
-			HeaterUserI
+public interface		HeaterExternalControlCI
+extends		RequiredCI,
+			OfferedCI,
+			HeaterExternalControlI
 {
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#on()
-	 */
-	@Override
-	public boolean		on() throws Exception;
-
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#switchOn()
-	 */
-	@Override
-	public void			switchOn() throws Exception;
-
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#switchOff()
-	 */
-	@Override
-	public void			switchOff() throws Exception;
-
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#setTargetTemperature(fr.sorbonne_u.alasca.physical_data.Measure)
-	 */
-	@Override
-	public void			setTargetTemperature(Measure<Double> target)
-	throws Exception;
-
 	/**
 	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#getMaxPowerLevel()
 	 */
@@ -113,6 +89,5 @@ extends		OfferedCI,
 	 */
 	@Override
 	public SignalData<Double> getCurrentTemperature() throws Exception;
-
 }
 // -----------------------------------------------------------------------------
