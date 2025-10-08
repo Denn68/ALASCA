@@ -524,6 +524,36 @@ extends		AbstractComponent
 		}
 
 		this.statistics.updateStatistics();
+		
+		this.logMessage("  Scenario: set the vacuum cleaner medium from low");
+		this.logMessage("    Given the vacuum cleaner is on");
+		this.logMessage("    And the vacuum cleaner is low");
+		this.logMessage("    When the vacuum cleaner is set medium");
+		try {
+			this.vcdop.setMedium();
+			this.logMessage("    Then the vacuum cleaner is on");
+			resultState = this.vcdop.getState();
+			if (!VacuumCleanerState.ON.equals(resultState)) {
+				this.logMessage("     but was: " + resultState);
+				this.statistics.incorrectResult();
+			}
+		} catch (Throwable e) {
+			this.statistics.incorrectResult();
+			this.logMessage("     but the exception " + e + " has been raised");
+		}
+		try {
+			this.logMessage("    And the vacuum cleaner is medium");
+			resultMode = this.vcdop.getMode();
+			if (!VacuumCleanerMode.MEDIUM.equals(resultMode)) {
+				this.logMessage("     but was: " + resultMode);
+				this.statistics.incorrectResult();
+			}
+		} catch (Throwable e) {
+			this.statistics.incorrectResult();
+			this.logMessage("     but the exception " + e + " has been raised");
+		}
+
+		this.statistics.updateStatistics();
 
 		try {
 			this.vcdop.turnOff();
@@ -551,7 +581,7 @@ extends		AbstractComponent
 		try {
 			this.doPortConnection(
 							this.vcdop.getPortURI(),
-							VacuumCleanerInboundPortURI,
+							vacuumCleanerInboundPortURI,
 							VacuumCleanerConnector.class.getCanonicalName());
 		} catch (Throwable e) {
 			throw new ComponentStartException(e) ;
