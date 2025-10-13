@@ -1,36 +1,5 @@
 package fr.sorbonne_u.components.hem2025e1.equipments.kettle;
 
-// Copyright Jacques Malenfant, Sorbonne Universite.
-// Jacques.Malenfant@lip6.fr
-//
-// This software is a computer program whose purpose is to implement a mock-up
-// of household energy management system.
-//
-// This software is governed by the CeCILL-C license under French law and
-// abiding by the rules of distribution of free software.  You can use,
-// modify and/ or redistribute the software under the terms of the
-// CeCILL-C license as circulated by CEA, CNRS and INRIA at the following
-// URL "http://www.cecill.info".
-//
-// As a counterpart to the access to the source code and  rights to copy,
-// modify and redistribute granted by the license, users are provided only
-// with a limited warranty  and the software's author,  the holder of the
-// economic rights,  and the successive licensors  have only  limited
-// liability. 
-//
-// In this respect, the user's attention is drawn to the risks associated
-// with loading,  using,  modifying and/or developing or reproducing the
-// software by the user in light of its specific status of free software,
-// that may mean  that it is complicated to manipulate,  and  that  also
-// therefore means  that it is reserved for developers  and  experienced
-// professionals having in-depth computer knowledge. Users are therefore
-// encouraged to load and test the software's suitability as regards their
-// requirements in conditions enabling the security of their systems and/or 
-// data to be ensured and,  more generally, to use and operate it in the 
-// same conditions as regards security. 
-//
-// The fact that you are presently reading this means that you have had
-// knowledge of the CeCILL-C license and that you accept its terms.
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
@@ -128,24 +97,6 @@ implements	KettleUserI,
 	/** target temperature for the heating.									*/
 	protected Measure<Double>					targetTemperature;
 
-	// -------------------------------------------------------------------------
-	// Invariants
-	// -------------------------------------------------------------------------
-
-	/**
-	 * return true if the implementation invariants are observed, false
-	 * otherwise.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code h != null}
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 * @param h	instance to be tested.
-	 * @return	true if the implementation invariants are observed, false otherwise.
-	 */
 	protected static boolean	implementationInvariants(Kettle h)
 	{
 		assert	h != null : new PreconditionException("h != null");
@@ -174,26 +125,13 @@ implements	KettleUserI,
 		return ret;
 	}
 
-	/**
-	 * return true if the invariants are observed, false otherwise.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code h != null}
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 * @param h	instance to be tested.
-	 * @return	true if the invariants are observed, false otherwise.
-	 */
 	protected static boolean	invariants(Kettle h)
 	{
 		assert	h != null : new PreconditionException("h != null");
 
 		boolean ret = true;
-		ret &= HeaterTemperatureI.invariants(h);
-		ret &= HeaterExternalControlI.invariants(h);
+		ret &= KettleTemperatureI.invariants(h);
+		ret &= KettleExternalControlI.invariants(h);
 		ret &= AssertionChecking.checkInvariant(
 				REFLECTION_INBOUND_PORT_URI != null &&
 									!REFLECTION_INBOUND_PORT_URI.isEmpty(),
@@ -227,45 +165,12 @@ implements	KettleUserI,
 		return ret;
 	}
 
-	// -------------------------------------------------------------------------
-	// Constructors
-	// -------------------------------------------------------------------------
-
-	/**
-	 * create a new kettle.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 * 
-	 * @throws Exception <i>to do</i>.
-	 */
 	protected			Kettle() throws Exception
 	{
 		this(USER_INBOUND_PORT_URI, INTERNAL_CONTROL_INBOUND_PORT_URI,
 			 EXTERNAL_CONTROL_INBOUND_PORT_URI);
 	}
 
-	/**
-	 * create a new kettle.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code heaterUserInboundPortURI != null && !kettleUserInboundPortURI.isEmpty()}
-	 * pre	{@code heaterInternalControlInboundPortURI != null && !kettleInternalControlInboundPortURI.isEmpty()}
-	 * pre	{@code heaterExternalControlInboundPortURI != null && !kettleExternalControlInboundPortURI.isEmpty()}
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 * 
-	 * @param kettleUserInboundPortURI				URI of the inbound port to call the kettle component for user interactions.
-	 * @param kettleInternalControlInboundPortURI	URI of the inbound port to call the kettle component for internal control.
-	 * @param kettleExternalControlInboundPortURI	URI of the inbound port to call the kettle component for external control.
-	 * @throws Exception							<i>to do</i>.
-	 */
 	protected			Kettle(
 		String kettleUserInboundPortURI,
 		String kettleInternalControlInboundPortURI,
@@ -278,25 +183,6 @@ implements	KettleUserI,
 						kettleExternalControlInboundPortURI);
 	}
 
-	/**
-	 * create a new kettle.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code reflectionInboundPortURI != null && !reflectionInboundPortURI.isEmpty()}
-	 * pre	{@code kettleUserInboundPortURI != null && !kettleUserInboundPortURI.isEmpty()}
-	 * pre	{@code kettleInternalControlInboundPortURI != null && !kettleInternalControlInboundPortURI.isEmpty()}
-	 * pre	{@code kettleExternalControlInboundPortURI != null && !kettleExternalControlInboundPortURI.isEmpty()}
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 * 
-	 * @param reflectionInboundPortURI				URI of the reflection inbound port of the component.
-	 * @param kettleUserInboundPortURI				URI of the inbound port to call the kettle component for user interactions.
-	 * @param kettleInternalControlInboundPortURI	URI of the inbound port to call the kettle component for internal control.
-	 * @param kettleExternalControlInboundPortURI	URI of the inbound port to call the kettle component for external control.
-	 * @throws Exception							<i>to do</i>.
-	 */
 	protected			Kettle(
 		String reflectionInboundPortURI,
 		String kettleUserInboundPortURI,
@@ -311,23 +197,6 @@ implements	KettleUserI,
 						kettleExternalControlInboundPortURI);
 	}
 
-	/**
-	 * create a new thermostated kettle.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code kettleUserInboundPortURI != null && !kettleUserInboundPortURI.isEmpty()}
-	 * pre	{@code kettleInternalControlInboundPortURI != null && !kettleInternalControlInboundPortURI.isEmpty()}
-	 * pre	{@code kettleExternalControlInboundPortURI != null && !kettleExternalControlInboundPortURI.isEmpty()}
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 * @param kettleUserInboundPortURI				URI of the inbound port to call the kettle component for user interactions.
-	 * @param kettleInternalControlInboundPortURI	URI of the inbound port to call the kettle component for internal control.
-	 * @param kettleExternalControlInboundPortURI	URI of the inbound port to call the kettle component for external control.
-	 * @throws Exception							<i>to do</i>.
-	 */
 	protected void		initialise(
 		String kettleUserInboundPortURI,
 		String kettleInternalControlInboundPortURI,
@@ -365,13 +234,6 @@ implements	KettleUserI,
 				new InvariantException("Kettle.invariants(this)");
 	}
 
-	// -------------------------------------------------------------------------
-	// Component life-cycle
-	// -------------------------------------------------------------------------
-
-	/**
-	 * @see fr.sorbonne_u.components.AbstractComponent#shutdown()
-	 */
 	@Override
 	public synchronized void	shutdown() throws ComponentShutdownException
 	{
@@ -385,13 +247,6 @@ implements	KettleUserI,
 		super.shutdown();
 	}
 
-	// -------------------------------------------------------------------------
-	// Component services implementation
-	// -------------------------------------------------------------------------
-
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleUserI#on()
-	 */
 	@Override
 	public boolean		on() throws Exception
 	{
@@ -404,9 +259,6 @@ implements	KettleUserI,
 									this.currentState == KettleState.KEEP_WARM;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleUserI#switchOn()
-	 */
 	@Override
 	public void			switchOn() throws Exception
 	{
@@ -421,9 +273,6 @@ implements	KettleUserI,
 		assert	 this.on() : new PostconditionException("on()");
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleUserI#switchOff()
-	 */
 	@Override
 	public void			switchOff() throws Exception
 	{
@@ -438,9 +287,6 @@ implements	KettleUserI,
 		assert	 !this.on() : new PostconditionException("!on()");
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleUserI#setTargetTemperature(fr.sorbonne_u.alasca.physical_data.Measure)
-	 */
 	@Override
 	public void			setTargetTemperature(Measure<Double> target)
 	throws Exception
@@ -494,9 +340,7 @@ implements	KettleUserI,
 		return ret;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleTemperatureI#getCurrentTemperature()
-	 */
+
 	@Override
 	public SignalData<Double>	getCurrentTemperature() throws Exception
 	{
@@ -512,9 +356,6 @@ implements	KettleUserI,
 		return  currentTemperature;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleInternalControlI#heating()
-	 */
 	@Override
 	public boolean		heating() throws Exception
 	{
@@ -528,9 +369,6 @@ implements	KettleUserI,
 		return this.currentState == KettleState.HEATING;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleInternalControlI#startHeating()
-	 */
 	@Override
 	public void			startHeating() throws Exception
 	{
@@ -545,9 +383,6 @@ implements	KettleUserI,
 		assert	this.heating() : new PostconditionException("heating()");
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleInternalControlI#stopHeating()
-	 */
 	@Override
 	public void			stopHeating() throws Exception
 	{
@@ -561,10 +396,7 @@ implements	KettleUserI,
 
 		assert	!this.heating() : new PostconditionException("!heating()");
 	}
-	
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleInternalControlI#keepingWarm()
-	 */
+
 	@Override
 	public boolean		keepingWarm() throws Exception
 	{
@@ -578,9 +410,6 @@ implements	KettleUserI,
 		return this.currentState == KettleState.KEEP_WARM;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleInternalControlI#startKeepingWarm()
-	 */
 	@Override
 	public void			startKeepingWarm() throws Exception
 	{
@@ -595,9 +424,6 @@ implements	KettleUserI,
 		assert	this.keepingWarm() : new PostconditionException("keepingWarm()");
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleInternalControlI#stopHeating()
-	 */
 	@Override
 	public void			stopKeepingWarm() throws Exception
 	{
@@ -612,9 +438,6 @@ implements	KettleUserI,
 		assert	!this.keepingWarm() : new PostconditionException("!keepingWarm()");
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleExternalControlI#getMaxPowerLevel()
-	 */
 	@Override
 	public Measure<Double>	getMaxPowerLevel() throws Exception
 	{
@@ -626,9 +449,6 @@ implements	KettleUserI,
 		return MAX_POWER_LEVEL;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleExternalControlI#setCurrentPowerLevel(fr.sorbonne_u.alasca.physical_data.Measure)
-	 */
 	@Override
 	public void			setCurrentPowerLevel(Measure<Double> powerLevel)
 	throws Exception
@@ -660,9 +480,6 @@ implements	KettleUserI,
 						+ "powerLevel.getData()");
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleExternalControlI#getCurrentPowerLevel()
-	 */
 	@Override
 	public SignalData<Double>	getCurrentPowerLevel() throws Exception
 	{

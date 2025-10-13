@@ -1,36 +1,5 @@
 package fr.sorbonne_u.components.hem2025e1.equipments.kettle;
 
-// Copyright Jacques Malenfant, Sorbonne Universite.
-// Jacques.Malenfant@lip6.fr
-//
-// This software is a computer program whose purpose is to provide a basic
-// household management systems as an example of a cyber-physical system.
-//
-// This software is governed by the CeCILL-C license under French law and
-// abiding by the rules of distribution of free software.  You can use,
-// modify and/ or redistribute the software under the terms of the
-// CeCILL-C license as circulated by CEA, CNRS and INRIA at the following
-// URL "http://www.cecill.info".
-//
-// As a counterpart to the access to the source code and  rights to copy,
-// modify and redistribute granted by the license, users are provided only
-// with a limited warranty  and the software's author,  the holder of the
-// economic rights,  and the successive licensors  have only  limited
-// liability. 
-//
-// In this respect, the user's attention is drawn to the risks associated
-// with loading,  using,  modifying and/or developing or reproducing the
-// software by the user in light of its specific status of free software,
-// that may mean  that it is complicated to manipulate,  and  that  also
-// therefore means  that it is reserved for developers  and  experienced
-// professionals having in-depth computer knowledge. Users are therefore
-// encouraged to load and test the software's suitability as regards their
-// requirements in conditions enabling the security of their systems and/or 
-// data to be ensured and,  more generally, to use and operate it in the 
-// same conditions as regards security. 
-//
-// The fact that you are presently reading this means that you have had
-// knowledge of the CeCILL-C license and that you accept its terms.
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
@@ -59,37 +28,11 @@ import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 import fr.sorbonne_u.alasca.physical_data.SignalData;
 
-// -----------------------------------------------------------------------------
-/**
- * The class <code>HeaterUnitTester</code> implements a component performing 
- * unit tests for the class <code>Heater</code> as a BCM component.
- *
- * <p><strong>Description</strong></p>
- * 
- * <p><strong>Implementation Invariants</strong></p>
- * 
- * <pre>
- * invariant	{@code heaterUserInboundPortURI != null && !heaterUserInboundPortURI.isEmpty()}
- * invariant	{@code heaterInternalControlInboundPortURI != null && !heaterInternalControlInboundPortURI.isEmpty()}
- * invariant	{@code heaterExternalControlInboundPortURI != null && !heaterExternalControlInboundPortURI.isEmpty()}
- * </pre>
- * 
- * <p><strong>Invariants</strong></p>
- * 
- * <pre>
- * invariant	{@code X_RELATIVE_POSITION >= 0}
- * invariant	{@code Y_RELATIVE_POSITION >= 0}
- * </pre>
- * 
- * <p>Created on : 2021-09-13</p>
- * 
- * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
- */
-@RequiredInterfaces(required={HeaterUserCI.class,
+@RequiredInterfaces(required={KettleUserCI.class,
 							  HeaterInternalControlCI.class,
 							  HeaterExternalControlCI.class,
 							  ClocksServerCI.class})
-public class			HeaterUnitTester
+public class			KettleUnitTester
 extends		AbstractComponent
 {
 	// -------------------------------------------------------------------------
@@ -97,10 +40,10 @@ extends		AbstractComponent
 	// -------------------------------------------------------------------------
 
 	/**	in clock-driven scenario, the delay from the start instant at which
-	 *  the heater is switched on.											*/
+	 *  the kettle is switched on.											*/
 	public static final int		SWITCH_ON_DELAY = 2;
 	/**	in clock-driven scenario, the delay from the start instant at which
-	 *  the heater is switched off.											*/
+	 *  the kettle is switched off.											*/
 	public static final int		SWITCH_OFF_DELAY = 9;
 
 	/** when true, methods trace their actions.								*/
@@ -114,223 +57,119 @@ extends		AbstractComponent
 	 *  executes integration tests actions.									*/
 	protected final boolean		isUnitTest;
 	/** URI of the user component interface inbound port.					*/
-	protected String			heaterUserInboundPortURI;
+	protected String			kettleUserInboundPortURI;
 	/** URI of the internal control component interface inbound port.		*/
-	protected String			heaterInternalControlInboundPortURI;
+	protected String			kettleInternalControlInboundPortURI;
 	/** URI of the external control component interface inbound port.		*/
-	protected String			heaterExternalControlInboundPortURI;
+	protected String			kettleExternalControlInboundPortURI;
 
 	/** user component interface inbound port.								*/
-	protected HeaterUserOutboundPort			hop;
+	protected KettleUserOutboundPort			kop;
 	/** internal control component interface inbound port.					*/
-	protected HeaterInternalControlOutboundPort	hicop;
+	protected KettleInternalControlOutboundPort	kicop;
 	/** external control component interface inbound port.					*/
-	protected HeaterExternalControlOutboundPort	hecop;
+	protected KettleExternalControlOutboundPort	kecop;
 
 	/** collector of test statistics.										*/
 	protected TestsStatistics	statistics;
 
-	// -------------------------------------------------------------------------
-	// Invariants
-	// -------------------------------------------------------------------------
-
-	/**
-	 * return true if the implementation invariants are observed, false
-	 * otherwise.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code ht != null}
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 * @param ht	instance to be tested.
-	 * @return		true if the implementation invariants are observed, false otherwise.
-	 */
-	protected static boolean	implementationInvariants(HeaterUnitTester ht)
+	protected static boolean	implementationInvariants(KettleUnitTester kt)
 	{
-		assert	ht != null : new PreconditionException("ht != null");
+		assert	kt != null : new PreconditionException("ht != null");
 
 		boolean ret = true;
 		ret &= AssertionChecking.checkImplementationInvariant(
-				ht.heaterUserInboundPortURI != null &&
-									!ht.heaterUserInboundPortURI.isEmpty(),
-				HeaterUnitTester.class, ht,
-				"ht.heaterUserInboundPortURI != null && "
-							+ "!ht.heaterUserInboundPortURI.isEmpty()");
+				kt.kettleUserInboundPortURI != null &&
+									!kt.kettleUserInboundPortURI.isEmpty(),
+				KettleUnitTester.class, kt,
+				"kt.kettleUserInboundPortURI != null && "
+							+ "!kt.kettleUserInboundPortURI.isEmpty()");
 		ret &= AssertionChecking.checkImplementationInvariant(
-				ht.heaterInternalControlInboundPortURI != null &&
-							!ht.heaterInternalControlInboundPortURI.isEmpty(),
-				HeaterUnitTester.class, ht,
-				"ht.heaterInternalControlInboundPortURI != null && "
-						+ "!ht.heaterInternalControlInboundPortURI.isEmpty()");
+				kt.kettleInternalControlInboundPortURI != null &&
+							!kt.kettleInternalControlInboundPortURI.isEmpty(),
+				KettleUnitTester.class, kt,
+				"kt.kettleInternalControlInboundPortURI != null && "
+						+ "!kt.kettleInternalControlInboundPortURI.isEmpty()");
 		ret &= AssertionChecking.checkImplementationInvariant(
-				ht.heaterExternalControlInboundPortURI != null &&
-							!ht.heaterExternalControlInboundPortURI.isEmpty(),
-				HeaterUnitTester.class, ht,
-				"ht.heaterExternalControlInboundPortURI != null &&"
-						+ "!ht.heaterExternalControlInboundPortURI.isEmpty()");
+				kt.kettleExternalControlInboundPortURI != null &&
+							!kt.kettleExternalControlInboundPortURI.isEmpty(),
+				KettleUnitTester.class, kt,
+				"kt.kettleExternalControlInboundPortURI != null &&"
+						+ "!kt.kettleExternalControlInboundPortURI.isEmpty()");
 		return ret;
 	}
-
-	/**
-	 * return true if the invariants is observed, false otherwise.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code ht != null}
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 * @param ht	instance to be tested.
-	 * @return		true if the invariants are observed, false otherwise.
-	 */
-	protected static boolean	invariants(HeaterUnitTester ht)
+	protected static boolean	invariants(KettleUnitTester kt)
 	{
-		assert	ht != null : new PreconditionException("ht != null");
+		assert	kt != null : new PreconditionException("kt != null");
 
 		boolean ret = true;
 		ret &= AssertionChecking.checkInvariant(
 				X_RELATIVE_POSITION >= 0,
-				HeaterUnitTester.class, ht,
+				KettleUnitTester.class, kt,
 				"X_RELATIVE_POSITION >= 0");
 		ret &= AssertionChecking.checkInvariant(
 				Y_RELATIVE_POSITION >= 0,
-				HeaterUnitTester.class, ht,
+				KettleUnitTester.class, kt,
 				"Y_RELATIVE_POSITION >= 0");
 		return ret;
 	}
-
-	// -------------------------------------------------------------------------
-	// Constructors
-	// -------------------------------------------------------------------------
-
-	/**
-	 * create a heater test component.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 * @param isUnitTest	true if the component must perform unit tests, otherwise it executes integration tests actions.
-	 * @throws Exception	<i>to do</i>.
-	 */
-	protected			HeaterUnitTester(boolean isUnitTest) throws Exception
+	protected			KettleUnitTester(boolean isUnitTest) throws Exception
 	{
 		this(isUnitTest,
 			 Kettle.USER_INBOUND_PORT_URI,
 			 Kettle.INTERNAL_CONTROL_INBOUND_PORT_URI,
 			 Kettle.EXTERNAL_CONTROL_INBOUND_PORT_URI);
 	}
-
-	/**
-	 * create a heater test component.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code heaterUserInboundPortURI != null && !heaterUserInboundPortURI.isEmpty()}
-	 * pre	{@code heaterInternalControlInboundPortURI != null && !heaterInternalControlInboundPortURI.isEmpty()}
-	 * pre	{@code heaterExternalControlInboundPortURI != null && !heaterExternalControlInboundPortURI.isEmpty()}
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 * @param isUnitTest							true if the component must perform unit tests, otherwise it executes integration tests actions.
-	 * @param heaterUserInboundPortURI				URI of the user component interface inbound port.
-	 * @param heaterInternalControlInboundPortURI	URI of the internal control component interface inbound port.
-	 * @param heaterExternalControlInboundPortURI	URI of the external control component interface inbound port.
-	 * @throws Exception							<i>to do</i>.
-	 */
-	protected			HeaterUnitTester(
+	
+	protected			KettleUnitTester(
 		boolean isUnitTest,
-		String heaterUserInboundPortURI,
-		String heaterInternalControlInboundPortURI,
-		String heaterExternalControlInboundPortURI
+		String kettleUserInboundPortURI,
+		String kettleInternalControlInboundPortURI,
+		String kettleExternalControlInboundPortURI
 		) throws Exception
 	{
 		super(1, 1);
 		this.isUnitTest = isUnitTest;
-		this.initialise(heaterUserInboundPortURI,
-						heaterInternalControlInboundPortURI,
-						heaterExternalControlInboundPortURI);
+		this.initialise(kettleUserInboundPortURI,
+						kettleInternalControlInboundPortURI,
+						kettleExternalControlInboundPortURI);
 	}
-
-	/**
-	 * create a heater test component.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code heaterUserInboundPortURI != null && !heaterUserInboundPortURI.isEmpty()}
-	 * pre	{@code heaterInternalControlInboundPortURI != null && !heaterInternalControlInboundPortURI.isEmpty()}
-	 * pre	{@code heaterExternalControlInboundPortURI != null && !heaterExternalControlInboundPortURI.isEmpty()}
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 * @param isUnitTest							true if the component must perform unit tests, otherwise it executes integration tests actions.
-	 * @param reflectionInboundPortURI				URI of the reflection inbound port of the component.
-	 * @param heaterUserInboundPortURI				URI of the user component interface inbound port.
-	 * @param heaterInternalControlInboundPortURI	URI of the internal control component interface inbound port.
-	 * @param heaterExternalControlInboundPortURI	URI of the external control component interface inbound port.
-	 * @throws Exception							<i>to do</i>.
-	 */
-	protected			HeaterUnitTester(
+	
+	protected			KettleUnitTester(
 		boolean isUnitTest,
 		String reflectionInboundPortURI,
-		String heaterUserInboundPortURI,
-		String heaterInternalControlInboundPortURI,
-		String heaterExternalControlInboundPortURI
+		String kettleUserInboundPortURI,
+		String kettleInternalControlInboundPortURI,
+		String kettleExternalControlInboundPortURI
 		) throws Exception
 	{
 		super(reflectionInboundPortURI, 1, 1);
 		this.isUnitTest = isUnitTest;
-		this.initialise(heaterUserInboundPortURI,
-						heaterInternalControlInboundPortURI,
-						heaterExternalControlInboundPortURI);
+		this.initialise(kettleUserInboundPortURI,
+						kettleInternalControlInboundPortURI,
+						kettleExternalControlInboundPortURI);
 	}
-
-	/**
-	 * initialise a heater test component.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code heaterUserInboundPortURI != null && !heaterUserInboundPortURI.isEmpty()}
-	 * pre	{@code heaterInternalControlInboundPortURI != null && !heaterInternalControlInboundPortURI.isEmpty()}
-	 * pre	{@code heaterExternalControlInboundPortURI != null && !heaterExternalControlInboundPortURI.isEmpty()}
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 * @param heaterUserInboundPortURI				URI of the user component interface inbound port.
-	 * @param heaterInternalControlInboundPortURI	URI of the internal control component interface inbound port.
-	 * @param heaterExternalControlInboundPortURI	URI of the external control component interface inbound port.
-	 * @throws Exception							<i>to do</i>.
-	 */
+	
 	protected void		initialise(
-		String heaterUserInboundPortURI,
-		String heaterInternalControlInboundPortURI,
-		String heaterExternalControlInboundPortURI
+		String kettleUserInboundPortURI,
+		String kettleInternalControlInboundPortURI,
+		String kettleExternalControlInboundPortURI
 		) throws Exception
 	{
-		this.heaterUserInboundPortURI = heaterUserInboundPortURI;
-		this.hop = new HeaterUserOutboundPort(this);
-		this.hop.publishPort();
-		this.heaterInternalControlInboundPortURI =
-									heaterInternalControlInboundPortURI;
-		this.hicop = new HeaterInternalControlOutboundPort(this);
-		this.hicop.publishPort();
-		this.heaterExternalControlInboundPortURI =
-									heaterExternalControlInboundPortURI;
-		this.hecop = new HeaterExternalControlOutboundPort(this);
-		this.hecop.publishPort();
+		this.kettleUserInboundPortURI = kettleUserInboundPortURI;
+		this.kop = new KettleUserOutboundPort(this);
+		this.kop.publishPort();
+		this.kettleInternalControlInboundPortURI =
+									kettleInternalControlInboundPortURI;
+		this.kicop = new HeaterInternalControlOutboundPort(this);
+		this.kicop.publishPort();
+		this.kettleExternalControlInboundPortURI =
+									kettleExternalControlInboundPortURI;
+		this.kecop = new KettleExternalControlOutboundPort(this);
+		this.kecop.publishPort();
 
 		if (VERBOSE) {
-			this.tracer.get().setTitle("Heater tester component");
+			this.tracer.get().setTitle("Kettle tester component");
 			this.tracer.get().setRelativePosition(X_RELATIVE_POSITION,
 												  Y_RELATIVE_POSITION);
 			this.toggleTracing();
@@ -338,52 +177,24 @@ extends		AbstractComponent
 
 		this.statistics = new TestsStatistics();
 
-		assert	HeaterUnitTester.implementationInvariants(this) :
+		assert	KettleUnitTester.implementationInvariants(this) :
 				new ImplementationInvariantException(
-						"HeaterTester.implementationInvariants(this)");
-		assert	HeaterUnitTester.invariants(this) :
-				new InvariantException("HeaterTester.invariants(this)");
+						"KettleTester.implementationInvariants(this)");
+		assert	KettleUnitTester.invariants(this) :
+				new InvariantException("KettleTester.invariants(this)");
 	}
-
-	// -------------------------------------------------------------------------
-	// Component services implementation
-	// -------------------------------------------------------------------------
-
-	/**
-	 * test getting the state of the heater.
-	 * 
-	 * <p><strong>Description</strong></p>
-	 * 
-	 * <p>Gherkin specification</p>
-	 * <p></p>
-	 * <pre>
-	 * Feature: getting the state of the heater
-	 *   Scenario: getting the state of the heater when off
-	 *     Given the heater is initialised
-	 *     And the heater has not been used yet
-	 *     When I test the state of the heater
-	 *     Then the state of the heater is off
-	 * </pre>
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 */
+	
 	protected void		testOff()
 	{
-		this.logMessage("Feature: getting the state of the heater");
-		this.logMessage("  Scenario: getting the state of the heater when off");
+		this.logMessage("Feature: getting the state of the kettle");
+		this.logMessage("  Scenario: getting the state of the kettle when off");
 		this.logMessage("    Given the heater is initialised");
 		this.logMessage("    And the heater has not been used yet");
 		try {
-			this.logMessage("    When I test the state of the heater");
-			boolean result = !this.hop.on();
+			this.logMessage("    When I test the state of the kettle");
+			boolean result = !this.kop.on();
 			if (result) {
-				this.logMessage("    Then the state of the heater is off");
+				this.logMessage("    Then the state of the kettle is off");
 			} else {
 				this.logMessage("     but was: on");
 				this.statistics.incorrectResult();
@@ -396,49 +207,20 @@ extends		AbstractComponent
 		this.statistics.updateStatistics();
 	}
 
-	/**
-	 * test switching on and off the heater.
-	 * 
-	 * <p><strong>Description</strong></p>
-	 * 
-	 * <p>Gherkin specification</p>
-	 * <p></p>
-	 * <pre>
-	 * Feature: switching on and off the heater
-	 *   Scenario: switching on the heater when off
-	 *     Given the heater is initialised
-	 *     And the heater has not been used yet
-	 *     When I switch on the heater
-	 *     Then the state of the heater is on
-	 *   Scenario: switching off the heater when on
-	 *     Given the heater is initialised
-	 *     And the heater is on
-	 *     When I switch off the heater
-	 *     Then the state of the heater is off
-	 * </pre>
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 */
 	protected void		testSwitchOnSwitchOff()
 	{
-		this.logMessage("Feature: switching on and off the heater");
+		this.logMessage("Feature: switching on and off the kettle");
 
-		this.logMessage("  Scenario: switching on the heater when off");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater has not been used yet");
+		this.logMessage("  Scenario: switching on the kettle when off");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle has not been used yet");
 		boolean result;
 		try {
-			this.logMessage("    When I switch on the heater");
-			this.hop.switchOn();
-			result = this.hop.on();
+			this.logMessage("    When I switch on the kettle");
+			this.kop.switchOn();
+			result = this.kop.on();
 			if (result) {
-				this.logMessage("    Then the state of the heater is on");
+				this.logMessage("    Then the state of the kettle is on");
 			} else {
 				this.logMessage("     but was: off");
 				this.statistics.incorrectResult();
@@ -451,14 +233,14 @@ extends		AbstractComponent
 		this.statistics.updateStatistics();
 
 		this.logMessage("  Scenario: switching off the heater when on");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater is on");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle is on");
 		try {
-			this.logMessage("    When I switch off the heater");
-			this.hop.switchOff();
-			result = !this.hop.on();
+			this.logMessage("    When I switch off the kettle");
+			this.kop.switchOff();
+			result = !this.kop.on();
 			if (result) {
-				this.logMessage("    Then the state of the heater is off");
+				this.logMessage("    Then the state of the kettle is off");
 			} else {
 				this.logMessage("     but was: on");
 				this.statistics.incorrectResult();
