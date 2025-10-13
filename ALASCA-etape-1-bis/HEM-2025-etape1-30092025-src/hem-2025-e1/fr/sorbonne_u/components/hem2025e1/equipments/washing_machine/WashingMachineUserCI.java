@@ -21,10 +21,13 @@ extends		OfferedCI,
 	public void			switchOff() throws Exception;
 	
 	@Override
-	public void 		startWashing() throws Exception;
+	public boolean 		isWashing() throws Exception;
 	
 	@Override
-	public void 		delayedStart(long delayMS, Measure<Double> target) throws Exception;
+	public void 		startWashing(long washingTimeMS) throws Exception;
+	
+	@Override
+	public void 		delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception;
 
 	@Override
 	public void			setTargetTemperature(Measure<Double> target)

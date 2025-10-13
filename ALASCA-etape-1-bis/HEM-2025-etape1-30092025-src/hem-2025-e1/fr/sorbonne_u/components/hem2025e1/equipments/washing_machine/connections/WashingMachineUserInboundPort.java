@@ -131,21 +131,26 @@ implements	WashingMachineUserCI
 	}
 
 	@Override
-	public void delayedStart(long delayMS, Measure<Double> target) throws Exception {
+	public void delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception {
 		this.getOwner().handleRequest(
 				o -> {	((WashingMachineUserI)o).
-									delayedStart(delayMS, target);
+									delayedStart(delayMS, target, washingTimeMS);
 						return null;
 				});
 		
 	}
 
 	@Override
-	public void startWashing() throws Exception {
+	public void startWashing(long washingTimeMS) throws Exception {
 		this.getOwner().handleRequest(
 				o -> {	((WashingMachineUserI)o).
-					startWashing();
+					startWashing(washingTimeMS);
 						return null;
 				});
+	}
+
+	@Override
+	public boolean isWashing() throws Exception {
+		return this.getOwner().handleRequest(o -> ((WashingMachineUserI)o).isWashing());
 	}
 }

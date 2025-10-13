@@ -82,12 +82,17 @@ implements	WashingMachineUserCI
 	}
 
 	@Override
-	public void delayedStart(long delayMS, Measure<Double> target) throws Exception {
-		((WashingMachineUserCI)this.getConnector()).delayedStart(delayMS, target);
+	public void delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception {
+		((WashingMachineUserCI)this.getConnector()).delayedStart(delayMS, target, washingTimeMS);
 	}
 
 	@Override
-	public void startWashing() throws Exception {
-		((WashingMachineUserCI)this.getConnector()).startWashing();
+	public void startWashing(long washingTimeMS) throws Exception {
+		((WashingMachineUserCI)this.getConnector()).startWashing(washingTimeMS);
+	}
+
+	@Override
+	public boolean isWashing() throws Exception {
+		return ((WashingMachineUserCI)this.getConnector()).isWashing();
 	}
 }

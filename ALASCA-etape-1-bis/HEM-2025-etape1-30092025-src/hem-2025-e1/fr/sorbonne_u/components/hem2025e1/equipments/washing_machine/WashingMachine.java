@@ -444,7 +444,7 @@ implements	WashingMachineUserI,
 	}
 
 	@Override
-	public void startWashing() throws Exception {
+	public void startWashing(long washingTimeMS) throws Exception {
 		if (WashingMachine.VERBOSE) {
 			this.traceMessage("Washing Machine starts washing.\n");
 		}
@@ -453,19 +453,41 @@ implements	WashingMachineUserI,
 
 		this.currentState = WashingMachineState.WASHING;
 		
-	}
-	
-	@Override
-	public void delayedStart(long delayMS, Measure<Double> target) throws Exception {
 		ScheduledExecutorService sch = Executors.newSingleThreadScheduledExecutor();
 	    sch.schedule(() -> {
 	    	try {
-				startWashing();
+	    		this.currentState = WashingMachineState.ON;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+	        sch.shutdown();
+	    }, washingTimeMS, TimeUnit.MILLISECONDS);
+		
+	}
+	
+	@Override
+	public void delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception {
+		ScheduledExecutorService sch = Executors.newSingleThreadScheduledExecutor();
+		
+		assert	this.on() : new PreconditionException("on()");
+		
+	    sch.schedule(() -> {
+	    	try {
+				startWashing(washingTimeMS);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 	        sch.shutdown();
 	    }, delayMS, TimeUnit.MILLISECONDS);
+	}
+
+	@Override
+	public boolean isWashing() throws Exception {
+		if (WashingMachine.VERBOSE) {
+			this.traceMessage("Washing Machine returns its state: " +
+											this.currentState + ".\n");
+		}
+		return this.currentState == WashingMachineState.WASHING;
 	}
 }
 // -----------------------------------------------------------------------------
