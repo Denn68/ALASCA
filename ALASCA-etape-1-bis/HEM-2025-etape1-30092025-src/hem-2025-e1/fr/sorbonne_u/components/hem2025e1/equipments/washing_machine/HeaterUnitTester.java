@@ -223,9 +223,9 @@ extends		AbstractComponent
 	protected			HeaterUnitTester(boolean isUnitTest) throws Exception
 	{
 		this(isUnitTest,
-			 Heater.USER_INBOUND_PORT_URI,
-			 Heater.INTERNAL_CONTROL_INBOUND_PORT_URI,
-			 Heater.EXTERNAL_CONTROL_INBOUND_PORT_URI);
+			 WashingMachine.USER_INBOUND_PORT_URI,
+			 WashingMachine.INTERNAL_CONTROL_INBOUND_PORT_URI,
+			 WashingMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI);
 	}
 
 	/**
@@ -530,7 +530,7 @@ extends		AbstractComponent
 							+ "user interface");
 			temperature = this.hop.getTargetTemperature();
 			if (temperature.getData() ==
-									Heater.STANDARD_TARGET_TEMPERATURE.getData()
+									WashingMachine.STANDARD_TARGET_TEMPERATURE.getData()
 				&& temperature.getMeasurementUnit().equals(
 													MeasurementUnit.CELSIUS)) {
 				this.logMessage("    Then the target temperature of the heater"
@@ -554,7 +554,7 @@ extends		AbstractComponent
 			this.logMessage("    When I get the target temperature through the internal control interface");
 			temperature = this.hicop.getTargetTemperature();
 			if (temperature.getData() ==
-									Heater.STANDARD_TARGET_TEMPERATURE.getData()
+									WashingMachine.STANDARD_TARGET_TEMPERATURE.getData()
 				&& temperature.getMeasurementUnit().equals(
 													MeasurementUnit.CELSIUS)) {
 				this.logMessage("    Then the target temperature of the heater"
@@ -583,7 +583,7 @@ extends		AbstractComponent
 			this.logMessage("    When I set the temperature at any given "
 							+ "temperature between -50 and 50 Celsius inclusive");
 			this.hop.setTargetTemperature(
-					new Measure<Double>(21.0, Heater.TEMPERATURE_UNIT));
+					new Measure<Double>(21.0, WashingMachine.TEMPERATURE_UNIT));
 			temperature = this.hop.getTargetTemperature();
 			if (temperature.getData() == 21.0 &&
 				temperature.getMeasurementUnit().equals(MeasurementUnit.CELSIUS)) {
@@ -650,9 +650,9 @@ extends		AbstractComponent
 							+ "heater through the user interface");
 			temperature = this.hop.getCurrentTemperature();
 			if (temperature.getMeasure().getData() == 
-					Heater.FAKE_CURRENT_TEMPERATURE.getMeasure().getData() &&
+					WashingMachine.FAKE_CURRENT_TEMPERATURE.getMeasure().getData() &&
 				temperature.getMeasure().getMeasurementUnit().equals(
-					Heater.FAKE_CURRENT_TEMPERATURE.getMeasure().
+					WashingMachine.FAKE_CURRENT_TEMPERATURE.getMeasure().
 														getMeasurementUnit())) {
 				this.logMessage("    Then the current temperature is the heater"
 								+ " standard current temperature");
@@ -677,9 +677,9 @@ extends		AbstractComponent
 							+ "heater through the user interface");
 			temperature = this.hicop.getCurrentTemperature();
 			if (temperature.getMeasure().getData() == 
-					Heater.FAKE_CURRENT_TEMPERATURE.getMeasure().getData() &&
+					WashingMachine.FAKE_CURRENT_TEMPERATURE.getMeasure().getData() &&
 				temperature.getMeasure().getMeasurementUnit().equals(
-					Heater.FAKE_CURRENT_TEMPERATURE.getMeasure().
+					WashingMachine.FAKE_CURRENT_TEMPERATURE.getMeasure().
 														getMeasurementUnit())) {
 				this.logMessage("    Then the current temperature is the heater"
 								+ " standard current temperature");
@@ -769,9 +769,9 @@ extends		AbstractComponent
 			this.logMessage("    When I get the maximum power level through the"
 							+ " user interface");
 			powerLevel = this.hop.getMaxPowerLevel();
-			if (powerLevel.getData() == Heater.MAX_POWER_LEVEL.getData() &&
+			if (powerLevel.getData() == WashingMachine.MAX_POWER_LEVEL.getData() &&
 				powerLevel.getMeasurementUnit().equals(
-							Heater.MAX_POWER_LEVEL.getMeasurementUnit())) {
+							WashingMachine.MAX_POWER_LEVEL.getMeasurementUnit())) {
 				this.logMessage("    Then the result is the heater maximum "
 								+ "power level");
 			} else {
@@ -792,9 +792,9 @@ extends		AbstractComponent
 			this.logMessage("    When I get the maximum power level through the"
 							+ " external control interface");
 			powerLevel = this.hecop.getMaxPowerLevel();
-			if (powerLevel.getData() == Heater.MAX_POWER_LEVEL.getData() &&
+			if (powerLevel.getData() == WashingMachine.MAX_POWER_LEVEL.getData() &&
 				powerLevel.getMeasurementUnit().equals(
-							Heater.MAX_POWER_LEVEL.getMeasurementUnit())) {
+							WashingMachine.MAX_POWER_LEVEL.getMeasurementUnit())) {
 				this.logMessage("    Then the result is the heater maximum "
 								+ "power level");
 			} else {
@@ -826,9 +826,9 @@ extends		AbstractComponent
 							+ " user interface");
 			powerLevelSignal =  this.hop.getCurrentPowerLevel();
 			if (powerLevelSignal.getMeasure().getData() == 
-											Heater.MAX_POWER_LEVEL.getData() &&
+											WashingMachine.MAX_POWER_LEVEL.getData() &&
 				powerLevelSignal.getMeasure().getMeasurementUnit().equals(
-								Heater.MAX_POWER_LEVEL.getMeasurementUnit())) {
+								WashingMachine.MAX_POWER_LEVEL.getMeasurementUnit())) {
 				this.logMessage("    Then the result is the heater maximum "
 								+ "power level");
 			} else {
@@ -853,9 +853,9 @@ extends		AbstractComponent
 							+ " external control interface");
 			powerLevelSignal =  this.hecop.getCurrentPowerLevel();
 			if (powerLevelSignal.getMeasure().getData() == 
-									Heater.MAX_POWER_LEVEL.getData() &&
+									WashingMachine.MAX_POWER_LEVEL.getData() &&
 				powerLevelSignal.getMeasure().getMeasurementUnit().equals(
-								Heater.MAX_POWER_LEVEL.getMeasurementUnit())) {
+								WashingMachine.MAX_POWER_LEVEL.getMeasurementUnit())) {
 				this.logMessage("    Then the result is the heater maximum "
 								+ "power level");
 			} else {
@@ -880,13 +880,13 @@ extends		AbstractComponent
 							+ " user interface to a given level between 0 and"
 							+ " the maximum power level");
 			this.hop.setCurrentPowerLevel(
-					new Measure<Double>(Heater.MAX_POWER_LEVEL.getData()/2.0,
-										Heater.POWER_UNIT));
+					new Measure<Double>(WashingMachine.MAX_POWER_LEVEL.getData()/2.0,
+										WashingMachine.POWER_UNIT));
 			powerLevelSignal = this.hop.getCurrentPowerLevel();
 			if (powerLevelSignal.getMeasure().getData() ==
-										Heater.MAX_POWER_LEVEL.getData()/2.0 &&
+										WashingMachine.MAX_POWER_LEVEL.getData()/2.0 &&
 				powerLevelSignal.getMeasure().getMeasurementUnit().equals(
-								Heater.MAX_POWER_LEVEL.getMeasurementUnit())) {
+								WashingMachine.MAX_POWER_LEVEL.getMeasurementUnit())) {
 				this.logMessage("    Then the current power level is the given"
 								+ " level");
 			} else {
@@ -911,13 +911,13 @@ extends		AbstractComponent
 							+ " user interface to a given level over the maximum"
 							+ " power level");
 			this.hop.setCurrentPowerLevel(
-					new Measure<Double>(Heater.MAX_POWER_LEVEL.getData() + 1.0,
-										Heater.POWER_UNIT));
+					new Measure<Double>(WashingMachine.MAX_POWER_LEVEL.getData() + 1.0,
+										WashingMachine.POWER_UNIT));
 			powerLevelSignal = this.hop.getCurrentPowerLevel();
 			if (powerLevelSignal.getMeasure().getData() ==
-											Heater.MAX_POWER_LEVEL.getData() &&
+											WashingMachine.MAX_POWER_LEVEL.getData() &&
 				powerLevelSignal.getMeasure().getMeasurementUnit().equals(
-								Heater.MAX_POWER_LEVEL.getMeasurementUnit())) {
+								WashingMachine.MAX_POWER_LEVEL.getMeasurementUnit())) {
 				this.logMessage("    Then the current power level is the maximum"
 								+ " power level");
 			} else {
@@ -942,13 +942,13 @@ extends		AbstractComponent
 							+ " external control interface to a given level "
 							+ "between 0 and the maximum power level");
 			this.hop.setCurrentPowerLevel(
-					new Measure<Double>(Heater.MAX_POWER_LEVEL.getData()/2.0,
-										Heater.POWER_UNIT));
+					new Measure<Double>(WashingMachine.MAX_POWER_LEVEL.getData()/2.0,
+										WashingMachine.POWER_UNIT));
 			powerLevelSignal = this.hecop.getCurrentPowerLevel();
 			if (powerLevelSignal.getMeasure().getData() ==
-										Heater.MAX_POWER_LEVEL.getData()/2.0 &&
+										WashingMachine.MAX_POWER_LEVEL.getData()/2.0 &&
 					powerLevelSignal.getMeasure().getMeasurementUnit().equals(
-								Heater.MAX_POWER_LEVEL.getMeasurementUnit())) {
+								WashingMachine.MAX_POWER_LEVEL.getMeasurementUnit())) {
 				this.logMessage("    Then the current power level is the given"
 								+ " level");
 			} else {
@@ -973,13 +973,13 @@ extends		AbstractComponent
 							+ " external control interface to a given level over"
 							+ " the maximum power level");
 			this.hop.setCurrentPowerLevel(
-					new Measure<Double>(Heater.MAX_POWER_LEVEL.getData() + 1.0,
-										Heater.POWER_UNIT));
+					new Measure<Double>(WashingMachine.MAX_POWER_LEVEL.getData() + 1.0,
+										WashingMachine.POWER_UNIT));
 			powerLevelSignal = this.hecop.getCurrentPowerLevel();
 			if (powerLevelSignal.getMeasure().getData() ==
-											Heater.MAX_POWER_LEVEL.getData() &&
+											WashingMachine.MAX_POWER_LEVEL.getData() &&
 				powerLevelSignal.getMeasure().getMeasurementUnit().equals(
-								Heater.MAX_POWER_LEVEL.getMeasurementUnit())) {
+								WashingMachine.MAX_POWER_LEVEL.getMeasurementUnit())) {
 				this.logMessage("    Then the current power level is the maximum"
 								+ " power level");
 			} else {

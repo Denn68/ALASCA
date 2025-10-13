@@ -21,7 +21,7 @@ extends		OfferedCI,
 	public void			switchOff() throws Exception;
 	
 	@Override
-	public void 		delayedStart() throws Exception;
+	public void 		delayedStart(long delayMS, Measure<Double> target) throws Exception;
 
 	@Override
 	public void			setTargetTemperature(Measure<Double> target)

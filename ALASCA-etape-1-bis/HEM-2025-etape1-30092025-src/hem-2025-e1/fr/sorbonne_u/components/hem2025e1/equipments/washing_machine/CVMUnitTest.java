@@ -70,9 +70,9 @@ extends		AbstractCVM
 		HeaterUnitTester.VERBOSE = true;
 		HeaterUnitTester.X_RELATIVE_POSITION = 0;
 		HeaterUnitTester.Y_RELATIVE_POSITION = 0;
-		Heater.VERBOSE = true;
-		Heater.X_RELATIVE_POSITION = 1;
-		Heater.Y_RELATIVE_POSITION = 0;
+		WashingMachine.VERBOSE = true;
+		WashingMachine.X_RELATIVE_POSITION = 1;
+		WashingMachine.Y_RELATIVE_POSITION = 0;
 	}
 
 	// -------------------------------------------------------------------------
@@ -86,7 +86,7 @@ extends		AbstractCVM
 	public void			deploy() throws Exception
 	{
 		AbstractComponent.createComponent(
-				Heater.class.getCanonicalName(),
+				WashingMachine.class.getCanonicalName(),
 				new Object[]{});
 
 		AbstractComponent.createComponent(
