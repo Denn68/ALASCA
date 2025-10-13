@@ -67,9 +67,9 @@ extends		AbstractCVM
 
 	public				CVMUnitTest() throws Exception
 	{
-		HeaterUnitTester.VERBOSE = true;
-		HeaterUnitTester.X_RELATIVE_POSITION = 0;
-		HeaterUnitTester.Y_RELATIVE_POSITION = 0;
+		WashingMachineUnitTester.VERBOSE = true;
+		WashingMachineUnitTester.X_RELATIVE_POSITION = 0;
+		WashingMachineUnitTester.Y_RELATIVE_POSITION = 0;
 		WashingMachine.VERBOSE = true;
 		WashingMachine.X_RELATIVE_POSITION = 1;
 		WashingMachine.Y_RELATIVE_POSITION = 0;
@@ -90,7 +90,7 @@ extends		AbstractCVM
 				new Object[]{});
 
 		AbstractComponent.createComponent(
-				HeaterUnitTester.class.getCanonicalName(),
+				WashingMachineUnitTester.class.getCanonicalName(),
 				new Object[]{true});	// is unit test
 
 		super.deploy();

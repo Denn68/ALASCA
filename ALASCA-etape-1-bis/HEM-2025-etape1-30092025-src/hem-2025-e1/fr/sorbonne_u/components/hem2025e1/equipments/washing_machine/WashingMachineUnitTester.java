@@ -1,49 +1,17 @@
 package fr.sorbonne_u.components.hem2025e1.equipments.washing_machine;
 
-// Copyright Jacques Malenfant, Sorbonne Universite.
-// Jacques.Malenfant@lip6.fr
-//
-// This software is a computer program whose purpose is to provide a basic
-// household management systems as an example of a cyber-physical system.
-//
-// This software is governed by the CeCILL-C license under French law and
-// abiding by the rules of distribution of free software.  You can use,
-// modify and/ or redistribute the software under the terms of the
-// CeCILL-C license as circulated by CEA, CNRS and INRIA at the following
-// URL "http://www.cecill.info".
-//
-// As a counterpart to the access to the source code and  rights to copy,
-// modify and redistribute granted by the license, users are provided only
-// with a limited warranty  and the software's author,  the holder of the
-// economic rights,  and the successive licensors  have only  limited
-// liability. 
-//
-// In this respect, the user's attention is drawn to the risks associated
-// with loading,  using,  modifying and/or developing or reproducing the
-// software by the user in light of its specific status of free software,
-// that may mean  that it is complicated to manipulate,  and  that  also
-// therefore means  that it is reserved for developers  and  experienced
-// professionals having in-depth computer knowledge. Users are therefore
-// encouraged to load and test the software's suitability as regards their
-// requirements in conditions enabling the security of their systems and/or 
-// data to be ensured and,  more generally, to use and operate it in the 
-// same conditions as regards security. 
-//
-// The fact that you are presently reading this means that you have had
-// knowledge of the CeCILL-C license and that you accept its terms.
-
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.components.hem2025.tests_utils.TestsStatistics;
 import fr.sorbonne_u.components.hem2025e1.CVMIntegrationTest;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterExternalControlConnector;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterExternalControlOutboundPort;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterInternalControlConnector;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterInternalControlOutboundPort;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterUserConnector;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterUserOutboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineExternalControlConnector;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineExternalControlOutboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineInternalControlConnector;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineInternalControlOutboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineUserConnector;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineUserOutboundPort;
 import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.InvariantException;
@@ -89,7 +57,7 @@ import fr.sorbonne_u.alasca.physical_data.SignalData;
 							  WashingMachineInternalControlCI.class,
 							  WashingMachineExternalControlCI.class,
 							  ClocksServerCI.class})
-public class			HeaterUnitTester
+public class			WashingMachineUnitTester
 extends		AbstractComponent
 {
 	// -------------------------------------------------------------------------
@@ -148,7 +116,7 @@ extends		AbstractComponent
 	 * @param ht	instance to be tested.
 	 * @return		true if the implementation invariants are observed, false otherwise.
 	 */
-	protected static boolean	implementationInvariants(HeaterUnitTester ht)
+	protected static boolean	implementationInvariants(WashingMachineUnitTester ht)
 	{
 		assert	ht != null : new PreconditionException("ht != null");
 
@@ -156,19 +124,19 @@ extends		AbstractComponent
 		ret &= AssertionChecking.checkImplementationInvariant(
 				ht.heaterUserInboundPortURI != null &&
 									!ht.heaterUserInboundPortURI.isEmpty(),
-				HeaterUnitTester.class, ht,
+				WashingMachineUnitTester.class, ht,
 				"ht.heaterUserInboundPortURI != null && "
 							+ "!ht.heaterUserInboundPortURI.isEmpty()");
 		ret &= AssertionChecking.checkImplementationInvariant(
 				ht.heaterInternalControlInboundPortURI != null &&
 							!ht.heaterInternalControlInboundPortURI.isEmpty(),
-				HeaterUnitTester.class, ht,
+				WashingMachineUnitTester.class, ht,
 				"ht.heaterInternalControlInboundPortURI != null && "
 						+ "!ht.heaterInternalControlInboundPortURI.isEmpty()");
 		ret &= AssertionChecking.checkImplementationInvariant(
 				ht.heaterExternalControlInboundPortURI != null &&
 							!ht.heaterExternalControlInboundPortURI.isEmpty(),
-				HeaterUnitTester.class, ht,
+				WashingMachineUnitTester.class, ht,
 				"ht.heaterExternalControlInboundPortURI != null &&"
 						+ "!ht.heaterExternalControlInboundPortURI.isEmpty()");
 		return ret;
@@ -187,18 +155,18 @@ extends		AbstractComponent
 	 * @param ht	instance to be tested.
 	 * @return		true if the invariants are observed, false otherwise.
 	 */
-	protected static boolean	invariants(HeaterUnitTester ht)
+	protected static boolean	invariants(WashingMachineUnitTester ht)
 	{
 		assert	ht != null : new PreconditionException("ht != null");
 
 		boolean ret = true;
 		ret &= AssertionChecking.checkInvariant(
 				X_RELATIVE_POSITION >= 0,
-				HeaterUnitTester.class, ht,
+				WashingMachineUnitTester.class, ht,
 				"X_RELATIVE_POSITION >= 0");
 		ret &= AssertionChecking.checkInvariant(
 				Y_RELATIVE_POSITION >= 0,
-				HeaterUnitTester.class, ht,
+				WashingMachineUnitTester.class, ht,
 				"Y_RELATIVE_POSITION >= 0");
 		return ret;
 	}
@@ -220,7 +188,7 @@ extends		AbstractComponent
 	 * @param isUnitTest	true if the component must perform unit tests, otherwise it executes integration tests actions.
 	 * @throws Exception	<i>to do</i>.
 	 */
-	protected			HeaterUnitTester(boolean isUnitTest) throws Exception
+	protected			WashingMachineUnitTester(boolean isUnitTest) throws Exception
 	{
 		this(isUnitTest,
 			 WashingMachine.USER_INBOUND_PORT_URI,
@@ -246,7 +214,7 @@ extends		AbstractComponent
 	 * @param heaterExternalControlInboundPortURI	URI of the external control component interface inbound port.
 	 * @throws Exception							<i>to do</i>.
 	 */
-	protected			HeaterUnitTester(
+	protected			WashingMachineUnitTester(
 		boolean isUnitTest,
 		String heaterUserInboundPortURI,
 		String heaterInternalControlInboundPortURI,
@@ -279,7 +247,7 @@ extends		AbstractComponent
 	 * @param heaterExternalControlInboundPortURI	URI of the external control component interface inbound port.
 	 * @throws Exception							<i>to do</i>.
 	 */
-	protected			HeaterUnitTester(
+	protected			WashingMachineUnitTester(
 		boolean isUnitTest,
 		String reflectionInboundPortURI,
 		String heaterUserInboundPortURI,
@@ -338,10 +306,10 @@ extends		AbstractComponent
 
 		this.statistics = new TestsStatistics();
 
-		assert	HeaterUnitTester.implementationInvariants(this) :
+		assert	WashingMachineUnitTester.implementationInvariants(this) :
 				new ImplementationInvariantException(
 						"HeaterTester.implementationInvariants(this)");
-		assert	HeaterUnitTester.invariants(this) :
+		assert	WashingMachineUnitTester.invariants(this) :
 				new InvariantException("HeaterTester.invariants(this)");
 	}
 

@@ -4,11 +4,19 @@ package fr.sorbonne_u.components.hem2025e1.equipments.washing_machine;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineExternalControlJava4InboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineInternalControlInboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineUserJava4InboundPort;
 import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
 import fr.sorbonne_u.exceptions.PreconditionException;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.alasca.physical_data.SignalData;
 
@@ -185,14 +193,14 @@ implements	WashingMachineUserI,
 		this.currentPowerLevel = new SignalData<>(MAX_POWER_LEVEL);
 		this.targetTemperature = STANDARD_TARGET_TEMPERATURE;
 
-		this.hip = new WashingMachineUserJava4InboundPort(washingMachineUserInboundPortURI, this);
-		this.hip.publishPort();
-		this.hicip = new HeaterInternalControlInboundPort(
+		this.wmip = new WashingMachineUserJava4InboundPort(washingMachineUserInboundPortURI, this);
+		this.wmip.publishPort();
+		this.wmicip = new WashingMachineInternalControlInboundPort(
 					washingMachineInternalControlInboundPortURI, this);
-		this.hicip.publishPort();
-		this.hecip = new HeaterExternalControlJava4InboundPort(
+		this.wmicip.publishPort();
+		this.wmecip = new WashingMachineExternalControlJava4InboundPort(
 					 washingMachineExternalControlInboundPortURI, this);
-		this.hecip.publishPort();
+		this.wmecip.publishPort();
 
 		if (VERBOSE) {
 			this.tracer.get().setTitle("WashingMachine component");
@@ -220,68 +228,52 @@ implements	WashingMachineUserI,
 		}
 		super.shutdown();
 	}
-
-	// -------------------------------------------------------------------------
-	// Component services implementation
-	// -------------------------------------------------------------------------
-
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#on()
-	 */
 	@Override
 	public boolean		on() throws Exception
 	{
 		if (WashingMachine.VERBOSE) {
-			this.traceMessage("Heater returns its state: " +
+			this.traceMessage("Washing Machine returns its state: " +
 											this.currentState + ".\n");
 		}
-		return this.currentState == HeaterState.ON ||
-									this.currentState == HeaterState.HEATING;
+		return this.currentState == WashingMachineState.ON ||
+									this.currentState == WashingMachineState.WASHING || 
+											this.currentState == WashingMachineState.HEATINGWATER;
 	}
-
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#switchOn()
-	 */
+	
 	@Override
 	public void			switchOn() throws Exception
 	{
 		if (WashingMachine.VERBOSE) {
-			this.traceMessage("Heater switches on.\n");
+			this.traceMessage("Washing Machine switches on.\n");
 		}
 
 		assert	!this.on() : new PreconditionException("!on()");
 
-		this.currentState = HeaterState.ON;
+		this.currentState = WashingMachineState.ON;
 
 		assert	 this.on() : new PostconditionException("on()");
 	}
-
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#switchOff()
-	 */
+	
 	@Override
 	public void			switchOff() throws Exception
 	{
 		if (WashingMachine.VERBOSE) {
-			this.traceMessage("Heater switches off.\n");
+			this.traceMessage("Washing Machine switches off.\n");
 		}
 
 		assert	this.on() : new PreconditionException("on()");
 
-		this.currentState = HeaterState.OFF;
+		this.currentState = WashingMachineState.OFF;
 
 		assert	 !this.on() : new PostconditionException("!on()");
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUserI#setTargetTemperature(fr.sorbonne_u.alasca.physical_data.Measure)
-	 */
 	@Override
 	public void			setTargetTemperature(Measure<Double> target)
 	throws Exception
 	{
 		if (WashingMachine.VERBOSE) {
-			this.traceMessage("Heater sets a new target "
+			this.traceMessage("Washing Machine sets a new target "
 										+ "temperature: " + target + ".\n");
 		}
 
@@ -303,14 +295,11 @@ implements	WashingMachineUserI,
 						"getTargetTemperature().equals(target)");
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterTemperatureI#getTargetTemperature()
-	 */
 	@Override
 	public Measure<Double>	getTargetTemperature() throws Exception
 	{
 		if (WashingMachine.VERBOSE) {
-			this.traceMessage("Heater returns its target"
+			this.traceMessage("Washing Machine returns its target"
 							+ " temperature " + this.targetTemperature + ".\n");
 		}
 
@@ -329,9 +318,6 @@ implements	WashingMachineUserI,
 		return ret;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterTemperatureI#getCurrentTemperature()
-	 */
 	@Override
 	public SignalData<Double>	getCurrentTemperature() throws Exception
 	{
@@ -340,86 +326,71 @@ implements	WashingMachineUserI,
 		// Temporary implementation; would need a temperature sensor.
 		SignalData<Double> currentTemperature = FAKE_CURRENT_TEMPERATURE;
 		if (WashingMachine.VERBOSE) {
-			this.traceMessage("Heater returns the current"
+			this.traceMessage("Washing Machine returns the current"
 							+ " temperature " + currentTemperature + ".\n");
 		}
 
 		return  currentTemperature;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterInternalControlI#heating()
-	 */
 	@Override
-	public boolean		heating() throws Exception
+	public boolean	heatWater() throws Exception
 	{
 		if (WashingMachine.VERBOSE) {
-			this.traceMessage("Heater returns its heating status " + 
-						(this.currentState == HeaterState.HEATING) + ".\n");
+			this.traceMessage("Washing Machine returns its heating status " + 
+						(this.currentState == WashingMachineState.HEATINGWATER) + ".\n");
 		}
 
 		assert	this.on() : new PreconditionException("on()");
 
-		return this.currentState == HeaterState.HEATING;
+		return this.currentState == WashingMachineState.HEATINGWATER;
 	}
-
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterInternalControlI#startHeating()
-	 */
+	
 	@Override
-	public void			startHeating() throws Exception
+	public void	startHeatingWater() throws Exception
 	{
 		if (WashingMachine.VERBOSE) {
-			this.traceMessage("Heater starts heating.\n");
+			this.traceMessage("Washing Machine starts heating.\n");
 		}
 		assert	this.on() : new PreconditionException("on()");
-		assert	!this.heating() : new PreconditionException("!heating()");
+		assert	!this.heatWater() : new PreconditionException("!heatWater()");
 
-		this.currentState = HeaterState.HEATING;
+		this.currentState = WashingMachineState.HEATINGWATER;
 
-		assert	this.heating() : new PostconditionException("heating()");
+		assert	this.heatWater() : new PostconditionException("heatWater()");
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterInternalControlI#stopHeating()
-	 */
 	@Override
-	public void			stopHeating() throws Exception
+	public void	stopHeatingWater() throws Exception
 	{
 		if (WashingMachine.VERBOSE) {
-			this.traceMessage("Heater stops heating.\n");
+			this.traceMessage("Washing Machine stops heating.\n");
 		}
 		assert	this.on() : new PreconditionException("on()");
-		assert	this.heating() : new PreconditionException("heating()");
+		assert	this.heatWater() : new PreconditionException("heating()");
 
-		this.currentState = HeaterState.ON;
+		this.currentState = WashingMachineState.ON;
 
-		assert	!this.heating() : new PostconditionException("!heating()");
+		assert	!this.heatWater() : new PostconditionException("!heating()");
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#getMaxPowerLevel()
-	 */
 	@Override
 	public Measure<Double>	getMaxPowerLevel() throws Exception
 	{
 		if (WashingMachine.VERBOSE) {
-			this.traceMessage("Heater returns its max power level " + 
+			this.traceMessage("Washing Machine returns its max power level " + 
 					MAX_POWER_LEVEL + ".\n");
 		}
 
 		return MAX_POWER_LEVEL;
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#setCurrentPowerLevel(fr.sorbonne_u.alasca.physical_data.Measure)
-	 */
 	@Override
 	public void			setCurrentPowerLevel(Measure<Double> powerLevel)
 	throws Exception
 	{
 		if (WashingMachine.VERBOSE) {
-			this.traceMessage("Heater sets its power level to " + 
+			this.traceMessage("Washing Machine sets its power level to " + 
 														powerLevel + ".\n");
 		}
 
@@ -445,14 +416,11 @@ implements	WashingMachineUserI,
 						+ "powerLevel.getData()");
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlI#getCurrentPowerLevel()
-	 */
 	@Override
 	public SignalData<Double>	getCurrentPowerLevel() throws Exception
 	{
 		if (WashingMachine.VERBOSE) {
-			this.traceMessage("Heater returns its current power level " + 
+			this.traceMessage("Washing Machine returns its current power level " + 
 					this.currentPowerLevel + ".\n");
 		}
 
@@ -476,27 +444,28 @@ implements	WashingMachineUserI,
 	}
 
 	@Override
-	public boolean heatWater() throws Exception {
-		// TODO Auto-generated method stub
-		return false;
-	}
+	public void startWashing() throws Exception {
+		if (WashingMachine.VERBOSE) {
+			this.traceMessage("Washing Machine starts washing.\n");
+		}
+		assert	this.on() : new PreconditionException("on()");
+		assert	!this.heatWater() : new PreconditionException("!heatWater()");
 
-	@Override
-	public void startHeatingWater() throws Exception {
-		// TODO Auto-generated method stub
+		this.currentState = WashingMachineState.WASHING;
 		
 	}
-
+	
 	@Override
-	public void stopHeatingWater() throws Exception {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void delayedStart() throws Exception {
-		// TODO Auto-generated method stub
-		
+	public void delayedStart(long delayMS, Measure<Double> target) throws Exception {
+		ScheduledExecutorService sch = Executors.newSingleThreadScheduledExecutor();
+	    sch.schedule(() -> {
+	    	try {
+				startWashing();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+	        sch.shutdown();
+	    }, delayMS, TimeUnit.MILLISECONDS);
 	}
 }
 // -----------------------------------------------------------------------------

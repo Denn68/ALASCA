@@ -36,80 +36,75 @@ import fr.sorbonne_u.alasca.physical_data.SignalData;
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 import fr.sorbonne_u.components.connectors.AbstractConnector;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlCI;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.WashingMachineUserCI;
 
-// -----------------------------------------------------------------------------
-/**
- * The class <code>HeaterExternalControlConnector</code> implements a
- * connector for the {@code HeaterExternalControlCI} component interface.
- *
- * <p><strong>Description</strong></p>
- * 
- * <p><strong>Implementation Invariants</strong></p>
- * 
- * <pre>
- * invariant	{@code true}	// no more invariant
- * </pre>
- * 
- * <p><strong>Invariants</strong></p>
- * 
- * <pre>
- * invariant	{@code true}	// no more invariant
- * </pre>
- * 
- * <p>Created on : 2023-09-19</p>
- * 
- * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
- */
-public class			HeaterExternalControlConnector
+public class			WashingMachineUserConnector
 extends		AbstractConnector
-implements	HeaterExternalControlCI
+implements	WashingMachineUserCI
 {
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlCI#getMaxPowerLevel()
-	 */
+	@Override
+	public boolean		on() throws Exception
+	{
+		return ((WashingMachineUserCI)this.offering).on();
+	}
+
+	@Override
+	public void			switchOn() throws Exception
+	{
+		((WashingMachineUserCI)this.offering).switchOn();
+	}
+
+	@Override
+	public void			switchOff() throws Exception
+	{
+		((WashingMachineUserCI)this.offering).switchOff();
+	}
+
+	@Override
+	public void			setTargetTemperature(Measure<Double> target)
+	throws Exception
+	{
+		((WashingMachineUserCI)this.offering).setTargetTemperature(target);
+	}
+
 	@Override
 	public Measure<Double>	getMaxPowerLevel() throws Exception
 	{
-		return ((HeaterExternalControlCI)this.offering).getMaxPowerLevel();
+		return ((WashingMachineUserCI)this.offering).getMaxPowerLevel();
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlCI#setCurrentPowerLevel(fr.sorbonne_u.alasca.physical_data.Measure)
-	 */
 	@Override
 	public void			setCurrentPowerLevel(Measure<Double> powerLevel)
 	throws Exception
 	{
-		((HeaterExternalControlCI)this.offering).
-										setCurrentPowerLevel(powerLevel);
+		((WashingMachineUserCI)this.offering).setCurrentPowerLevel(powerLevel);
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlCI#getCurrentPowerLevel()
-	 */
 	@Override
 	public SignalData<Double>	getCurrentPowerLevel() throws Exception
 	{
-		return ((HeaterExternalControlCI)this.offering).getCurrentPowerLevel();
+		return ((WashingMachineUserCI)this.offering).getCurrentPowerLevel();
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlCI#getTargetTemperature()
-	 */
 	@Override
 	public Measure<Double>	getTargetTemperature() throws Exception
 	{
-		return ((HeaterExternalControlCI)this.offering).getTargetTemperature();
+		return ((WashingMachineUserCI)this.offering).getTargetTemperature();
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterExternalControlCI#getCurrentTemperature()
-	 */
 	@Override
 	public SignalData<Double>	getCurrentTemperature() throws Exception
 	{
-		return ((HeaterExternalControlCI)this.offering).getCurrentTemperature();
+		return ((WashingMachineUserCI)this.offering).getCurrentTemperature();
+	}
+
+	@Override
+	public void delayedStart(long delayMS, Measure<Double> target) throws Exception {
+		((WashingMachineUserCI)this.offering).delayedStart(delayMS, target);
+	}
+
+	@Override
+	public void startWashing() throws Exception {
+		((WashingMachineUserCI)this.offering).startWashing();
 	}
 }
-// -----------------------------------------------------------------------------

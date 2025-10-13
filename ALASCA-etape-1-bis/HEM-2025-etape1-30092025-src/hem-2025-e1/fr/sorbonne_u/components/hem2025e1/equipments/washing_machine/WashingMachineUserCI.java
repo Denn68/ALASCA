@@ -21,6 +21,9 @@ extends		OfferedCI,
 	public void			switchOff() throws Exception;
 	
 	@Override
+	public void 		startWashing() throws Exception;
+	
+	@Override
 	public void 		delayedStart(long delayMS, Measure<Double> target) throws Exception;
 
 	@Override

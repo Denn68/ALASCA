@@ -14,6 +14,8 @@ extends		WashingMachineExternalControlI
 
 	public void			setTargetTemperature(Measure<Double> target) throws Exception;
 	
+	public void 		startWashing() throws Exception;
+	
 	public void 		delayedStart(long delayMS, Measure<Double> target) throws Exception;
 	
 }
