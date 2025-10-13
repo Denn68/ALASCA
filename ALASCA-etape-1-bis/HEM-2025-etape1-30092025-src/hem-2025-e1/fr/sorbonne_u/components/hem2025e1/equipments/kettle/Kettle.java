@@ -4,9 +4,9 @@ package fr.sorbonne_u.components.hem2025e1.equipments.kettle;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterExternalControlJava4InboundPort;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterInternalControlInboundPort;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterUserJava4InboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections.KettleExternalControlJava4InboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections.KettleInternalControlInboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections.KettleUserJava4InboundPort;
 import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.InvariantException;
@@ -216,7 +216,7 @@ implements	KettleUserI,
 		this.kicip = new KettleInternalControlInboundPort(
 									kettleInternalControlInboundPortURI, this);
 		this.kicip.publishPort();
-		this.kecip = new HeaterExternalControlJava4InboundPort(
+		this.kecip = new KettleExternalControlJava4InboundPort(
 									kettleExternalControlInboundPortURI, this);
 		this.kecip.publishPort();
 
@@ -251,7 +251,7 @@ implements	KettleUserI,
 	public boolean		on() throws Exception
 	{
 		if (Kettle.VERBOSE) {
-			this.traceMessage("Heater returns its state: " +
+			this.traceMessage("Kettle returns its state: " +
 											this.currentState + ".\n");
 		}
 		return this.currentState == KettleState.ON ||

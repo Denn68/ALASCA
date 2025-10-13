@@ -7,12 +7,12 @@ import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.components.hem2025.tests_utils.TestsStatistics;
 import fr.sorbonne_u.components.hem2025e1.CVMIntegrationTest;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterExternalControlConnector;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterExternalControlOutboundPort;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterInternalControlConnector;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterInternalControlOutboundPort;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterUserConnector;
-import fr.sorbonne_u.components.hem2025e1.equipments.heater.connections.HeaterUserOutboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections.KettleExternalControlConnector;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections.KettleExternalControlOutboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections.KettleInternalControlConnector;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections.KettleInternalControlOutboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections.KettleUserConnector;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections.KettleUserOutboundPort;
 import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.InvariantException;
@@ -29,8 +29,8 @@ import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 import fr.sorbonne_u.alasca.physical_data.SignalData;
 
 @RequiredInterfaces(required={KettleUserCI.class,
-							  HeaterInternalControlCI.class,
-							  HeaterExternalControlCI.class,
+							  KettleInternalControlCI.class,
+							  KettleExternalControlCI.class,
 							  ClocksServerCI.class})
 public class			KettleUnitTester
 extends		AbstractComponent
@@ -161,7 +161,7 @@ extends		AbstractComponent
 		this.kop.publishPort();
 		this.kettleInternalControlInboundPortURI =
 									kettleInternalControlInboundPortURI;
-		this.kicop = new HeaterInternalControlOutboundPort(this);
+		this.kicop = new KettleInternalControlOutboundPort(this);
 		this.kicop.publishPort();
 		this.kettleExternalControlInboundPortURI =
 									kettleExternalControlInboundPortURI;
@@ -188,8 +188,8 @@ extends		AbstractComponent
 	{
 		this.logMessage("Feature: getting the state of the kettle");
 		this.logMessage("  Scenario: getting the state of the kettle when off");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater has not been used yet");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle has not been used yet");
 		try {
 			this.logMessage("    When I test the state of the kettle");
 			boolean result = !this.kop.on();
@@ -232,7 +232,7 @@ extends		AbstractComponent
 
 		this.statistics.updateStatistics();
 
-		this.logMessage("  Scenario: switching off the heater when on");
+		this.logMessage("  Scenario: switching off the kettle when on");
 		this.logMessage("    Given the kettle is initialised");
 		this.logMessage("    And the kettle is on");
 		try {
@@ -252,71 +252,35 @@ extends		AbstractComponent
 
 		this.statistics.updateStatistics();
 	}
-
-	/**
-	 * test getting and setting the target temperature of the heater.
-	 * 
-	 * <p><strong>Description</strong></p>
-	 * 
-	 * <p>Gherkin specification</p>
-	 * <p></p>
-	 * <pre>
-	 * Feature: getting and setting the target temperature of the heater");
-	 *   Scenario: getting the target temperature through the user interface when just initialised
-	 *     Given the heater is initialised
-	 *     And the heater has not been used yet
-	 *     And the heater is on
-	 *     When I get the target temperature through the user interface
-	 *     Then the target temperature of the heater is the heater standard target temperature
-	 *   Scenario: getting the target temperature through the internal control interface when just initialised
-	 *     Given the heater is initialised
-	 *     And the heater has not been used yet
-	 *     And the heater is on
-	 *     When I get the target temperature through the internal control interface
-	 *     Then the target temperature of the heater is the heater standard target temperature
-	 *   Scenario: setting the target temperature of the heater when on
-	 *     Given the heater is initialised
-	 *     And the heater is on
-	 *     When I set the temperature at any given temperature between -50 and 50 Celsius inclusive
-	 *     Then the target temperature of the heater is the given temperature
-	 * </pre>
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 */
+	
 	protected void		testTargetTemperature()
 	{
 		this.logMessage("Feature: getting and setting the target temperature"
-						+ " of the heater");
+						+ " of the kettle");
 
 		this.logMessage("  Scenario: getting the target temperature through the"
 						+ " user interface when just initialised");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater has not been used yet");
-		this.logMessage("    And the heater is on");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle has not been used yet");
+		this.logMessage("    And the kettle is on");
 		boolean result;
 		Measure<Double> temperature = null;
 		try {
-			this.hop.switchOn();
-			result = this.hop.on();
+			this.kop.switchOn();
+			result = this.kop.on();
 			if (!result) {
 				this.logMessage("     but was: off");
 				this.statistics.failedCondition();
 			}
 			this.logMessage("    When I get the target temperature through the "
 							+ "user interface");
-			temperature = this.hop.getTargetTemperature();
+			temperature = this.kop.getTargetTemperature();
 			if (temperature.getData() ==
 									Kettle.STANDARD_TARGET_TEMPERATURE.getData()
 				&& temperature.getMeasurementUnit().equals(
 													MeasurementUnit.CELSIUS)) {
-				this.logMessage("    Then the target temperature of the heater"
-								+ " is the heater standard target temperature");
+				this.logMessage("    Then the target temperature of the kettle"
+								+ " is the kettle standard target temperature");
 			} else {
 				this.logMessage("     but was: " + temperature.getData());
 				this.statistics.incorrectResult();
@@ -329,18 +293,18 @@ extends		AbstractComponent
 		this.statistics.updateStatistics();
 
 		this.logMessage("  Scenario: getting the target temperature through the internal control interface when just initialised");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater has not been used yet");
-		this.logMessage("    And the heater is on");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle has not been used yet");
+		this.logMessage("    And the kettle is on");
 		try {
 			this.logMessage("    When I get the target temperature through the internal control interface");
-			temperature = this.hicop.getTargetTemperature();
+			temperature = this.kicop.getTargetTemperature();
 			if (temperature.getData() ==
 									Kettle.STANDARD_TARGET_TEMPERATURE.getData()
 				&& temperature.getMeasurementUnit().equals(
 													MeasurementUnit.CELSIUS)) {
-				this.logMessage("    Then the target temperature of the heater"
-								+ " is the heater standard target temperature");
+				this.logMessage("    Then the target temperature of the kettle"
+								+ " is the kettle standard target temperature");
 			} else {
 				this.logMessage("     but was: " + temperature.getData());
 				this.statistics.incorrectResult();
@@ -353,29 +317,29 @@ extends		AbstractComponent
 		this.statistics.updateStatistics();
 
 		this.logMessage("  Scenario: setting the target temperature of the "
-						+ "heater when on");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater is on");
+						+ "kettle when on");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle is on");
 		try {
-			result = this.hop.on();
+			result = this.kop.on();
 			if (!result) {
 				this.logMessage("     but was: off");
 				this.statistics.failedCondition();
 			}
 			this.logMessage("    When I set the temperature at any given "
 							+ "temperature between -50 and 50 Celsius inclusive");
-			this.hop.setTargetTemperature(
+			this.kop.setTargetTemperature(
 					new Measure<Double>(21.0, Kettle.TEMPERATURE_UNIT));
-			temperature = this.hop.getTargetTemperature();
+			temperature = this.kop.getTargetTemperature();
 			if (temperature.getData() == 21.0 &&
 				temperature.getMeasurementUnit().equals(MeasurementUnit.CELSIUS)) {
-				this.logMessage("    Then the target temperature of the heater"
+				this.logMessage("    Then the target temperature of the kettle"
 								+ " is the given temperature");
 			} else {
 				this.statistics.incorrectResult();
 				this.logMessage("     but was not: " + temperature.getData());
 			}
-			this.hop.switchOff();
+			this.kop.switchOff();
 		} catch (Throwable e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
@@ -384,59 +348,37 @@ extends		AbstractComponent
 		this.statistics.updateStatistics();
 	}
 
-	/**
-	 * test getting the current temperature in the room of the heater.
-	 * 
-	 * <p><strong>Description</strong></p>
-	 * 
-	 * <p>Gherkin specification</p>
-	 * <p></p>
-	 * <pre>
-	 * Feature: getting the current temperature in the room of the heater");
-	 *   Scenario: getting the current temperature when on");
-	 *     Given the heater is initialised");
-	 *     And the heater has not been used yet");
-	 *     And the heater is on");
-	 *     When I get the current temperature of the heater");
-	 *     Then the current temperature is the heater standard current temperature");
-	 * </pre>
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 */
 	protected void		testCurrentTemperature()
 	{
 		this.logMessage("Feature: getting the current temperature"
-						+ " in the room of the heater");
+						+ " in the room of the kettle");
 
 		this.logMessage("  Scenario: getting the current temperature through "
 						+ "the user interface when on");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater has not been used yet");
-		this.logMessage("    And the heater is on");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle has not been used yet");
+		this.logMessage("    And the kettle is on");
+		
 		boolean result;
+		
 		SignalData<Double> temperature = null;
 		try {
-			this.hop.switchOn();
-			result = this.hop.on();
+			this.kop.switchOn();
+			result = this.kop.on();
 			if (!result) {
 				this.logMessage("     but was: off");
 				this.statistics.failedCondition();
 			}
 			this.logMessage("    When I get the current temperature of the "
-							+ "heater through the user interface");
-			temperature = this.hop.getCurrentTemperature();
+							+ "kettle through the user interface");
+			
+			temperature = this.kop.getCurrentTemperature();
 			if (temperature.getMeasure().getData() == 
 					Kettle.FAKE_CURRENT_TEMPERATURE.getMeasure().getData() &&
 				temperature.getMeasure().getMeasurementUnit().equals(
 					Kettle.FAKE_CURRENT_TEMPERATURE.getMeasure().
 														getMeasurementUnit())) {
-				this.logMessage("    Then the current temperature is the heater"
+				this.logMessage("    Then the current temperature is the kettle"
 								+ " standard current temperature");
 			} else {
 				this.logMessage("     but was: " + temperature.getMeasure().getData());
@@ -451,26 +393,26 @@ extends		AbstractComponent
 
 		this.logMessage("  Scenario: getting the current temperature through "
 						+ "the internal control interface when on");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater has not been used yet");
-		this.logMessage("    And the heater is on");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle has not been used yet");
+		this.logMessage("    And the kettle is on");
 		try {
 			this.logMessage("    When I get the current temperature of the "
-							+ "heater through the user interface");
-			temperature = this.hicop.getCurrentTemperature();
+							+ "kettle through the user interface");
+			temperature = this.kicop.getCurrentTemperature();
 			if (temperature.getMeasure().getData() == 
 					Kettle.FAKE_CURRENT_TEMPERATURE.getMeasure().getData() &&
 				temperature.getMeasure().getMeasurementUnit().equals(
 					Kettle.FAKE_CURRENT_TEMPERATURE.getMeasure().
 														getMeasurementUnit())) {
-				this.logMessage("    Then the current temperature is the heater"
+				this.logMessage("    Then the current temperature is the kettle"
 								+ " standard current temperature");
 			} else {
 				this.statistics.incorrectResult();
 				this.logMessage("     but was: " +
 										temperature.getMeasure().getData());
 			}
-			this.hop.switchOff();
+			this.kop.switchOff();
 		} catch (Throwable e) {
 			this.statistics.incorrectResult();
 			this.logMessage("     but the exception " + e + " has been raised");
@@ -478,83 +420,24 @@ extends		AbstractComponent
 
 		this.statistics.updateStatistics();
 	}
-
-	/**
-	 * test getting and setting the power level of the heater.
-	 * 
-	 * <p><strong>Description</strong></p>
-	 * 
-	 * <p>Gherkin specification</p>
-	 * <p></p>
-	 * <pre>
-	 * Feature: getting and setting the power level of the heater
-	 *   Scenario: getting the maximum power level through the user interface
-	 *     Given the heater is initialised
-	 *     When I get the maximum power level through the user interface
-	 *     Then the result is the heater maximum power level
-	 *   Scenario: getting the maximum power level through the external control interface
-	 *     Given the heater is initialised
-	 *     When I get the maximum power level through the external control interface
-	 *     Then the result is the heater maximum power level
-	 *   Scenario: getting the current power level through the user interface when just initialised
-	 *     Given the heater is initialised
-	 *     And the heater has not been used yet
-	 *     And the heater is on
-	 *     When I get the current power level through the user interface
-	 *     Then the result is the heater maximum power level
-	 *   Scenario: getting the current power level through the external control interface when just initialised
-	 *     Given the heater is initialised
-	 *     And the heater has not been used yet
-	 *     And the heater is on
-	 *     When I get the current power level through the external control interface
-	 *     Then the result is the heater maximum power level
-	 *   Scenario: setting the power level to a given level between 0 and the maximum power level through the user interface
-	 *     Given the heater is initialised
-	 *     And the heater is on
-	 *     When I set the current power level through the user interface to a given level between 0 and the maximum power level
-	 *     Then the current power level is the given power level
-	 *   Scenario: setting the power level to a given level over the maximum power level through the user interface
-	 *     Given the heater is initialised
-	 *     And the heater is on
-	 *     When I set the current power level through the user interface to a given level bover the maximum power level
-	 *     Then the current power level is the maximum power level
-	 *   Scenario: setting the power level to a given level between 0 and the maximum power level through the external control interface
-	 *     Given the heater is initialised
-	 *     And the heater is on
-	 *     When I set the current power level through the external control interface to a given level between 0 and the maximum power level
-	 *     Then the current power level is the given power level
-	 *   Scenario: setting the power level to a given level over the maximum power level through the external control interface
-	 *     Given the heater is initialised
-	 *     And the heater is on
-	 *     When I set the current power level through the external control interface to a given level over the maximum power level
-	 *     Then the current power level is the maximum power level
-	 * </pre>
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 */
+	
 	protected void		testPowerLevel()
 	{
 		this.logMessage("Feature: getting and setting the power level of the"
-						+ " heater");
+						+ " kettle");
 
 		this.logMessage("  Scenario: getting the maximum power level through "
 						+ "the user interface");
-		this.logMessage("    Given the heater is initialised");
+		this.logMessage("    Given the kettle is initialised");
 		Measure<Double> powerLevel = null;
 		try {
 			this.logMessage("    When I get the maximum power level through the"
 							+ " user interface");
-			powerLevel = this.hop.getMaxPowerLevel();
+			powerLevel = this.kop.getMaxPowerLevel();
 			if (powerLevel.getData() == Kettle.MAX_POWER_LEVEL.getData() &&
 				powerLevel.getMeasurementUnit().equals(
 							Kettle.MAX_POWER_LEVEL.getMeasurementUnit())) {
-				this.logMessage("    Then the result is the heater maximum "
+				this.logMessage("    Then the result is the kettle maximum "
 								+ "power level");
 			} else {
 				this.statistics.incorrectResult();
@@ -569,15 +452,15 @@ extends		AbstractComponent
 
 		this.logMessage("  Scenario: getting the maximum power level through the"
 						+ " external control interface");
-		this.logMessage("    Given the heater is initialised");
+		this.logMessage("    Given the kettle is initialised");
 		try {
 			this.logMessage("    When I get the maximum power level through the"
 							+ " external control interface");
-			powerLevel = this.hecop.getMaxPowerLevel();
+			powerLevel = this.kecop.getMaxPowerLevel();
 			if (powerLevel.getData() == Kettle.MAX_POWER_LEVEL.getData() &&
 				powerLevel.getMeasurementUnit().equals(
 							Kettle.MAX_POWER_LEVEL.getMeasurementUnit())) {
-				this.logMessage("    Then the result is the heater maximum "
+				this.logMessage("    Then the result is the kettle maximum "
 								+ "power level");
 			} else {
 				this.statistics.incorrectResult();
@@ -592,26 +475,26 @@ extends		AbstractComponent
 
 		this.logMessage("  Scenario: getting the current power level through "
 						+ "the user interface when just initialised");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater has not been used yet");
-		this.logMessage("    And the heater is on");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle has not been used yet");
+		this.logMessage("    And the kettle is on");
 		boolean result;
 		SignalData<Double> powerLevelSignal = null;
 		try {
-			this.hop.switchOn();
-			result = this.hop.on();
+			this.kop.switchOn();
+			result = this.kop.on();
 			if (!result) {
 				this.logMessage("     but was: off");
 				this.statistics.failedCondition();
 			}
 			this.logMessage("    When I get the current power level through the"
 							+ " user interface");
-			powerLevelSignal =  this.hop.getCurrentPowerLevel();
+			powerLevelSignal =  this.kop.getCurrentPowerLevel();
 			if (powerLevelSignal.getMeasure().getData() == 
 											Kettle.MAX_POWER_LEVEL.getData() &&
 				powerLevelSignal.getMeasure().getMeasurementUnit().equals(
 								Kettle.MAX_POWER_LEVEL.getMeasurementUnit())) {
-				this.logMessage("    Then the result is the heater maximum "
+				this.logMessage("    Then the result is the kettle maximum "
 								+ "power level");
 			} else {
 				this.logMessage("     but was: " +
@@ -627,18 +510,18 @@ extends		AbstractComponent
 
 		this.logMessage("  Scenario: getting the current power level through "
 						+ "the external control interface when just initialised");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater has not been used yet");
-		this.logMessage("    And the heater is on");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle has not been used yet");
+		this.logMessage("    And the kettle is on");
 		try {
 			this.logMessage("    When I get the current power level through the"
 							+ " external control interface");
-			powerLevelSignal =  this.hecop.getCurrentPowerLevel();
+			powerLevelSignal =  this.kecop.getCurrentPowerLevel();
 			if (powerLevelSignal.getMeasure().getData() == 
 									Kettle.MAX_POWER_LEVEL.getData() &&
 				powerLevelSignal.getMeasure().getMeasurementUnit().equals(
 								Kettle.MAX_POWER_LEVEL.getMeasurementUnit())) {
-				this.logMessage("    Then the result is the heater maximum "
+				this.logMessage("    Then the result is the kettle maximum "
 								+ "power level");
 			} else {
 				this.statistics.incorrectResult();
@@ -655,16 +538,16 @@ extends		AbstractComponent
 		this.logMessage("  Scenario: setting the power level through the user "
 						+ "interface to a given level between 0 and the maximum"
 						+ " power level");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater is on");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle is on");
 		try {
 			this.logMessage("    When I set the current power level through the"
 							+ " user interface to a given level between 0 and"
 							+ " the maximum power level");
-			this.hop.setCurrentPowerLevel(
+			this.kop.setCurrentPowerLevel(
 					new Measure<Double>(Kettle.MAX_POWER_LEVEL.getData()/2.0,
 										Kettle.POWER_UNIT));
-			powerLevelSignal = this.hop.getCurrentPowerLevel();
+			powerLevelSignal = this.kop.getCurrentPowerLevel();
 			if (powerLevelSignal.getMeasure().getData() ==
 										Kettle.MAX_POWER_LEVEL.getData()/2.0 &&
 				powerLevelSignal.getMeasure().getMeasurementUnit().equals(
@@ -686,16 +569,16 @@ extends		AbstractComponent
 		this.logMessage("  Scenario: setting the power level through the user "
 						+ "interface to a given level over the maximum"
 						+ " power level");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater is on");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle is on");
 		try {
 			this.logMessage("    When I set the current power level through the"
 							+ " user interface to a given level over the maximum"
 							+ " power level");
-			this.hop.setCurrentPowerLevel(
+			this.kop.setCurrentPowerLevel(
 					new Measure<Double>(Kettle.MAX_POWER_LEVEL.getData() + 1.0,
 										Kettle.POWER_UNIT));
-			powerLevelSignal = this.hop.getCurrentPowerLevel();
+			powerLevelSignal = this.kop.getCurrentPowerLevel();
 			if (powerLevelSignal.getMeasure().getData() ==
 											Kettle.MAX_POWER_LEVEL.getData() &&
 				powerLevelSignal.getMeasure().getMeasurementUnit().equals(
@@ -717,16 +600,16 @@ extends		AbstractComponent
 		this.logMessage("  Scenario: setting the power level through the "
 						+ "external control interface to a given level between "
 						+ "0 and the maximum power level");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater is on");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle is on");
 		try {
 			this.logMessage("    When I set the current power level through the"
 							+ " external control interface to a given level "
 							+ "between 0 and the maximum power level");
-			this.hop.setCurrentPowerLevel(
+			this.kop.setCurrentPowerLevel(
 					new Measure<Double>(Kettle.MAX_POWER_LEVEL.getData()/2.0,
 										Kettle.POWER_UNIT));
-			powerLevelSignal = this.hecop.getCurrentPowerLevel();
+			powerLevelSignal = this.kecop.getCurrentPowerLevel();
 			if (powerLevelSignal.getMeasure().getData() ==
 										Kettle.MAX_POWER_LEVEL.getData()/2.0 &&
 					powerLevelSignal.getMeasure().getMeasurementUnit().equals(
@@ -748,16 +631,16 @@ extends		AbstractComponent
 		this.logMessage("  Scenario: setting the power level through the "
 						+ "external control interface to a given level over the"
 						+ " maximum power level");
-		this.logMessage("    Given the heater is initialised");
-		this.logMessage("    And the heater is on");
+		this.logMessage("    Given the kettle is initialised");
+		this.logMessage("    And the kettle is on");
 		try {
 			this.logMessage("    When I set the current power level through the"
 							+ " external control interface to a given level over"
 							+ " the maximum power level");
-			this.hop.setCurrentPowerLevel(
+			this.kop.setCurrentPowerLevel(
 					new Measure<Double>(Kettle.MAX_POWER_LEVEL.getData() + 1.0,
 										Kettle.POWER_UNIT));
-			powerLevelSignal = this.hecop.getCurrentPowerLevel();
+			powerLevelSignal = this.kecop.getCurrentPowerLevel();
 			if (powerLevelSignal.getMeasure().getData() ==
 											Kettle.MAX_POWER_LEVEL.getData() &&
 				powerLevelSignal.getMeasure().getMeasurementUnit().equals(
@@ -777,35 +660,27 @@ extends		AbstractComponent
 		this.statistics.updateStatistics();
 	}
 
-	/**
-	 * run all unit tests.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 */
 	protected void		runAllUnitTests()
 	{
+		this.logMessage("");
+		this.logMessage("Off Test");
 		this.testOff();
+		this.logMessage("");
+		this.logMessage("On-Off Test");
 		this.testSwitchOnSwitchOff();
+		this.logMessage("");
+		this.logMessage("TempTarget Test");
 		this.testTargetTemperature();
+		this.logMessage("");
+		this.logMessage("CurTemp Test");
 		this.testCurrentTemperature();
+		this.logMessage("");
+		this.logMessage("Pow Test");
 		this.testPowerLevel();
 
 		this.statistics.statisticsReport(this);
 	}
 
-	// -------------------------------------------------------------------------
-	// Component life-cycle
-	// -------------------------------------------------------------------------
-
-	/**
-	 * @see fr.sorbonne_u.components.AbstractComponent#start()
-	 */
 	@Override
 	public synchronized void	start() throws ComponentStartException
 	{
@@ -813,25 +688,23 @@ extends		AbstractComponent
 
 		try {
 			this.doPortConnection(
-					this.hop.getPortURI(),
-					this.heaterUserInboundPortURI,
-					HeaterUserConnector.class.getCanonicalName());
+					this.kop.getPortURI(),
+					this.kettleUserInboundPortURI,
+					KettleUserConnector.class.getCanonicalName());
 			this.doPortConnection(
-					this.hicop.getPortURI(),
-					heaterInternalControlInboundPortURI,
-					HeaterInternalControlConnector.class.getCanonicalName());
+					this.kicop.getPortURI(),
+					kettleInternalControlInboundPortURI,
+					KettleInternalControlConnector.class.getCanonicalName());
 			this.doPortConnection(
-					this.hecop.getPortURI(),
-					heaterExternalControlInboundPortURI,
-					HeaterExternalControlConnector.class.getCanonicalName());
+					this.kecop.getPortURI(),
+					kettleExternalControlInboundPortURI,
+					KettleExternalControlConnector.class.getCanonicalName());
 		} catch (Throwable e) {
 			throw new ComponentStartException(e) ;
 		}
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.AbstractComponent#execute()
-	 */
+
 	@Override
 	public synchronized void	execute() throws Exception
 	{
@@ -845,7 +718,7 @@ extends		AbstractComponent
 					clocksServerOutboundPort.getPortURI(),
 					ClocksServer.STANDARD_INBOUNDPORT_URI,
 					ClocksServerConnector.class.getCanonicalName());
-			this.traceMessage("Heater tester gets the clock.\n");
+			this.traceMessage("Kettle tester gets the clock.\n");
 			AcceleratedClock ac =
 					clocksServerOutboundPort.getClock(
 										CVMIntegrationTest.CLOCK_URI);
@@ -855,26 +728,26 @@ extends		AbstractComponent
 			clocksServerOutboundPort = null;
 
 			Instant startInstant = ac.getStartInstant();
-			Instant heaterSwitchOn = startInstant.plusSeconds(SWITCH_ON_DELAY);
-			Instant heaterSwitchOff = startInstant.plusSeconds(SWITCH_OFF_DELAY);
-			this.traceMessage("Heater tester waits until start.\n");
+			Instant kettleSwitchOn = startInstant.plusSeconds(SWITCH_ON_DELAY);
+			Instant kettleSwitchOff = startInstant.plusSeconds(SWITCH_OFF_DELAY);
+			this.traceMessage("Kettle tester waits until start.\n");
 			ac.waitUntilStart();
-			this.traceMessage("Heater tester schedules switch on and off.\n");
-			long delayToSwitchOn = ac.nanoDelayUntilInstant(heaterSwitchOn);
-			long delayToSwitchOff = ac.nanoDelayUntilInstant(heaterSwitchOff);
+			this.traceMessage("Kettle tester schedules switch on and off.\n");
+			long delayToSwitchOn = ac.nanoDelayUntilInstant(kettleSwitchOn);
+			long delayToSwitchOff = ac.nanoDelayUntilInstant(kettleSwitchOff);
 
 			// This is to avoid mixing the 'this' of the task object with the 'this'
 			// representing the component object in the code of the next methods run
 			AbstractComponent o = this;
 
-			// schedule the switch on heater
+			// schedule the switch on kettle
 			this.scheduleTaskOnComponent(
 					new AbstractComponent.AbstractTask() {
 						@Override
 						public void run() {
 							try {
-								o.traceMessage("Heater switches on.\n");
-								hop.switchOn();
+								o.traceMessage("Kettle switches on.\n");
+								kop.switchOn();
 							} catch (Throwable e) {
 								e.printStackTrace();
 							}
@@ -883,14 +756,14 @@ extends		AbstractComponent
 
 			// to be completed with a more covering scenario
 
-			// schedule the switch off heater
+			// schedule the switch off kettle
 			this.scheduleTaskOnComponent(
 					new AbstractComponent.AbstractTask() {
 						@Override
 						public void run() {
 							try {
-								o.traceMessage("Heater switches off.\n");
-								hop.switchOff();
+								o.traceMessage("Kettle switches off.\n");
+								kop.switchOff();
 							} catch (Throwable e) {
 								e.printStackTrace();
 							}
@@ -899,28 +772,22 @@ extends		AbstractComponent
 		}
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.AbstractComponent#finalise()
-	 */
 	@Override
 	public synchronized void	finalise() throws Exception
 	{
-		this.doPortDisconnection(this.hop.getPortURI());
-		this.doPortDisconnection(this.hicop.getPortURI());
-		this.doPortDisconnection(this.hecop.getPortURI());
+		this.doPortDisconnection(this.kop.getPortURI());
+		this.doPortDisconnection(this.kicop.getPortURI());
+		this.doPortDisconnection(this.kecop.getPortURI());
 		super.finalise();
 	}
 
-	/**
-	 * @see fr.sorbonne_u.components.AbstractComponent#shutdown()
-	 */
 	@Override
 	public synchronized void	shutdown() throws ComponentShutdownException
 	{
 		try {
-			this.hop.unpublishPort();
-			this.hicop.unpublishPort();
-			this.hecop.unpublishPort();
+			this.kop.unpublishPort();
+			this.kicop.unpublishPort();
+			this.kecop.unpublishPort();
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e) ;
 		}

@@ -1,0 +1,113 @@
+package fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections;
+
+
+import fr.sorbonne_u.components.ComponentI;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleExternalControlCI;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleExternalControlI;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleTemperatureI;
+import fr.sorbonne_u.components.interfaces.OfferedCI;
+import fr.sorbonne_u.components.ports.AbstractInboundPort;
+import fr.sorbonne_u.exceptions.PreconditionException;
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.SignalData;
+
+public class			KettleExternalControlInboundPort
+extends		AbstractInboundPort
+implements	KettleExternalControlCI
+{
+
+	private static final long serialVersionUID = 1L;
+
+	public				KettleExternalControlInboundPort(ComponentI owner)
+	throws Exception
+	{
+		this(KettleExternalControlCI.class, owner);
+	}
+
+	public				KettleExternalControlInboundPort(
+		String uri,
+		ComponentI owner
+		) throws Exception
+	{
+		this(uri, KettleExternalControlCI.class, owner);
+	}
+
+	public				KettleExternalControlInboundPort(
+		Class<? extends OfferedCI> implementedInterface,
+		ComponentI owner
+		) throws Exception
+	{
+		super(implementedInterface, owner);
+
+		assert	implementedInterface != null &&
+				KettleExternalControlCI.class.isAssignableFrom(
+														implementedInterface)  :
+				new PreconditionException(
+						"implementedInterface != null && "
+						+ "KettleExternalControlCI.class.isAssignableFrom("
+						+ "implementedInterface)");
+		assert	owner instanceof KettleExternalControlI :
+				new PreconditionException(
+						"owner instanceof KettleExternalControlI");
+	}
+
+	public				KettleExternalControlInboundPort(
+		String uri,
+		Class<? extends OfferedCI> implementedInterface,
+		ComponentI owner
+		) throws Exception
+	{
+		super(uri, implementedInterface, owner);
+
+		assert	implementedInterface != null &&
+				KettleExternalControlCI.class.isAssignableFrom(
+														implementedInterface)  :
+				new PreconditionException(
+						"implementedInterface != null && "
+						+ "KettleExternalControlCI.class.isAssignableFrom("
+						+ "implementedInterface)");
+		assert	owner instanceof KettleExternalControlI :
+				new PreconditionException(
+						"owner instanceof KettleExternalControlI");
+	}
+
+	@Override
+	public Measure<Double>	getMaxPowerLevel() throws Exception
+	{
+		return this.getOwner().handleRequest(
+				o -> ((KettleExternalControlI)o).getMaxPowerLevel());
+	}
+
+	@Override
+	public void			setCurrentPowerLevel(Measure<Double> powerLevel)
+	throws Exception
+	{
+		this.getOwner().handleRequest(
+				o -> {	((KettleExternalControlI)o).
+											setCurrentPowerLevel(powerLevel);
+						return null;
+					 });
+	}
+
+	@Override
+	public SignalData<Double>	getCurrentPowerLevel() throws Exception
+	{
+		return this.getOwner().handleRequest(
+				o -> ((KettleExternalControlI)o).getCurrentPowerLevel());
+	}
+
+	@Override
+	public Measure<Double>	getTargetTemperature() throws Exception
+	{
+		return this.getOwner().handleRequest(
+				o -> ((KettleTemperatureI)o).getTargetTemperature());
+	}
+
+	@Override
+	public SignalData<Double>	getCurrentTemperature() throws Exception
+	{
+ 		return this.getOwner().handleRequest(
+ 				o -> ((KettleTemperatureI)o).getCurrentTemperature());
+	}
+}
+// -----------------------------------------------------------------------------
