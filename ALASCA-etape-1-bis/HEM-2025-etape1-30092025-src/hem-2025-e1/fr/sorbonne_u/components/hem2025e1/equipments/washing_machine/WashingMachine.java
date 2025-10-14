@@ -26,7 +26,7 @@ import fr.sorbonne_u.alasca.physical_data.SignalData;
 public class			WashingMachine
 extends		AbstractComponent
 implements	WashingMachineUserI,
-			WashingMachineControlI
+			WashingMachineInternalControlI
 {
 	protected static enum	WashingMachineState
 	{
