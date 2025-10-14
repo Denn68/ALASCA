@@ -53,6 +53,8 @@ import fr.sorbonne_u.components.hem2025e1.equipments.generator.connections.Gener
 import fr.sorbonne_u.components.hem2025e1.equipments.generator.connections.GeneratorOutboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.heater.Heater;
 import fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUnitTester;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.Kettle;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleUnitTester;
 import fr.sorbonne_u.components.hem2025e1.equipments.meter.ElectricMeter;
 import fr.sorbonne_u.components.hem2025e1.equipments.meter.ElectricMeterCI;
 import fr.sorbonne_u.components.hem2025e1.equipments.meter.ElectricMeterConnector;
@@ -63,6 +65,8 @@ import fr.sorbonne_u.components.hem2025e1.equipments.solar_panel.SolarPanelCI;
 import fr.sorbonne_u.components.hem2025e1.equipments.solar_panel.SolarPanelUnitTester;
 import fr.sorbonne_u.components.hem2025e1.equipments.solar_panel.connections.SolarPanelConnector;
 import fr.sorbonne_u.components.hem2025e1.equipments.solar_panel.connections.SolarPanelOutboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.WashingMachine;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.WashingMachineUnitTester;
 import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.InvariantException;
@@ -142,6 +146,12 @@ extends		AbstractComponent
 	protected boolean						isPreFirstStep;
 	/** port to connect to the heater when managed in a customised way.		*/
 	protected AdjustableOutboundPort		heaterop;
+	
+	
+	protected AdjustableOutboundPort		kettleop;
+	
+	
+	protected AdjustableOutboundPort		washingMachineop;
 
 	/** when true, this implementation of the HEM performs the tests
 	 *  that are planned in the method execute.								*/
@@ -310,6 +320,20 @@ extends		AbstractComponent
 						this.heaterop.getPortURI(),
 						Heater.EXTERNAL_CONTROL_INBOUND_PORT_URI,
 						HeaterConnector.class.getCanonicalName());
+				
+				this.kettleop = new AdjustableOutboundPort(this);
+				this.kettleop.publishPort();
+				this.doPortConnection(
+						this.kettleop.getPortURI(),
+						Kettle.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+						KettleConnector.class.getCanonicalName());
+				
+				//this.washingMachineop = new AdjustableOutboundPort(this);
+				//this.washingMachineop.publishPort();
+				//this.doPortConnection(
+				//		this.washingMachineop.getPortURI(),
+				//		WashingMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+				//		WashingMachine.class.getCanonicalName());
 			}
 		} catch (Throwable e) {
 			throw new ComponentStartException(e) ;
@@ -354,6 +378,8 @@ extends		AbstractComponent
 			this.logMessage("Generator tests end.");
 			if (this.isPreFirstStep) {
 				this.scheduleTestHeater();
+				this.scheduleTestKettle();
+				//this.scheduleTestWashingMachine();
 			}
 		}
 	}
@@ -370,6 +396,8 @@ extends		AbstractComponent
 		this.doPortDisconnection(this.generatorop.getPortURI());
 		if (this.isPreFirstStep) {
 			this.doPortDisconnection(this.heaterop.getPortURI());
+			this.doPortDisconnection(this.kettleop.getPortURI());
+			//this.doPortDisconnection(this.washingMachineop.getPortURI());
 		}
 		super.finalise();
 	}
@@ -387,6 +415,8 @@ extends		AbstractComponent
 			this.generatorop.unpublishPort();
 			if (this.isPreFirstStep) {
 				this.heaterop.unpublishPort();
+				this.kettleop.unpublishPort();
+				//this.washingMachineop.unpublishPort();
 			}
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e) ;
@@ -858,6 +888,588 @@ extends		AbstractComponent
 
 		this.logMessage("Heater tests end.");
 	}
+	
+	protected void		testKettle() throws Exception
+	{
+		this.logMessage("Kettle tests start.");
+		TestsStatistics statistics = new TestsStatistics();
+		try {
+			this.logMessage("Feature: adjustable appliance mode management");
+			this.logMessage("  Scenario: getting the max mode index");
+			this.logMessage("    Given the kettle has just been turned on");
+			this.logMessage("    When I call maxMode()");
+			this.logMessage("    Then the result is its max mode index");
+			final int maxMode = kettleop.maxMode();
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: getting the current mode index");
+			this.logMessage("    Given the kettle has just been turned on");
+			this.logMessage("    When I call currentMode()");
+			this.logMessage("    Then the current mode is its max mode");
+			int result = kettleop.currentMode();
+			if (result != maxMode) {
+				this.logMessage("      but was: " + result);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: going down one mode index");
+			this.logMessage("    Given the kettle is turned on");
+			this.logMessage("    And the current mode index is the max mode index");
+			result = kettleop.currentMode();
+			if (result != maxMode) {
+				this.logMessage("      but was: " + result);
+				statistics.failedCondition();
+			}
+			this.logMessage("    When I call downMode()");
+			this.logMessage("    Then the method returns true");
+			boolean bResult = kettleop.downMode();
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the current mode is its max mode minus one");
+			result = kettleop.currentMode();
+			if (result != maxMode - 1) {
+				this.logMessage("      but was: " + result);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: going up one mode index");
+			this.logMessage("    Given the kettle is turned on");
+			this.logMessage("    And the current mode index is the max mode index minus one");
+			result = kettleop.currentMode();
+			if (result != maxMode - 1) {
+				this.logMessage("      but was: " + result);
+				statistics.failedCondition();
+			}
+			this.logMessage("    When I call upMode()");
+			this.logMessage("    Then the method returns true");
+			bResult = kettleop.upMode();
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the current mode is its max mode");
+			result = kettleop.currentMode();
+			if (result != maxMode) {
+				this.logMessage("      but was: " + result);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: setting the mode index");
+			this.logMessage("    Given the kettle is turned on");
+			int index = 1;
+			this.logMessage("    And the mode index 1 is legitimate");
+			if (index > maxMode) {
+				this.logMessage("      but was not!");
+				statistics.failedCondition();
+			}
+			this.logMessage("    When I call setMode(1)");
+			this.logMessage("    Then the method returns true");
+			bResult = kettleop.setMode(1);
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the current mode is 1");
+			result = kettleop.currentMode();
+			if (result != 1) {
+				this.logMessage("      but was: " + result);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("Feature: Getting the power consumption given a mode");
+			this.logMessage("  Scenario: getting the power consumption of the maximum mode");
+			this.logMessage("    Given the kettle is turned on");
+			this.logMessage("    When I get the power consumption of the maximum mode");
+			double dResult = kettleop.getModeConsumption(maxMode);
+			this.logMessage("    Then the result is the maximum power consumption of the kettle");
+
+			statistics.updateStatistics();
+
+			this.logMessage("Feature: suspending and resuming");
+			this.logMessage("  Scenario: checking if suspended when not");
+			this.logMessage("    Given the kettle is turned on");
+			this.logMessage("    And it has not been suspended yet");
+			this.logMessage("    When I check if suspended");
+			bResult = kettleop.suspended();
+			this.logMessage("    Then it is not");
+			if (bResult) {
+				this.logMessage("      but it was!");
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: suspending");
+			this.logMessage("    Given the kettle is turned on");
+			this.logMessage("    And it is not suspended");
+			bResult = kettleop.suspended();
+			if (bResult) {
+				this.logMessage("      but it was!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call suspend()");
+			bResult = kettleop.suspend();
+			this.logMessage("    Then the method returns true");
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the kettle is suspended");
+			bResult = kettleop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: going down one mode index when suspended");
+			this.logMessage("    Given the kettle is turned on");
+			this.logMessage("    And the kettle is suspended");
+			bResult = kettleop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call downMode()");
+			this.logMessage("    Then a precondition exception is thrown");
+			boolean old = BCMException.VERBOSE;
+			try {
+				BCMException.VERBOSE = false;
+				kettleop.downMode();
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			} catch (Throwable e) {
+			} finally {
+				BCMException.VERBOSE = old;
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: going up one mode index when suspended");
+			this.logMessage("    Given the kettle is turned on");
+			this.logMessage("    And the kettle is suspended");
+			bResult = kettleop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call upMode()");
+			this.logMessage("    Then a precondition exception is thrown");
+			old = BCMException.VERBOSE;
+			try {
+				BCMException.VERBOSE = false;
+				kettleop.upMode();
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			} catch (Throwable e) {
+			} finally {
+				BCMException.VERBOSE = old;
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: setting the mode when suspended");
+			this.logMessage("    Given the kettle is turned on");
+			this.logMessage("    And the kettle is suspended");
+			bResult = kettleop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    And the mode index 1 is legitimate");
+			if (index > maxMode) {
+				this.logMessage("      but was not!");
+				statistics.failedCondition();
+			}
+			this.logMessage("    When I call setMode(1)");
+			this.logMessage("    Then a precondition exception is thrown");
+			old = BCMException.VERBOSE;
+			try {
+				BCMException.VERBOSE = false;
+				kettleop.upMode();
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			} catch (Throwable e) {
+			} finally {
+				BCMException.VERBOSE = old;
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: getting the current mode when suspended");
+			this.logMessage("    Given the kettle is turned on");
+			this.logMessage("    And the kettle is suspended");
+			bResult = kettleop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I get the current mode");
+			this.logMessage("    Then a precondition exception is thrown");
+			old = BCMException.VERBOSE;
+			try {
+				BCMException.VERBOSE = false;
+				kettleop.currentMode();
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			} catch (Throwable e) {
+			} finally {
+				BCMException.VERBOSE = old;
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: checking the emergency");
+			this.logMessage("    Given the kettle is turned on");
+			this.logMessage("    And it has just been suspended");
+			bResult = kettleop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call emergency()");
+			dResult = kettleop.emergency();
+			this.logMessage("    Then the emergency is between 0.0 and 1.0");
+			if (dResult < 0.0 || dResult > 1.0) {
+				this.logMessage("      but was: " + dResult);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: resuming");
+			this.logMessage("    Given the kettle is turned on");
+			this.logMessage("    And it is suspended");
+			bResult = kettleop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call resume()");
+			bResult = kettleop.resume();
+			this.logMessage("    Then the method returns true");
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the kettle is not suspended");
+			bResult = kettleop.suspended();
+			if (bResult) {
+				this.logMessage("      but it was!");
+				statistics.incorrectResult();
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+
+		statistics.updateStatistics();
+		statistics.statisticsReport(this);
+
+		this.logMessage("Kettle tests end.");
+	}
+	
+	protected void		testWashingMachine() throws Exception
+	{
+		this.logMessage("Washing Machine tests start.");
+		TestsStatistics statistics = new TestsStatistics();
+		try {
+			this.logMessage("Feature: adjustable appliance mode management");
+			this.logMessage("  Scenario: getting the max mode index");
+			this.logMessage("    Given the washing machine has just been turned on");
+			this.logMessage("    When I call maxMode()");
+			this.logMessage("    Then the result is its max mode index");
+			final int maxMode = washingMachineop.maxMode();
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: getting the current mode index");
+			this.logMessage("    Given the washing mashine has just been turned on");
+			this.logMessage("    When I call currentMode()");
+			this.logMessage("    Then the current mode is its max mode");
+			int result = washingMachineop.currentMode();
+			if (result != maxMode) {
+				this.logMessage("      but was: " + result);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: going down one mode index");
+			this.logMessage("    Given the washing machine is turned on");
+			this.logMessage("    And the current mode index is the max mode index");
+			result = washingMachineop.currentMode();
+			if (result != maxMode) {
+				this.logMessage("      but was: " + result);
+				statistics.failedCondition();
+			}
+			this.logMessage("    When I call downMode()");
+			this.logMessage("    Then the method returns true");
+			boolean bResult = washingMachineop.downMode();
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the current mode is its max mode minus one");
+			result = washingMachineop.currentMode();
+			if (result != maxMode - 1) {
+				this.logMessage("      but was: " + result);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: going up one mode index");
+			this.logMessage("    Given the washing machine is turned on");
+			this.logMessage("    And the current mode index is the max mode index minus one");
+			result = washingMachineop.currentMode();
+			if (result != maxMode - 1) {
+				this.logMessage("      but was: " + result);
+				statistics.failedCondition();
+			}
+			this.logMessage("    When I call upMode()");
+			this.logMessage("    Then the method returns true");
+			bResult = washingMachineop.upMode();
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the current mode is its max mode");
+			result = washingMachineop.currentMode();
+			if (result != maxMode) {
+				this.logMessage("      but was: " + result);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: setting the mode index");
+			this.logMessage("    Given the washing machine is turned on");
+			int index = 1;
+			this.logMessage("    And the mode index 1 is legitimate");
+			if (index > maxMode) {
+				this.logMessage("      but was not!");
+				statistics.failedCondition();
+			}
+			this.logMessage("    When I call setMode(1)");
+			this.logMessage("    Then the method returns true");
+			bResult = washingMachineop.setMode(1);
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the current mode is 1");
+			result = washingMachineop.currentMode();
+			if (result != 1) {
+				this.logMessage("      but was: " + result);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("Feature: Getting the power consumption given a mode");
+			this.logMessage("  Scenario: getting the power consumption of the maximum mode");
+			this.logMessage("    Given the washing machine is turned on");
+			this.logMessage("    When I get the power consumption of the maximum mode");
+			double dResult = washingMachineop.getModeConsumption(maxMode);
+			this.logMessage("    Then the result is the maximum power consumption of the wahsing machine");
+
+			statistics.updateStatistics();
+
+			this.logMessage("Feature: suspending and resuming");
+			this.logMessage("  Scenario: checking if suspended when not");
+			this.logMessage("    Given the wahsing machine is turned on");
+			this.logMessage("    And it has not been suspended yet");
+			this.logMessage("    When I check if suspended");
+			bResult = washingMachineop.suspended();
+			this.logMessage("    Then it is not");
+			if (bResult) {
+				this.logMessage("      but it was!");
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: suspending");
+			this.logMessage("    Given the washing machine is turned on");
+			this.logMessage("    And it is not suspended");
+			bResult = washingMachineop.suspended();
+			if (bResult) {
+				this.logMessage("      but it was!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call suspend()");
+			bResult = washingMachineop.suspend();
+			this.logMessage("    Then the method returns true");
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the washing machine is suspended");
+			bResult = washingMachineop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: going down one mode index when suspended");
+			this.logMessage("    Given the washing machine is turned on");
+			this.logMessage("    And the washing machine is suspended");
+			bResult = washingMachineop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call downMode()");
+			this.logMessage("    Then a precondition exception is thrown");
+			boolean old = BCMException.VERBOSE;
+			try {
+				BCMException.VERBOSE = false;
+				washingMachineop.downMode();
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			} catch (Throwable e) {
+			} finally {
+				BCMException.VERBOSE = old;
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: going up one mode index when suspended");
+			this.logMessage("    Given the washing machine is turned on");
+			this.logMessage("    And the washing machine is suspended");
+			bResult = washingMachineop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call upMode()");
+			this.logMessage("    Then a precondition exception is thrown");
+			old = BCMException.VERBOSE;
+			try {
+				BCMException.VERBOSE = false;
+				washingMachineop.upMode();
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			} catch (Throwable e) {
+			} finally {
+				BCMException.VERBOSE = old;
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: setting the mode when suspended");
+			this.logMessage("    Given the washine machine is turned on");
+			this.logMessage("    And the washing machine is suspended");
+			bResult = washingMachineop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    And the mode index 1 is legitimate");
+			if (index > maxMode) {
+				this.logMessage("      but was not!");
+				statistics.failedCondition();
+			}
+			this.logMessage("    When I call setMode(1)");
+			this.logMessage("    Then a precondition exception is thrown");
+			old = BCMException.VERBOSE;
+			try {
+				BCMException.VERBOSE = false;
+				washingMachineop.upMode();
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			} catch (Throwable e) {
+			} finally {
+				BCMException.VERBOSE = old;
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: getting the current mode when suspended");
+			this.logMessage("    Given the washing machine is turned on");
+			this.logMessage("    And the washing machine is suspended");
+			bResult = washingMachineop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I get the current mode");
+			this.logMessage("    Then a precondition exception is thrown");
+			old = BCMException.VERBOSE;
+			try {
+				BCMException.VERBOSE = false;
+				washingMachineop.currentMode();
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			} catch (Throwable e) {
+			} finally {
+				BCMException.VERBOSE = old;
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: checking the emergency");
+			this.logMessage("    Given the washing machine is turned on");
+			this.logMessage("    And it has just been suspended");
+			bResult = washingMachineop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call emergency()");
+			dResult = washingMachineop.emergency();
+			this.logMessage("    Then the emergency is between 0.0 and 1.0");
+			if (dResult < 0.0 || dResult > 1.0) {
+				this.logMessage("      but was: " + dResult);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: resuming");
+			this.logMessage("    Given the washing machine is turned on");
+			this.logMessage("    And it is suspended");
+			bResult = washingMachineop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call resume()");
+			bResult = washingMachineop.resume();
+			this.logMessage("    Then the method returns true");
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the washing machine is not suspended");
+			bResult = washingMachineop.suspended();
+			if (bResult) {
+				this.logMessage("      but it was!");
+				statistics.incorrectResult();
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+
+		statistics.updateStatistics();
+		statistics.statisticsReport(this);
+
+		this.logMessage("Washing Machine tests end.");
+	}
 
 	/**
 	 * test the {@code Heater} component, in cooperation with the
@@ -888,6 +1500,54 @@ extends		AbstractComponent
 					public void run() {
 						try {
 							testHeater();
+						} catch (Throwable e) {
+							throw new BCMRuntimeException(e) ;
+						}
+					}
+				}, delay, TimeUnit.NANOSECONDS);
+	}
+	
+	protected void		scheduleTestKettle()
+	{
+		// Test for the kettle
+		Instant kettleTestStart =
+				this.ac.getStartInstant().plusSeconds(
+							(KettleUnitTester.SWITCH_ON_DELAY +
+											KettleUnitTester.SWITCH_OFF_DELAY)/2);
+		this.traceMessage("HEM schedules the kettle test.\n");
+		long delay = this.ac.nanoDelayUntilInstant(kettleTestStart);
+
+		// schedule the switch on kettle in one second
+		this.scheduleTaskOnComponent(
+				new AbstractComponent.AbstractTask() {
+					@Override
+					public void run() {
+						try {
+							testKettle();
+						} catch (Throwable e) {
+							throw new BCMRuntimeException(e) ;
+						}
+					}
+				}, delay, TimeUnit.NANOSECONDS);
+	}
+	
+	protected void		scheduleTestWashingMachine()
+	{
+		// Test for the washing machine
+		Instant washingMachineTestStart =
+				this.ac.getStartInstant().plusSeconds(
+							(WashingMachineUnitTester.SWITCH_ON_DELAY +
+									WashingMachineUnitTester.SWITCH_OFF_DELAY)/2);
+		this.traceMessage("HEM schedules the kettle test.\n");
+		long delay = this.ac.nanoDelayUntilInstant(washingMachineTestStart);
+
+		// schedule the switch on kettle in one second
+		this.scheduleTaskOnComponent(
+				new AbstractComponent.AbstractTask() {
+					@Override
+					public void run() {
+						try {
+							testWashingMachine();
 						} catch (Throwable e) {
 							throw new BCMRuntimeException(e) ;
 						}

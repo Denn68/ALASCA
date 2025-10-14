@@ -41,8 +41,14 @@ import fr.sorbonne_u.components.hem2025e1.equipments.hairdryer.HairDryerTester;
 import fr.sorbonne_u.components.hem2025e1.equipments.heater.Heater;
 import fr.sorbonne_u.components.hem2025e1.equipments.heater.HeaterUnitTester;
 import fr.sorbonne_u.components.hem2025e1.equipments.hem.HEM;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.Kettle;
+import fr.sorbonne_u.components.hem2025e1.equipments.kettle.KettleUnitTester;
 import fr.sorbonne_u.components.hem2025e1.equipments.meter.ElectricMeter;
 import fr.sorbonne_u.components.hem2025e1.equipments.solar_panel.SolarPanel;
+import fr.sorbonne_u.components.hem2025e1.equipments.vacuum_cleaner.VacuumCleaner;
+import fr.sorbonne_u.components.hem2025e1.equipments.vacuum_cleaner.VacuumCleanerTester;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.WashingMachine;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.WashingMachineUnitTester;
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PreconditionException;
@@ -193,12 +199,30 @@ extends		AbstractCVM
 		HairDryer.VERBOSE = true;
 		HairDryer.X_RELATIVE_POSITION = 1;
 		HairDryer.Y_RELATIVE_POSITION = 2;
+		VacuumCleanerTester.VERBOSE = true;
+		VacuumCleanerTester.X_RELATIVE_POSITION = 2;
+		VacuumCleanerTester.Y_RELATIVE_POSITION = 2;
+		VacuumCleaner.VERBOSE = true;
+		VacuumCleaner.X_RELATIVE_POSITION = 3;
+		VacuumCleaner.Y_RELATIVE_POSITION = 2;
 		HeaterUnitTester.VERBOSE = true;
 		HeaterUnitTester.X_RELATIVE_POSITION = 0;
 		HeaterUnitTester.Y_RELATIVE_POSITION = 3;
 		Heater.VERBOSE = true;
 		Heater.X_RELATIVE_POSITION = 1;
 		Heater.Y_RELATIVE_POSITION = 3;
+		KettleUnitTester.VERBOSE = true;
+		KettleUnitTester.X_RELATIVE_POSITION = 2;
+		KettleUnitTester.Y_RELATIVE_POSITION = 0;
+		Kettle.VERBOSE = true;
+		Kettle.X_RELATIVE_POSITION = 3;
+		Kettle.Y_RELATIVE_POSITION = 0;
+		WashingMachineUnitTester.VERBOSE = true;
+		WashingMachineUnitTester.X_RELATIVE_POSITION = 2;
+		WashingMachineUnitTester.Y_RELATIVE_POSITION = 3;
+		WashingMachine.VERBOSE = true;
+		WashingMachine.X_RELATIVE_POSITION = 3;
+		WashingMachine.Y_RELATIVE_POSITION = 3;
 
 		assert	CVMIntegrationTest.implementationInvariants(this) :
 				new InvariantException(
@@ -248,6 +272,10 @@ extends		AbstractCVM
 		AbstractComponent.createComponent(
 				HairDryer.class.getCanonicalName(),
 				new Object[]{});
+
+		AbstractComponent.createComponent(
+				VacuumCleaner.class.getCanonicalName(),
+				new Object[]{});
 		// At this stage, the tester for the hair dryer is added only
 		// to show the hair dryer functioning; later on, it will be replaced
 		// by a simulation of users' actions.
@@ -256,8 +284,22 @@ extends		AbstractCVM
 				new Object[]{false});
 
 		AbstractComponent.createComponent(
+				VacuumCleanerTester.class.getCanonicalName(),
+				new Object[]{false});
+
+		AbstractComponent.createComponent(
 				Heater.class.getCanonicalName(),
 				new Object[]{});
+		
+		// Kettle
+		AbstractComponent.createComponent(
+				Kettle.class.getCanonicalName(),
+				new Object[]{});
+		
+		// Washing Machine
+		//AbstractComponent.createComponent(
+		//		WashingMachine.class.getCanonicalName(),
+		//		new Object[]{});
 
 		// At this stage, the tester for the heater is added only
 		// to switch on and off the heater; later on, it will be replaced
@@ -265,6 +307,14 @@ extends		AbstractCVM
 		AbstractComponent.createComponent(
 				HeaterUnitTester.class.getCanonicalName(),
 				new Object[]{false});
+		
+		AbstractComponent.createComponent(
+				KettleUnitTester.class.getCanonicalName(),
+				new Object[]{false});
+		
+		//AbstractComponent.createComponent(
+		//		WashingMachineUnitTester.class.getCanonicalName(),
+		//		new Object[]{false});
 
 		AbstractComponent.createComponent(
 				HEM.class.getCanonicalName(),

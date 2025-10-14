@@ -47,7 +47,7 @@ implements	KettleUserI,
 
 	/** URI of the kettle inbound port used in tests.						*/
 	public static final String		REFLECTION_INBOUND_PORT_URI =
-															"Kettle-RIP-URI";	
+															"KETTLE-RIP-URI";	
 
 	/** URI of the kettle port for user interactions.						*/
 	public static final String		USER_INBOUND_PORT_URI =
@@ -70,7 +70,7 @@ implements	KettleUserI,
 	protected KettleExternalControlJava4InboundPort	kecip;
 
 	/** when true, methods trace their actions.								*/
-	public static boolean			VERBOSE = false;
+	public static boolean			VERBOSE = true;
 	/** when tracing, x coordinate of the window relative position.			*/
 	public static int				X_RELATIVE_POSITION = 0;
 	/** when tracing, y coordinate of the window relative position.			*/
@@ -359,6 +359,7 @@ implements	KettleUserI,
 	@Override
 	public boolean		heating() throws Exception
 	{
+		System.out.println("Is HEATING ?");
 		if (Kettle.VERBOSE) {
 			this.traceMessage("Kettle returns its heating status " + 
 						(this.currentState == KettleState.HEATING) + ".\n");

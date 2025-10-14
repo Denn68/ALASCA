@@ -75,7 +75,7 @@ extends		AbstractComponent
 
 	protected static boolean	implementationInvariants(KettleUnitTester kt)
 	{
-		assert	kt != null : new PreconditionException("ht != null");
+		assert	kt != null : new PreconditionException("kt != null");
 
 		boolean ret = true;
 		ret &= AssertionChecking.checkImplementationInvariant(
@@ -659,24 +659,58 @@ extends		AbstractComponent
 
 		this.statistics.updateStatistics();
 	}
+	
+	protected void testHeating() {
+	    this.logMessage("Feature: starting/stopping heating");
+
+	    // startHeatingWater
+	    this.logMessage("  Scenario: starting heating when on");
+	    this.logMessage("    Given the kettle is on and not heating");
+	    try {
+	        this.kop.switchOn();
+	        if (this.kicop.heating()) this.kicop.stopHeating();
+	        this.logMessage("    When I start heating water");
+	        this.kicop.startHeating();
+	        if (this.kicop.heating()) {
+	            this.logMessage("    Then the kettle is heating");
+	        } else {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but was: not heating");
+	        }
+	    } catch (Throwable e) {
+	        this.statistics.incorrectResult();
+	        this.logMessage("     but the exception " + e + " has been raised");
+	    }
+	    this.statistics.updateStatistics();
+
+	    // stopHeatingWater
+	    this.logMessage("  Scenario: stopping heating when heating");
+	    this.logMessage("    Given the kettle is heating");
+	    try {
+	        if (!this.kicop.heating()) this.kicop.startHeating();
+	        this.logMessage("    When I stop heating");
+	        this.kicop.stopHeating();
+	        if (!this.kicop.heating()) {
+	            this.logMessage("    Then the kettle is no longer heating");
+	        } else {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but was: still heating");
+	        }
+	    } catch (Throwable e) {
+	        this.statistics.incorrectResult();
+	        this.logMessage("     but the exception " + e + " has been raised");
+	    }
+	    this.statistics.updateStatistics();
+	}
 
 	protected void		runAllUnitTests()
 	{
-		this.logMessage("");
-		this.logMessage("Off Test");
 		this.testOff();
-		this.logMessage("");
-		this.logMessage("On-Off Test");
 		this.testSwitchOnSwitchOff();
-		this.logMessage("");
-		this.logMessage("TempTarget Test");
 		this.testTargetTemperature();
-		this.logMessage("");
-		this.logMessage("CurTemp Test");
 		this.testCurrentTemperature();
-		this.logMessage("");
-		this.logMessage("Pow Test");
 		this.testPowerLevel();
+		this.testHeating();
 
 		this.statistics.statisticsReport(this);
 	}

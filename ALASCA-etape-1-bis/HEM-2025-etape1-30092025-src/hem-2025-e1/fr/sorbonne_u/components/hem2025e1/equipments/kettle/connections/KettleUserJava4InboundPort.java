@@ -20,7 +20,7 @@ implements	KettleUserJava4CI
 	{
 		super(KettleUserCI.class, owner);
 		assert	owner instanceof KettleUserI :
-				new PreconditionException("owner instanceof HeaterUserI");
+				new PreconditionException("owner instanceof KettleUserCI");
 	}
 	
 	public				KettleUserJava4InboundPort(String uri, ComponentI owner)
