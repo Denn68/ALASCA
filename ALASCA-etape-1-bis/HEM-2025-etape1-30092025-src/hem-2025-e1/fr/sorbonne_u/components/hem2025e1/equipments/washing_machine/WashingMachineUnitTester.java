@@ -632,7 +632,6 @@ extends		AbstractComponent
 	protected void testHeatingWater() {
 	    this.logMessage("Feature: starting/stopping water heating");
 
-	    // startHeatingWater
 	    this.logMessage("  Scenario: starting heating water when on");
 	    this.logMessage("    Given the washingMachine is on and not heating");
 	    try {
@@ -652,7 +651,6 @@ extends		AbstractComponent
 	    }
 	    this.statistics.updateStatistics();
 
-	    // stopHeatingWater
 	    this.logMessage("  Scenario: stopping heating water when heating");
 	    this.logMessage("    Given the washingMachine is heating water");
 	    try {
@@ -681,11 +679,10 @@ extends		AbstractComponent
 	        this.wmop.switchOn();
 	        if (this.wmicop.heatWater()) this.wmicop.stopHeatingWater();
 
-	        long cycle = 60L; // ms
+	        long cycle = 60L; 
 	        this.logMessage("    When I call startWashing(" + cycle + " ms)");
 	        this.wmop.startWashing(cycle);
 
-	        // Pendant le cycle : isWashing() devrait être true rapidement
 	        Thread.sleep(10L);
 	        boolean washingNow = this.wmop.isWashing();
 	        if (washingNow && this.wmop.on()) {
@@ -695,7 +692,6 @@ extends		AbstractComponent
 	            this.logMessage("     but was: isWashing=" + washingNow + ", on=" + this.wmop.on());
 	        }
 
-	        // Après la durée, l'état revient à ON, isWashing=false
 	        Thread.sleep(cycle + 30L);
 	        if (this.wmop.on() && !this.wmop.isWashing()) {
 	            this.logMessage("    And after completion, isWashing=false and machine is ON");
@@ -709,7 +705,6 @@ extends		AbstractComponent
 	    }
 	    this.statistics.updateStatistics();
 
-	    // Cas négatif: startWashing pendant heating
 	    this.logMessage("  Scenario: startWashing while heating (should fail precondition)");
 	    this.logMessage("    Given the washingMachine is on and heating");
 	    try {
@@ -745,8 +740,8 @@ extends		AbstractComponent
 	        this.wmop.switchOn();
 	        if (!this.wmop.on()) { this.statistics.failedCondition(); this.logMessage("     but was: off"); }
 
-	        long delay = 80L;      // ms
-	        long washing = 50L;    // ms
+	        long delay = 80L;     
+	        long washing = 50L;   
 	        Measure<Double> target = new Measure<>(
 	            WashingMachine.STANDARD_TARGET_TEMPERATURE.getData(),
 	            WashingMachine.TEMPERATURE_UNIT);
@@ -754,7 +749,6 @@ extends		AbstractComponent
 	        this.logMessage("    When I call delayedStart(delay=80 ms, target=STANDARD, washing=50 ms)");
 	        this.wmop.delayedStart(delay, target, washing);
 
-	        // Avant expiration du délai : pas encore washing
 	        Thread.sleep(30L);
 	        if (!this.wmop.isWashing() && this.wmop.on()) {
 	            this.logMessage("    Then before the delay expires, isWashing=false and machine is ON");
@@ -763,7 +757,6 @@ extends		AbstractComponent
 	            this.logMessage("     but was: isWashing=" + this.wmop.isWashing() + ", on=" + this.wmop.on());
 	        }
 
-	        // Après delay + washing : terminé
 	        Thread.sleep(delay + washing + 40L);
 	        if (this.wmop.on() && !this.wmop.isWashing()) {
 	            this.logMessage("    And after completion, isWashing=false and machine is ON");

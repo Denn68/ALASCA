@@ -9,7 +9,7 @@ import fr.sorbonne_u.alasca.physical_data.SignalData;
 public interface		WashingMachineInternalControlCI
 extends		OfferedCI,
 			RequiredCI,
-			WashingMachineControlI
+			WashingMachineInternalControlI
 {
 	@Override
 	public boolean		heatWater() throws Exception;
