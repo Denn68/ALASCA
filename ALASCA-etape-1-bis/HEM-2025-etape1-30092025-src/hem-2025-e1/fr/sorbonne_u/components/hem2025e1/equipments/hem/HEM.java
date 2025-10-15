@@ -1538,10 +1538,10 @@ extends		AbstractComponent
 				this.ac.getStartInstant().plusSeconds(
 							(WashingMachineUnitTester.SWITCH_ON_DELAY +
 									WashingMachineUnitTester.SWITCH_OFF_DELAY)/2);
-		this.traceMessage("HEM schedules the kettle test.\n");
+		this.traceMessage("HEM schedules the washing machine test.\n");
 		long delay = this.ac.nanoDelayUntilInstant(washingMachineTestStart);
 
-		// schedule the switch on kettle in one second
+		// schedule the switch on washing machine in one second
 		this.scheduleTaskOnComponent(
 				new AbstractComponent.AbstractTask() {
 					@Override
