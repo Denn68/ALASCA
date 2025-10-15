@@ -350,12 +350,12 @@ extends		AbstractComponent implements RegistrationI
 						Kettle.EXTERNAL_CONTROL_INBOUND_PORT_URI,
 						KettleConnector.class.getCanonicalName());
 				
-				/*this.washingMachineop = new AdjustableOutboundPort(this);
+				this.washingMachineop = new AdjustableOutboundPort(this);
 				this.washingMachineop.publishPort();
 				this.doPortConnection(
 						this.washingMachineop.getPortURI(),
 						WashingMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-						WashingMachine.class.getCanonicalName());*/
+						WashingMachineConnector.class.getCanonicalName());
 			}
 		} catch (Throwable e) {
 			throw new ComponentStartException(e) ;
@@ -402,7 +402,7 @@ extends		AbstractComponent implements RegistrationI
 				this.scheduleTestHeater();
 				this.scheduleTestFan();
 				this.scheduleTestKettle();
-				//this.scheduleTestWashingMachine();
+				this.scheduleTestWashingMachine();
 			}
 		}
 	}
@@ -421,7 +421,7 @@ extends		AbstractComponent implements RegistrationI
 			this.doPortDisconnection(this.heaterop.getPortURI());
 			this.doPortDisconnection(this.fanop.getPortURI());
 			this.doPortDisconnection(this.kettleop.getPortURI());
-			//this.doPortDisconnection(this.washingMachineop.getPortURI());
+			this.doPortDisconnection(this.washingMachineop.getPortURI());
 		}
 		super.finalise();
 	}
@@ -441,7 +441,7 @@ extends		AbstractComponent implements RegistrationI
 				this.heaterop.unpublishPort();
 				this.fanop.unpublishPort();
 				this.kettleop.unpublishPort();
-				//this.washingMachineop.unpublishPort();
+				this.washingMachineop.unpublishPort();
 			}
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e) ;

@@ -310,9 +310,9 @@ extends		AbstractCVM
 				new Object[]{});
 		
 		// Washing Machine
-		/*AbstractComponent.createComponent(
+		AbstractComponent.createComponent(
 				WashingMachine.class.getCanonicalName(),
-				new Object[]{});*/
+				new Object[]{});
 
 		// At this stage, the tester for the heater is added only
 		// to switch on and off the heater; later on, it will be replaced
@@ -329,9 +329,9 @@ extends		AbstractCVM
 				KettleUnitTester.class.getCanonicalName(),
 				new Object[]{false});
 		
-		/*AbstractComponent.createComponent(
+		AbstractComponent.createComponent(
 				WashingMachineUnitTester.class.getCanonicalName(),
-				new Object[]{false});*/
+				new Object[]{false});
 
 		AbstractComponent.createComponent(
 				HEM.class.getCanonicalName(),
