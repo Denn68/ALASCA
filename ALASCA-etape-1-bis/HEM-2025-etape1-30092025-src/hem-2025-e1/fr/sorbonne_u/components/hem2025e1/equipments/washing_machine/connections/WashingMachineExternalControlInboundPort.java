@@ -99,13 +99,13 @@ implements	WashingMachineExternalControlCI
 	public Measure<Double>	getTargetTemperature() throws Exception
 	{
 		return this.getOwner().handleRequest(
-				o -> ((WashingMachineExternalControlI)o).getTargetTemperature());
+				o -> ((WashingMachineTemperatureI)o).getTargetTemperature());
 	}
 
 	@Override
 	public SignalData<Double>	getCurrentTemperature() throws Exception
 	{
  		return this.getOwner().handleRequest(
- 				o -> ((WashingMachineExternalControlI)o).getCurrentTemperature());
+ 				o -> ((WashingMachineTemperatureI)o).getCurrentTemperature());
 	}
 }
