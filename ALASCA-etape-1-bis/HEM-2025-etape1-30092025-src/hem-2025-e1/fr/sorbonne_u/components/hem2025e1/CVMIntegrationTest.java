@@ -35,6 +35,8 @@ package fr.sorbonne_u.components.hem2025e1;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.exceptions.BCMException;
 import fr.sorbonne_u.components.hem2025e1.equipments.batteries.Batteries;
+import fr.sorbonne_u.components.hem2025e1.equipments.fan.Fan;
+import fr.sorbonne_u.components.hem2025e1.equipments.fan.FanUnitTester;
 import fr.sorbonne_u.components.hem2025e1.equipments.generator.Generator;
 import fr.sorbonne_u.components.hem2025e1.equipments.hairdryer.HairDryer;
 import fr.sorbonne_u.components.hem2025e1.equipments.hairdryer.HairDryerTester;
@@ -211,6 +213,12 @@ extends		AbstractCVM
 		Heater.VERBOSE = true;
 		Heater.X_RELATIVE_POSITION = 1;
 		Heater.Y_RELATIVE_POSITION = 3;
+		FanUnitTester.VERBOSE = true;
+		FanUnitTester.X_RELATIVE_POSITION = 2;
+		FanUnitTester.Y_RELATIVE_POSITION = 3;
+		Fan.VERBOSE = true;
+		Fan.X_RELATIVE_POSITION = 3;
+		Fan.Y_RELATIVE_POSITION = 3;
 		KettleUnitTester.VERBOSE = true;
 		KettleUnitTester.X_RELATIVE_POSITION = 2;
 		KettleUnitTester.Y_RELATIVE_POSITION = 0;
@@ -291,15 +299,20 @@ extends		AbstractCVM
 				Heater.class.getCanonicalName(),
 				new Object[]{});
 		
+		// Fan
+		AbstractComponent.createComponent(
+				Fan.class.getCanonicalName(),
+				new Object[]{});
+		
 		// Kettle
 		AbstractComponent.createComponent(
 				Kettle.class.getCanonicalName(),
 				new Object[]{});
 		
 		// Washing Machine
-		//AbstractComponent.createComponent(
-		//		WashingMachine.class.getCanonicalName(),
-		//		new Object[]{});
+		/*AbstractComponent.createComponent(
+				WashingMachine.class.getCanonicalName(),
+				new Object[]{});*/
 
 		// At this stage, the tester for the heater is added only
 		// to switch on and off the heater; later on, it will be replaced
@@ -309,12 +322,16 @@ extends		AbstractCVM
 				new Object[]{false});
 		
 		AbstractComponent.createComponent(
+				FanUnitTester.class.getCanonicalName(),
+				new Object[]{false});
+		
+		AbstractComponent.createComponent(
 				KettleUnitTester.class.getCanonicalName(),
 				new Object[]{false});
 		
-		//AbstractComponent.createComponent(
-		//		WashingMachineUnitTester.class.getCanonicalName(),
-		//		new Object[]{false});
+		/*AbstractComponent.createComponent(
+				WashingMachineUnitTester.class.getCanonicalName(),
+				new Object[]{false});*/
 
 		AbstractComponent.createComponent(
 				HEM.class.getCanonicalName(),

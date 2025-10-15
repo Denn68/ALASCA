@@ -48,6 +48,8 @@ import fr.sorbonne_u.components.hem2025e1.equipments.batteries.BatteriesCI;
 import fr.sorbonne_u.components.hem2025e1.equipments.batteries.BatteriesUnitTester;
 import fr.sorbonne_u.components.hem2025e1.equipments.batteries.connections.BatteriesConnector;
 import fr.sorbonne_u.components.hem2025e1.equipments.batteries.connections.BatteriesOutboundPort;
+import fr.sorbonne_u.components.hem2025e1.equipments.fan.Fan;
+import fr.sorbonne_u.components.hem2025e1.equipments.fan.FanUnitTester;
 import fr.sorbonne_u.components.hem2025e1.equipments.generator.Generator;
 import fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorCI;
 import fr.sorbonne_u.components.hem2025e1.equipments.generator.GeneratorUnitTester;
@@ -162,6 +164,7 @@ extends		AbstractComponent implements RegistrationI
 	
 	protected AdjustableOutboundPort		kettleop;
 	
+	protected AdjustableOutboundPort		fanop;
 	
 	protected AdjustableOutboundPort		washingMachineop;
 
@@ -333,6 +336,13 @@ extends		AbstractComponent implements RegistrationI
 						Heater.EXTERNAL_CONTROL_INBOUND_PORT_URI,
 						HeaterConnector.class.getCanonicalName());
 				
+				this.fanop = new AdjustableOutboundPort(this);
+				this.fanop.publishPort();
+				this.doPortConnection(
+						this.fanop.getPortURI(),
+						Fan.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+						FanConnector.class.getCanonicalName());
+				
 				this.kettleop = new AdjustableOutboundPort(this);
 				this.kettleop.publishPort();
 				this.doPortConnection(
@@ -340,12 +350,12 @@ extends		AbstractComponent implements RegistrationI
 						Kettle.EXTERNAL_CONTROL_INBOUND_PORT_URI,
 						KettleConnector.class.getCanonicalName());
 				
-				//this.washingMachineop = new AdjustableOutboundPort(this);
-				//this.washingMachineop.publishPort();
-				//this.doPortConnection(
-				//		this.washingMachineop.getPortURI(),
-				//		WashingMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-				//		WashingMachine.class.getCanonicalName());
+				/*this.washingMachineop = new AdjustableOutboundPort(this);
+				this.washingMachineop.publishPort();
+				this.doPortConnection(
+						this.washingMachineop.getPortURI(),
+						WashingMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+						WashingMachine.class.getCanonicalName());*/
 			}
 		} catch (Throwable e) {
 			throw new ComponentStartException(e) ;
@@ -390,6 +400,7 @@ extends		AbstractComponent implements RegistrationI
 			this.logMessage("Generator tests end.");
 			if (this.isPreFirstStep) {
 				this.scheduleTestHeater();
+				this.scheduleTestFan();
 				this.scheduleTestKettle();
 				//this.scheduleTestWashingMachine();
 			}
@@ -408,6 +419,7 @@ extends		AbstractComponent implements RegistrationI
 		this.doPortDisconnection(this.generatorop.getPortURI());
 		if (this.isPreFirstStep) {
 			this.doPortDisconnection(this.heaterop.getPortURI());
+			this.doPortDisconnection(this.fanop.getPortURI());
 			this.doPortDisconnection(this.kettleop.getPortURI());
 			//this.doPortDisconnection(this.washingMachineop.getPortURI());
 		}
@@ -427,6 +439,7 @@ extends		AbstractComponent implements RegistrationI
 			this.generatorop.unpublishPort();
 			if (this.isPreFirstStep) {
 				this.heaterop.unpublishPort();
+				this.fanop.unpublishPort();
 				this.kettleop.unpublishPort();
 				//this.washingMachineop.unpublishPort();
 			}
@@ -899,6 +912,297 @@ extends		AbstractComponent implements RegistrationI
 		statistics.statisticsReport(this);
 
 		this.logMessage("Heater tests end.");
+	}
+	
+	protected void		testFan() throws Exception
+	{
+		this.logMessage("Fan tests start.");
+		TestsStatistics statistics = new TestsStatistics();
+		try {
+			this.logMessage("Feature: adjustable appliance mode management");
+			this.logMessage("  Scenario: getting the max mode index");
+			this.logMessage("    Given the fan has just been turned on");
+			this.logMessage("    When I call maxMode()");
+			this.logMessage("    Then the result is its max mode index");
+			final int maxMode = fanop.maxMode();
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: getting the current mode index");
+			this.logMessage("    Given the fan has just been turned on");
+			this.logMessage("    When I call currentMode()");
+			this.logMessage("    Then the current mode is its max mode");
+			int result = fanop.currentMode();
+			if (result != maxMode) {
+				this.logMessage("      but was: " + result);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: going down one mode index");
+			this.logMessage("    Given the fan is turned on");
+			this.logMessage("    And the current mode index is the max mode index");
+			result = fanop.currentMode();
+			if (result != maxMode) {
+				this.logMessage("      but was: " + result);
+				statistics.failedCondition();
+			}
+			this.logMessage("    When I call downMode()");
+			this.logMessage("    Then the method returns true");
+			boolean bResult = fanop.downMode();
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the current mode is its max mode minus one");
+			result = fanop.currentMode();
+			if (result != maxMode - 1) {
+				this.logMessage("      but was: " + result);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: going up one mode index");
+			this.logMessage("    Given the fan is turned on");
+			this.logMessage("    And the current mode index is the max mode index minus one");
+			result = fanop.currentMode();
+			if (result != maxMode - 1) {
+				this.logMessage("      but was: " + result);
+				statistics.failedCondition();
+			}
+			this.logMessage("    When I call upMode()");
+			this.logMessage("    Then the method returns true");
+			bResult = fanop.upMode();
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the current mode is its max mode");
+			result = fanop.currentMode();
+			if (result != maxMode) {
+				this.logMessage("      but was: " + result);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: setting the mode index");
+			this.logMessage("    Given the fan is turned on");
+			int index = 1;
+			this.logMessage("    And the mode index 1 is legitimate");
+			if (index > maxMode) {
+				this.logMessage("      but was not!");
+				statistics.failedCondition();
+			}
+			this.logMessage("    When I call setMode(1)");
+			this.logMessage("    Then the method returns true");
+			bResult = fanop.setMode(1);
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the current mode is 1");
+			result = fanop.currentMode();
+			if (result != 1) {
+				this.logMessage("      but was: " + result);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("Feature: Getting the power consumption given a mode");
+			this.logMessage("  Scenario: getting the power consumption of the maximum mode");
+			this.logMessage("    Given the fan is turned on");
+			this.logMessage("    When I get the power consumption of the maximum mode");
+			double dResult = fanop.getModeConsumption(maxMode);
+			this.logMessage("    Then the result is the maximum power consumption of the fan");
+
+			statistics.updateStatistics();
+
+			this.logMessage("Feature: suspending and resuming");
+			this.logMessage("  Scenario: checking if suspended when not");
+			this.logMessage("    Given the fan is turned on");
+			this.logMessage("    And it has not been suspended yet");
+			this.logMessage("    When I check if suspended");
+			bResult = fanop.suspended();
+			this.logMessage("    Then it is not");
+			if (bResult) {
+				this.logMessage("      but it was!");
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: suspending");
+			this.logMessage("    Given the fan is turned on");
+			this.logMessage("    And it is not suspended");
+			bResult = fanop.suspended();
+			if (bResult) {
+				this.logMessage("      but it was!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call suspend()");
+			bResult = fanop.suspend();
+			this.logMessage("    Then the method returns true");
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the fan is suspended");
+			bResult = fanop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: going down one mode index when suspended");
+			this.logMessage("    Given the fan is turned on");
+			this.logMessage("    And the fan is suspended");
+			bResult = fanop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call downMode()");
+			this.logMessage("    Then a precondition exception is thrown");
+			boolean old = BCMException.VERBOSE;
+			try {
+				BCMException.VERBOSE = false;
+				fanop.downMode();
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			} catch (Throwable e) {
+			} finally {
+				BCMException.VERBOSE = old;
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: going up one mode index when suspended");
+			this.logMessage("    Given the fan is turned on");
+			this.logMessage("    And the fan is suspended");
+			bResult = fanop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call upMode()");
+			this.logMessage("    Then a precondition exception is thrown");
+			old = BCMException.VERBOSE;
+			try {
+				BCMException.VERBOSE = false;
+				fanop.upMode();
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			} catch (Throwable e) {
+			} finally {
+				BCMException.VERBOSE = old;
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: setting the mode when suspended");
+			this.logMessage("    Given the fan is turned on");
+			this.logMessage("    And the fan is suspended");
+			bResult = fanop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    And the mode index 1 is legitimate");
+			if (index > maxMode) {
+				this.logMessage("      but was not!");
+				statistics.failedCondition();
+			}
+			this.logMessage("    When I call setMode(1)");
+			this.logMessage("    Then a precondition exception is thrown");
+			old = BCMException.VERBOSE;
+			try {
+				BCMException.VERBOSE = false;
+				fanop.upMode();
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			} catch (Throwable e) {
+			} finally {
+				BCMException.VERBOSE = old;
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: getting the current mode when suspended");
+			this.logMessage("    Given the fan is turned on");
+			this.logMessage("    And the fan is suspended");
+			bResult = fanop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I get the current mode");
+			this.logMessage("    Then a precondition exception is thrown");
+			old = BCMException.VERBOSE;
+			try {
+				BCMException.VERBOSE = false;
+				fanop.currentMode();
+				this.logMessage("      but it was not!");
+				statistics.incorrectResult();
+			} catch (Throwable e) {
+			} finally {
+				BCMException.VERBOSE = old;
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: checking the emergency");
+			this.logMessage("    Given the fan is turned on");
+			this.logMessage("    And it has just been suspended");
+			bResult = fanop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call emergency()");
+			dResult = fanop.emergency();
+			this.logMessage("    Then the emergency is between 0.0 and 1.0");
+			if (dResult < 0.0 || dResult > 1.0) {
+				this.logMessage("      but was: " + dResult);
+				statistics.incorrectResult();
+			}
+
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: resuming");
+			this.logMessage("    Given the fan is turned on");
+			this.logMessage("    And it is suspended");
+			bResult = fanop.suspended();
+			if (!bResult) {
+				this.logMessage("      but it was not!");
+				statistics.failedCondition();;
+			}
+			this.logMessage("    When I call resume()");
+			bResult = fanop.resume();
+			this.logMessage("    Then the method returns true");
+			if (!bResult) {
+				this.logMessage("      but was: " + bResult);
+				statistics.incorrectResult();
+			}
+			this.logMessage("    And the fan is not suspended");
+			bResult = fanop.suspended();
+			if (bResult) {
+				this.logMessage("      but it was!");
+				statistics.incorrectResult();
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+
+		statistics.updateStatistics();
+		statistics.statisticsReport(this);
+
+		this.logMessage("Fan tests end.");
 	}
 	
 	protected void		testKettle() throws Exception
@@ -1519,6 +1823,30 @@ extends		AbstractComponent implements RegistrationI
 				}, delay, TimeUnit.NANOSECONDS);
 	}
 	
+	protected void		scheduleTestFan()
+	{
+		// Test for the fan
+		Instant fanTestStart =
+				this.ac.getStartInstant().plusSeconds(
+							(FanUnitTester.SWITCH_ON_DELAY +
+											KettleUnitTester.SWITCH_OFF_DELAY)/2);
+		this.traceMessage("HEM schedules the kettle test.\n");
+		long delay = this.ac.nanoDelayUntilInstant(fanTestStart);
+
+		// schedule the switch on kettle in one second
+		this.scheduleTaskOnComponent(
+				new AbstractComponent.AbstractTask() {
+					@Override
+					public void run() {
+						try {
+							testFan();
+						} catch (Throwable e) {
+							throw new BCMRuntimeException(e) ;
+						}
+					}
+				}, delay, TimeUnit.NANOSECONDS);
+	}
+	
 	protected void		scheduleTestKettle()
 	{
 		// Test for the kettle
@@ -1585,7 +1913,8 @@ extends		AbstractComponent implements RegistrationI
 
 	@Override
 	public boolean register(String uid, String controlPortURI, String xmlControlAdapter) throws Exception {
-	    assert uid != null && !uid.isEmpty() : new PreconditionException("uid != null && !uid.isEmpty()");
+		return false;
+	    /*assert uid != null && !uid.isEmpty() : new PreconditionException("uid != null && !uid.isEmpty()");
 	    assert controlPortURI != null && !controlPortURI.isEmpty() :
 	            new PreconditionException("controlPortURI != null && !controlPortURI.isEmpty()");
 	    assert xmlControlAdapter == null || !xmlControlAdapter.isEmpty() :
@@ -1628,7 +1957,7 @@ extends		AbstractComponent implements RegistrationI
 	    	this.traceMessage("Failed to register equipment " + uid + ": " + t.getMessage() + "\n");
 	        t.printStackTrace();
 	        return false;
-	    }
+	    }*/
 	}
 	
 	private String extractConnectorClassName(File xmlFile) throws Exception {
