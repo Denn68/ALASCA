@@ -43,10 +43,10 @@ extends		WashingMachineTemperatureI
 		ret &= AssertionChecking.checkInvariant(
 				VOLTAGE != null &&
 					VOLTAGE.getMeasurementUnit().equals(TENSION_UNIT) &&
-					VOLTAGE.getData() == 220.0,
+					VOLTAGE.getData() == 230.0,
 					WashingMachineExternalControlI.class, h,
 				"VOLTAGE != null && VOLTAGE.getMeasurementUnit().equals("
-				+ "TENSION_UNIT) && VOLTAGE.getData() == 220.0");
+				+ "TENSION_UNIT) && VOLTAGE.getData() == 230.0");
 		return ret;
 	}
 	
