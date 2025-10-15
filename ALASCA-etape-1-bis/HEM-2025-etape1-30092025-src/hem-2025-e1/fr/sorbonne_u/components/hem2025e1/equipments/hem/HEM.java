@@ -39,6 +39,8 @@ import fr.sorbonne_u.components.exceptions.BCMRuntimeException;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.components.hem2025.bases.AdjustableCI;
+import fr.sorbonne_u.components.hem2025.bases.RegistrationCI;
+import fr.sorbonne_u.components.hem2025.bases.RegistrationI;
 import fr.sorbonne_u.components.hem2025.tests_utils.TestsStatistics;
 import fr.sorbonne_u.components.hem2025e1.CVMIntegrationTest;
 import fr.sorbonne_u.components.hem2025e1.equipments.batteries.Batteries;
@@ -76,8 +78,17 @@ import fr.sorbonne_u.utils.aclocks.ClocksServer;
 import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
 import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
 import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
+
+import java.io.File;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
 
 // -----------------------------------------------------------------------------
 /**
@@ -116,9 +127,10 @@ import java.util.concurrent.TimeUnit;
 								ElectricMeterCI.class,
 								BatteriesCI.class,
 								SolarPanelCI.class,
-								GeneratorCI.class})
+								GeneratorCI.class,
+								RegistrationCI.class})
 public class			HEM
-extends		AbstractComponent
+extends		AbstractComponent implements RegistrationI
 {
 	// -------------------------------------------------------------------------
 	// Constants and variables
@@ -1554,5 +1566,82 @@ extends		AbstractComponent
 					}
 				}, delay, TimeUnit.NANOSECONDS);
 	}
+	
+	private final Map<String, AdjustableOutboundPort> registeredEquipments = new HashMap<>();
+
+	@Override
+	public boolean registered(String uid) {
+	    return registeredEquipments.containsKey(uid);
+	}
+
+	@Override
+	public void unregister(String uid) throws Exception {
+	    if (registeredEquipments.containsKey(uid)) {
+	        AdjustableOutboundPort port = registeredEquipments.remove(uid);
+	        this.doPortDisconnection(port.getPortURI());
+	        port.unpublishPort();
+	    }
+	}
+
+	@Override
+	public boolean register(String uid, String controlPortURI, String xmlControlAdapter) throws Exception {
+	    assert uid != null && !uid.isEmpty() : new PreconditionException("uid != null && !uid.isEmpty()");
+	    assert controlPortURI != null && !controlPortURI.isEmpty() :
+	            new PreconditionException("controlPortURI != null && !controlPortURI.isEmpty()");
+	    assert xmlControlAdapter == null || !xmlControlAdapter.isEmpty() :
+	            new PreconditionException("xmlControlAdapter == null || !xmlControlAdapter.isEmpty()");
+	    assert !registered(uid) : new PreconditionException("!registered(uid)");
+
+	    try {
+	        if (xmlControlAdapter == null) {
+	            this.traceMessage("Registration of " + uid + " with direct interface.\n");
+	            AdjustableOutboundPort aop = new AdjustableOutboundPort(this);
+	            aop.publishPort();
+	            this.doPortConnection(aop.getPortURI(), controlPortURI,
+	                    "fr.sorbonne_u.components.hem2025.bases.AdjustableConnector");
+	            return true;
+	        }
+
+	        this.traceMessage("Generating connector dynamically for " + uid + "\n");
+
+	        File tmpXml = File.createTempFile("control-adapter-", ".xml");
+	        java.nio.file.Files.write(tmpXml.toPath(), xmlControlAdapter.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+
+	        fr.sorbonne_u.generator.ControlAdapterGenerator.main(new String[]{tmpXml.getAbsolutePath()});
+
+	        String connectorClassName = extractConnectorClassName(tmpXml);
+
+	        Class<?> connectorClass = Class.forName("fr.sorbonne_u.generated." + connectorClassName);
+
+	        AdjustableOutboundPort dynamicPort = new AdjustableOutboundPort(this);
+	        dynamicPort.publishPort();
+
+	        this.doPortConnection(dynamicPort.getPortURI(), controlPortURI, connectorClass.getCanonicalName());
+
+	        this.traceMessage("Equipment " + uid + " registered with dynamic connector: "
+	                + connectorClassName + "\n");
+	        registeredEquipments.put(uid, dynamicPort);
+	        return true;
+
+	    } catch (Throwable t) {
+	    	this.traceMessage("Failed to register equipment " + uid + ": " + t.getMessage() + "\n");
+	        t.printStackTrace();
+	        return false;
+	    }
+	}
+	
+	private String extractConnectorClassName(File xmlFile) throws Exception {
+	    // Lecture rapide du tag "offered" pour déduire le nom du connecteur
+	    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+	    DocumentBuilder db = dbf.newDocumentBuilder();
+	    Document doc = db.parse(xmlFile);
+	    String offered = doc.getDocumentElement().getAttribute("offered");
+	    String[] parts = offered.split("\\.");
+	    String last = parts[parts.length - 1]; // ex: HeaterExternalControlJava4CI
+	    return last.replace("ExternalControlJava4CI", "Connector");
+	}
+
+
 }
 // -----------------------------------------------------------------------------

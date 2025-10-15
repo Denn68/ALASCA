@@ -271,6 +271,8 @@ implements	KettleUserI,
 		this.currentState = KettleState.ON;
 
 		assert	 this.on() : new PostconditionException("on()");
+		
+		
 	}
 
 	@Override
