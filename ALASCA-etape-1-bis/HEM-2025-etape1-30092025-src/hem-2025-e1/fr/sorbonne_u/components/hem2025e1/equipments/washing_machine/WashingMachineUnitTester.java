@@ -766,6 +766,14 @@ extends		AbstractComponent
 	            this.statistics.incorrectResult();
 	            this.logMessage("     but was: isWashing=" + this.wmop.isWashing() + ", on=" + this.wmop.on());
 	        }
+	        
+	        Thread.sleep(80L);
+	        if (this.wmop.isWashing()) {
+	            this.logMessage("    Then after the delay expires, isWashing=true");
+	        } else {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but was: isWashing=" + this.wmop.isWashing());
+	        }
 
 	        Thread.sleep(delay + washing + 40L);
 	        if (this.wmop.on() && !this.wmop.isWashing()) {
