@@ -24,7 +24,7 @@ extends		OfferedCI,
 	public boolean 		isWashing() throws Exception;
 	
 	@Override
-	public void 		startWashing(long washingTimeMS) throws Exception;
+	public void 		startWashing(long washingTimeMS, Measure<Double> target) throws Exception;
 	
 	@Override
 	public void 		delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception;

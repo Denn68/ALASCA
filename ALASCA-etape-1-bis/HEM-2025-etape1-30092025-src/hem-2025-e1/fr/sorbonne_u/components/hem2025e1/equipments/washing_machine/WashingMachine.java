@@ -444,27 +444,37 @@ implements	WashingMachineUserI,
 	}
 
 	@Override
-	public void startWashing(long washingTimeMS) throws Exception {
+	public void startWashing(long washingTimeMS, Measure<Double> target) throws Exception {
 		if (WashingMachine.VERBOSE) {
 			this.traceMessage("Washing Machine starts washing.\n");
 		}
-		assert	this.on() : new PreconditionException("on()");
-		assert	!this.heatWater() : new PreconditionException("!heatWater()");
+		assert this.on() : new PreconditionException("on()");
+		assert this.currentState == WashingMachineState.ON :
+			new PreconditionException("currentState == ON");
+		assert !this.heatWater() : new PreconditionException("!heatWater()");
+		assert !this.isWashing() : new PreconditionException("!isWashing()");
+
+		this.setTargetTemperature(target);
+
+		double current = this.getCurrentTemperature().getMeasure().getData();
+		if (current < target.getData()) {
+			this.startHeatingWater();
+			// ici on simule que la température est atteinte immédiatement
+			this.stopHeatingWater();
+		}
 
 		this.currentState = WashingMachineState.WASHING;
 		
 		ScheduledExecutorService sch = Executors.newSingleThreadScheduledExecutor();
-	    sch.schedule(() -> {
-	    	try {
-	    		this.currentState = WashingMachineState.ON;
+		sch.schedule(() -> {
+			try {
+				this.currentState = WashingMachineState.ON;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-	        sch.shutdown();
-	    }, washingTimeMS, TimeUnit.MILLISECONDS);
-		
+			sch.shutdown();
+		}, washingTimeMS, TimeUnit.MILLISECONDS);
 	}
-	
 	@Override
 	public void delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception {
 		ScheduledExecutorService sch = Executors.newSingleThreadScheduledExecutor();
@@ -473,7 +483,7 @@ implements	WashingMachineUserI,
 		
 	    sch.schedule(() -> {
 	    	try {
-				startWashing(washingTimeMS);
+				startWashing(washingTimeMS, target);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

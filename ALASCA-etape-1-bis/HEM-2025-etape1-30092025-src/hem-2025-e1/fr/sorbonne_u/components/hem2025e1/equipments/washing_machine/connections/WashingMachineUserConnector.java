@@ -104,8 +104,8 @@ implements	WashingMachineUserCI
 	}
 
 	@Override
-	public void startWashing(long washingTimeMS) throws Exception {
-		((WashingMachineUserCI)this.offering).startWashing(washingTimeMS);
+	public void startWashing(long washingTimeMS, Measure<Double> target) throws Exception {
+		((WashingMachineUserCI)this.offering).startWashing(washingTimeMS, target);
 	}
 
 	@Override

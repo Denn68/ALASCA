@@ -87,8 +87,8 @@ implements	WashingMachineUserCI
 	}
 
 	@Override
-	public void startWashing(long washingTimeMS) throws Exception {
-		((WashingMachineUserCI)this.getConnector()).startWashing(washingTimeMS);
+	public void startWashing(long washingTimeMS, Measure<Double> target) throws Exception {
+		((WashingMachineUserCI)this.getConnector()).startWashing(washingTimeMS, target);
 	}
 
 	@Override

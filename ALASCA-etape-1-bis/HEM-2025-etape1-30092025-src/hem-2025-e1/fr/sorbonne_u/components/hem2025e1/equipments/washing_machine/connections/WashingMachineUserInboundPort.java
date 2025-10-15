@@ -141,10 +141,10 @@ implements	WashingMachineUserCI
 	}
 
 	@Override
-	public void startWashing(long washingTimeMS) throws Exception {
+	public void startWashing(long washingTimeMS, Measure<Double> target) throws Exception {
 		this.getOwner().handleRequest(
 				o -> {	((WashingMachineUserI)o).
-					startWashing(washingTimeMS);
+					startWashing(washingTimeMS, target);
 						return null;
 				});
 	}

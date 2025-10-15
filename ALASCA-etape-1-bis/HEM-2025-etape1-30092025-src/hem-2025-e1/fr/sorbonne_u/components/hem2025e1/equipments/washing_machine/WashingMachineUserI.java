@@ -16,7 +16,7 @@ extends		WashingMachineExternalControlI
 	
 	public boolean 		isWashing() throws Exception;
 	
-	public void 		startWashing(long washingTimeMS) throws Exception;
+	public void 		startWashing(long washingTimeMS, Measure<Double> target) throws Exception;
 	
 	public void 		delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception;
 	

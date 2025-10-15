@@ -635,7 +635,6 @@ extends		AbstractComponent
 	    this.logMessage("  Scenario: starting heating water when on");
 	    this.logMessage("    Given the washingMachine is on and not heating");
 	    try {
-	        this.wmop.switchOn();
 	        if (this.wmicop.heatWater()) this.wmicop.stopHeatingWater();
 	        this.logMessage("    When I start heating water");
 	        this.wmicop.startHeatingWater();
@@ -676,12 +675,16 @@ extends		AbstractComponent
 	    this.logMessage("  Scenario: startWashing transitions and completion");
 	    this.logMessage("    Given the washingMachine is on and not heating");
 	    try {
-	        this.wmop.switchOn();
 	        if (this.wmicop.heatWater()) this.wmicop.stopHeatingWater();
 
-	        long cycle = 60L; 
-	        this.logMessage("    When I call startWashing(" + cycle + " ms)");
-	        this.wmop.startWashing(cycle);
+	        long cycle = 60L;
+	        Measure<Double> target = new Measure<>(
+	            WashingMachine.STANDARD_TARGET_TEMPERATURE.getData(),
+	            WashingMachine.TEMPERATURE_UNIT
+	        );
+
+	        this.logMessage("    When I call startWashing(" + cycle + " ms, target=STANDARD)");
+	        this.wmop.startWashing(cycle, target);
 
 	        Thread.sleep(10L);
 	        boolean washingNow = this.wmop.isWashing();
@@ -710,10 +713,16 @@ extends		AbstractComponent
 	    try {
 	        if (!this.wmop.on()) this.wmop.switchOn();
 	        this.wmicop.startHeatingWater();
+
+	        Measure<Double> target = new Measure<>(
+	            WashingMachine.STANDARD_TARGET_TEMPERATURE.getData(),
+	            WashingMachine.TEMPERATURE_UNIT
+	        );
+
 	        boolean failed = false;
 	        try {
-	            this.logMessage("    When I call startWashing(10 ms) while heating");
-	            this.wmop.startWashing(10L);
+	            this.logMessage("    When I call startWashing(10 ms, target=STANDARD) while heating");
+	            this.wmop.startWashing(10L, target);
 	        } catch (Throwable pe) {
 	            failed = true;
 	            this.logMessage("    Then a precondition failure/exception is raised: " + pe);
@@ -730,6 +739,7 @@ extends		AbstractComponent
 	    }
 	    this.statistics.updateStatistics();
 	}
+
 	
 	protected void testDelayedStart() {
 	    this.logMessage("Feature: delayedStart schedules a future washing cycle");
@@ -737,14 +747,14 @@ extends		AbstractComponent
 	    this.logMessage("  Scenario: delayedStart waits then runs a short cycle");
 	    this.logMessage("    Given the washingMachine is initialised and on");
 	    try {
-	        this.wmop.switchOn();
 	        if (!this.wmop.on()) { this.statistics.failedCondition(); this.logMessage("     but was: off"); }
 
-	        long delay = 80L;     
-	        long washing = 50L;   
+	        long delay = 80L;
+	        long washing = 50L;
 	        Measure<Double> target = new Measure<>(
 	            WashingMachine.STANDARD_TARGET_TEMPERATURE.getData(),
-	            WashingMachine.TEMPERATURE_UNIT);
+	            WashingMachine.TEMPERATURE_UNIT
+	        );
 
 	        this.logMessage("    When I call delayedStart(delay=80 ms, target=STANDARD, washing=50 ms)");
 	        this.wmop.delayedStart(delay, target, washing);
@@ -770,6 +780,7 @@ extends		AbstractComponent
 	    }
 	    this.statistics.updateStatistics();
 	}
+
 
 
 
