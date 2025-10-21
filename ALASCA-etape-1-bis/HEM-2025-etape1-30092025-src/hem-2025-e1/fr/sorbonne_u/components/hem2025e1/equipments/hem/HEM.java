@@ -364,10 +364,27 @@ extends		AbstractComponent implements RegistrationI
 				
 				this.kettleop = new AdjustableOutboundPort(this);
 				this.kettleop.publishPort();
+				
+				Class<?> dynKettleConnector =
+					    fr.sorbonne_u.generator.ControlAdapterGenerator.generateAndLoad(
+				    		java.nio.file.Paths.get("ALASCA-etape-1-bis/HEM-2025-etape1-30092025-src/hem-adapter/kettleci-descriptor.xml").toAbsolutePath().toString(),   // ton descripteur
+				            java.nio.file.Paths.get("ALASCA-etape-1-bis/HEM-2025-etape1-30092025-src/hem-adapter/control-adapter.rnc").toAbsolutePath().toString(),       // ton RNC
+				            "fr.sorbonne_u.components.connectors.AbstractConnector",
+					        "fr.sorbonne_u.components.hem2025e1.generated.KettleConnectorDynamic",
+					        this.getClass().getClassLoader()
+					    );
+
+				// puis utiliser dynHeaterConnector.getCanonicalName() pour la connexion
 				this.doPortConnection(
+				    this.kettleop.getPortURI(),
+				    fr.sorbonne_u.components.hem2025e1.equipments.kettle.Kettle.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+				    dynKettleConnector.getCanonicalName()
+				);
+				
+				/*this.doPortConnection(
 						this.kettleop.getPortURI(),
 						Kettle.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-						KettleConnector.class.getCanonicalName());
+						KettleConnector.class.getCanonicalName());*/
 				
 				this.washingMachineop = new AdjustableOutboundPort(this);
 				this.washingMachineop.publishPort();
