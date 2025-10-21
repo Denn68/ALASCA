@@ -304,12 +304,12 @@ extends		AbstractCVM
 				Fan.class.getCanonicalName(),
 				new Object[]{});
 		
-		// Kettle
+		// Kettle modulable avec la piussance
 		AbstractComponent.createComponent(
 				Kettle.class.getCanonicalName(),
 				new Object[]{});
 		
-		// Washing Machine
+		// Washing Machine suspendre (si c'est un décalé retenir le temps) et pouvoir arreter pendant le lavage
 		AbstractComponent.createComponent(
 				WashingMachine.class.getCanonicalName(),
 				new Object[]{});

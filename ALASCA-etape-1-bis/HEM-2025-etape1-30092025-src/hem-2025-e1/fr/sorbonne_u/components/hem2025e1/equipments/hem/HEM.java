@@ -331,10 +331,29 @@ extends		AbstractComponent implements RegistrationI
 				// call the heater.
 				this.heaterop = new AdjustableOutboundPort(this);
 				this.heaterop.publishPort();
+
+				Class<?> dynHeaterConnector =
+					    fr.sorbonne_u.generator.ControlAdapterGenerator.generateAndLoad(
+				    		java.nio.file.Paths.get("ALASCA-etape-1-bis/HEM-2025-etape1-30092025-src/hem-adapter/heaterci-descriptor.xml").toAbsolutePath().toString(),   // ton descripteur
+				            java.nio.file.Paths.get("ALASCA-etape-1-bis/HEM-2025-etape1-30092025-src/hem-adapter/control-adapter.rnc").toAbsolutePath().toString(),       // ton RNC
+				            "fr.sorbonne_u.components.connectors.AbstractConnector",
+					        "fr.sorbonne_u.components.hem2025e1.generated.HeaterConnectorDynamic",
+					        this.getClass().getClassLoader()
+					    );
+
+				// puis utiliser dynHeaterConnector.getCanonicalName() pour la connexion
+				this.doPortConnection(
+				    this.heaterop.getPortURI(),
+				    fr.sorbonne_u.components.hem2025e1.equipments.heater.Heater.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+				    dynHeaterConnector.getCanonicalName()
+				);
+
+				/*this.heaterop = new AdjustableOutboundPort(this);
+				this.heaterop.publishPort();
 				this.doPortConnection(
 						this.heaterop.getPortURI(),
 						Heater.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-						HeaterConnector.class.getCanonicalName());
+						HeaterConnector.class.getCanonicalName());*/
 				
 				this.fanop = new AdjustableOutboundPort(this);
 				this.fanop.publishPort();
