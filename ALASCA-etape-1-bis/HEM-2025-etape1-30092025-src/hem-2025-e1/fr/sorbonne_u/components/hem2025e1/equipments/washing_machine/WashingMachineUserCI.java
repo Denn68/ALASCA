@@ -28,6 +28,12 @@ extends		OfferedCI,
 	
 	@Override
 	public void 		delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception;
+	
+	@Override
+	public void 		suspendCycle() throws Exception;
+	
+	@Override
+	public void 		resumeCycle() throws Exception;
 
 	@Override
 	public void			setTargetTemperature(Measure<Double> target)

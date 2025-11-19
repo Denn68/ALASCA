@@ -148,6 +148,24 @@ implements	WashingMachineUserCI
 						return null;
 				});
 	}
+	
+	@Override
+	public void suspendCycle() throws Exception {
+		this.getOwner().handleRequest(
+				o -> {	((WashingMachineUserI)o).
+					suspendCycle();
+						return null;
+				});
+	}
+	
+	@Override
+	public void resumeCycle() throws Exception {
+		this.getOwner().handleRequest(
+				o -> {	((WashingMachineUserI)o).
+					resumeCycle();
+						return null;
+				});
+	}
 
 	@Override
 	public boolean isWashing() throws Exception {

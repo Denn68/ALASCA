@@ -304,7 +304,6 @@ extends		AbstractCVM
 				Fan.class.getCanonicalName(),
 				new Object[]{});
 		
-		// Kettle modulable avec la piussance
 		AbstractComponent.createComponent(
 				Kettle.class.getCanonicalName(),
 				new Object[]{});

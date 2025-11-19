@@ -107,6 +107,16 @@ implements	WashingMachineUserCI
 	public void startWashing(long washingTimeMS, Measure<Double> target) throws Exception {
 		((WashingMachineUserCI)this.offering).startWashing(washingTimeMS, target);
 	}
+	
+	@Override
+	public void suspendCycle() throws Exception {
+		((WashingMachineUserCI)this.offering).suspendCycle();
+	}
+	
+	@Override
+	public void resumeCycle() throws Exception {
+		((WashingMachineUserCI)this.offering).resumeCycle();
+	}
 
 	@Override
 	public boolean isWashing() throws Exception {

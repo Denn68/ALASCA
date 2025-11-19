@@ -20,4 +20,7 @@ extends		WashingMachineExternalControlI
 	
 	public void 		delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception;
 	
+	public void 		suspendCycle() throws Exception;
+	
+	public void 		resumeCycle() throws Exception;
 }

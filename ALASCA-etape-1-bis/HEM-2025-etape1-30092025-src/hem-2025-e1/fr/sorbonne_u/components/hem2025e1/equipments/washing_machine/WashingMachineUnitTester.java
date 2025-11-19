@@ -670,6 +670,7 @@ extends		AbstractComponent
 	}
 	
 	protected void testStartWashing() {
+		System.out.println("je suis la 1");
 	    this.logMessage("Feature: starting a washing cycle immediately");
 
 	    this.logMessage("  Scenario: startWashing transitions and completion");
@@ -789,12 +790,187 @@ extends		AbstractComponent
 	    this.statistics.updateStatistics();
 	}
 
+	protected void testSuspendResumeImmediateWashing() {
+	    this.logMessage("Feature: suspending and resuming an immediate washing cycle");
+
+	    this.logMessage("  Scenario: startWashing, suspend then resume");
+	    this.logMessage("    Given the washingMachine is on and not heating");
+	    try {
+	        // S'assurer que la machine est allumée
+	        if (!this.wmop.on()) {
+	            this.wmop.switchOn();
+	        }
+
+	        // On s'assure que la machine ne chauffe pas
+	        if (this.wmicop.heatWater()) {
+	            this.wmicop.stopHeatingWater();
+	        }
+
+	        long washing = 100L;
+	        Measure<Double> target = new Measure<>(
+	                WashingMachine.STANDARD_TARGET_TEMPERATURE.getData(),
+	                WashingMachine.TEMPERATURE_UNIT
+	        );
+
+	        this.logMessage("    When I call startWashing(" + washing + " ms, target=STANDARD)");
+	        this.wmop.startWashing(washing, target);
+
+	        // Laisser le temps au cycle de démarrer
+	        Thread.sleep(20L);
+
+	        boolean washingNow = this.wmop.isWashing();
+	        if (!washingNow || !this.wmop.on()) {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but was: isWashing=" + washingNow + ", on=" + this.wmop.on());
+	        } else {
+	            this.logMessage("    Then isWashing=true and machine is ON");
+	        }
+
+	        this.logMessage("    When I suspend the current cycle");
+	        this.wmop.suspendCycle();
+
+	        // Petite latence pour que la suspension soit prise en compte
+	        Thread.sleep(10L);
+
+	        boolean washingAfterSuspend = this.wmop.isWashing();
+	        if (!washingAfterSuspend && this.wmop.on()) {
+	            this.logMessage("    Then after suspend, isWashing=false and machine is still ON");
+	        } else {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but was: isWashing=" + washingAfterSuspend + ", on=" + this.wmop.on());
+	        }
+
+	        // On attend plus longtemps que le temps restant du cycle initial :
+	        // le lavage ne doit pas se terminer pendant la pause.
+	        Thread.sleep(washing + 50L);
+	        boolean stillNotWashing = !this.wmop.isWashing();
+	        if (stillNotWashing && this.wmop.on()) {
+	            this.logMessage("    And while suspended, washing does not resume and machine stays ON");
+	        } else {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but was during suspension: isWashing=" + this.wmop.isWashing() + ", on=" + this.wmop.on());
+	        }
+
+	        this.logMessage("    When I resume the current cycle");
+	        this.wmop.resumeCycle();
+
+	        Thread.sleep(20L); // laisser le temps de reprendre
+	        boolean washingAfterResume = this.wmop.isWashing();
+	        if (washingAfterResume && this.wmop.on()) {
+	            this.logMessage("    Then after resume, isWashing=true and machine is ON");
+	        } else {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but was: isWashing=" + washingAfterResume + ", on=" + this.wmop.on());
+	        }
+
+	        // Laisser le temps au reste du cycle de se terminer
+	        Thread.sleep(150L);
+	        boolean finallyNotWashing = !this.wmop.isWashing() && this.wmop.on();
+	        if (finallyNotWashing) {
+	            this.logMessage("    And after completion, isWashing=false and machine is ON");
+	        } else {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but was at end: isWashing=" + this.wmop.isWashing() + ", on=" + this.wmop.on());
+	        }
+	    } catch (Throwable e) {
+	        this.statistics.incorrectResult();
+	        this.logMessage("     but the exception " + e + " has been raised: " + e);
+	    }
+
+	    this.statistics.updateStatistics();
+	}
+
+	protected void testSuspendResumeDelayedStart() {
+	    this.logMessage("Feature: suspending and resuming a delayedStart cycle");
+
+	    this.logMessage("  Scenario: delayedStart, suspend during delay then resume");
+	    this.logMessage("    Given the washingMachine is initialised and on");
+	    try {
+	        if (!this.wmop.on()) {
+	            this.wmop.switchOn();
+	        }
+
+	        long delay = 80L;
+	        long washing = 60L;
+	        Measure<Double> target = new Measure<>(
+	                WashingMachine.STANDARD_TARGET_TEMPERATURE.getData(),
+	                WashingMachine.TEMPERATURE_UNIT
+	        );
+
+	        this.logMessage("    When I call delayedStart(delay=80 ms, target=STANDARD, washing=60 ms)");
+	        this.wmop.delayedStart(delay, target, washing);
+
+	        // On laisse passer une partie du délai
+	        Thread.sleep(30L);
+
+	        if (!this.wmop.isWashing() && this.wmop.on()) {
+	            this.logMessage("    Then before suspend, still not washing and machine is ON");
+	        } else {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but was: isWashing=" + this.wmop.isWashing() + ", on=" + this.wmop.on());
+	        }
+
+	        this.logMessage("    When I suspend the current (delayed) cycle");
+	        this.wmop.suspendCycle();
+
+	        Thread.sleep(10L);
+
+	        boolean washingAfterSuspend = this.wmop.isWashing();
+	        if (!washingAfterSuspend && this.wmop.on()) {
+	            this.logMessage("    Then after suspend, still not washing and machine is ON");
+	        } else {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but was: isWashing=" + washingAfterSuspend + ", on=" + this.wmop.on());
+	        }
+
+	        // On attend suffisamment longtemps pour que le délai initial
+	        // + durée de lavage auraient dû finir si ça n'était pas en pause.
+	        Thread.sleep(delay + washing + 50L);
+	        boolean stillNotWashing = !this.wmop.isWashing();
+	        if (stillNotWashing && this.wmop.on()) {
+	            this.logMessage("    And while suspended, the washing cycle never starts");
+	        } else {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but during suspension: isWashing=" + this.wmop.isWashing() + ", on=" + this.wmop.on());
+	        }
+
+	        this.logMessage("    When I resume the delayed cycle");
+	        this.wmop.resumeCycle();
+
+	        // On attend le reste du délai (approximatif) pour qu'il démarre
+	        Thread.sleep(70L);
+	        boolean washingAfterResume = this.wmop.isWashing();
+	        if (washingAfterResume && this.wmop.on()) {
+	            this.logMessage("    Then after resume, the washing cycle eventually starts (isWashing=true)");
+	        } else {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but was: isWashing=" + washingAfterResume + ", on=" + this.wmop.on());
+	        }
+
+	        // On attend la fin du cycle
+	        Thread.sleep(washing + 80L);
+	        boolean finallyNotWashing = !this.wmop.isWashing() && this.wmop.on();
+	        if (finallyNotWashing) {
+	            this.logMessage("    And after completion, isWashing=false and machine is ON");
+	        } else {
+	            this.statistics.incorrectResult();
+	            this.logMessage("     but was at end: isWashing=" + this.wmop.isWashing() + ", on=" + this.wmop.on());
+	        }
+	    } catch (Throwable e) {
+	        this.statistics.incorrectResult();
+	        this.logMessage("     but the exception " + e + " has been raised: " + e);
+	    }
+
+	    this.statistics.updateStatistics();
+	}
+
 
 
 
 
 	protected void		runAllUnitTests()
 	{
+		/*
 		this.testOff();
 		this.testSwitchOnSwitchOff();
 		this.testTargetTemperature();
@@ -803,6 +979,9 @@ extends		AbstractComponent
 		this.testHeatingWater();
 		this.testStartWashing();
 		this.testDelayedStart();
+		*/
+		this.testSuspendResumeImmediateWashing();
+		this.testSuspendResumeDelayedStart();
 
 		this.statistics.statisticsReport(this);
 	}

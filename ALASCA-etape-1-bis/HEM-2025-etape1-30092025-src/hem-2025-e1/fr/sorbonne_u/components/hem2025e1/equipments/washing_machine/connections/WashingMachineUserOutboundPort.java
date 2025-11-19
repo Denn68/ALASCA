@@ -90,6 +90,16 @@ implements	WashingMachineUserCI
 	public void startWashing(long washingTimeMS, Measure<Double> target) throws Exception {
 		((WashingMachineUserCI)this.getConnector()).startWashing(washingTimeMS, target);
 	}
+	
+	@Override
+	public void suspendCycle() throws Exception {
+		((WashingMachineUserCI)this.getConnector()).suspendCycle();
+	}
+	
+	@Override
+	public void resumeCycle() throws Exception {
+		((WashingMachineUserCI)this.getConnector()).resumeCycle();
+	}
 
 	@Override
 	public boolean isWashing() throws Exception {
