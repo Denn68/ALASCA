@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="ALASCA-etape-2/BCM4Java-02102025-src/examples"/>
+	<classpathentry kind="src" path="ALASCA-etape-2/BCM4Java-02102025-src/examples-basic-plugins"/>
+	<classpathentry kind="src" path="ALASCA-etape-2/BCM4Java-02102025-src/src"/>
+	<classpathentry kind="src" path="ALASCA-etape-2/BCM4Java-02102025-src/src-basic-plugins"/>
+	<classpathentry kind="src" path="ALASCA-etape-2/HEM-2025-etape2-14102025-src/hem-2025-base"/>
+	<classpathentry kind="src" path="ALASCA-etape-2/HEM-2025-etape2-14102025-src/hem-2025-e1"/>
+	<classpathentry kind="src" path="ALASCA-etape-2/HEM-2025-etape2-14102025-src/hem-2025-e2"/>
+	<classpathentry kind="src" path="ALASCA-etape-2/HEM-2025-etape2-14102025-src/physical_data"/>
+	<classpathentry kind="src" path="ALASCA-etape-2/NeoSim4Java-09102025-src/examples-advanced"/>
+	<classpathentry kind="src" path="ALASCA-etape-2/NeoSim4Java-09102025-src/examples-basic"/>
+	<classpathentry kind="src" path="ALASCA-etape-2/NeoSim4Java-09102025-src/extra"/>
+	<classpathentry kind="src" path="ALASCA-etape-2/NeoSim4Java-09102025-src/src"/>
+	<classpathentry kind="lib" path="__MACOSX/ALASCA-etape-2/._BCM4Java-02102025.jar"/>
+	<classpathentry kind="lib" path="__MACOSX/ALASCA-etape-2/._NeoSim4Java-09102025.jar"/>
+	<classpathentry kind="lib" path="ALASCA-etape-2/BCM4Java-02102025.jar"/>
+	<classpathentry kind="lib" path="ALASCA-etape-2/NeoSim4Java-09102025.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

@@ -1,0 +1,91 @@
+<!-- fr.sorbonne_u.devs_simulation.simulators ------------------------------- -->
+<html>
+<body>
+<p><b>DEVS simulation engines.</b></p>
+
+<table border="2" width="100%">
+<tr><th align="left" colspan="1">Licence</th></tr>
+<tr>
+<td width="100%">
+<p>Copyright Jacques Malenfant, Sorbonne Universite.</p>
+<p>Jacques.Malenfant@lip6.fr</p>
+
+<p>
+This software is a computer program whose purpose is to provide a new
+implementation of the DEVS simulation <i>de facto</i> standard for Java.
+</p>
+<p>
+This software is governed by the
+<a href="../../../../images/Licence_CeCILL-C_V1-en.html">CeCILL-C</a>
+license under French law and
+abiding by the rules of distribution of free software.  You can use,
+modify and/ or redistribute the software under the terms of the
+CeCILL-C license as circulated by CEA, CNRS and INRIA at the following
+URL <a href="http://www.cecill.info">http://www.cecill.info</a>.
+</p>
+<p>
+As a counterpart to the access to the source code and  rights to copy,
+modify and redistribute granted by the license, users are provided only
+with a limited warranty  and the software's author,  the holder of the
+economic rights,  and the successive licensors  have only  limited
+liability. 
+</p>
+<p>
+In this respect, the user's attention is drawn to the risks associated
+with loading,  using,  modifying and/or developing or reproducing the
+software by the user in light of its specific status of free software,
+that may mean  that it is complicated to manipulate,  and  that  also
+therefore means  that it is reserved for developers  and  experienced
+professionals having in-depth computer knowledge. Users are therefore
+encouraged to load and test the software's suitability as regards their
+requirements in conditions enabling the security of their systems and/or 
+data to be ensured and,  more generally, to use and operate it in the 
+same conditions as regards security. 
+</p>
+<p>
+The fact that you are presently reading this means that you have had
+knowledge of the CeCILL-C license and that you accept its terms.
+</p>
+</td>
+</tr>
+</table>
+
+<p>
+This packages defines the implementation of simulation engines.
+DEVS simulation engines implements simulation algorithms at their
+level. Essentially, they ensure the coordinated execution of
+models by implementing a strategy to coordinate their simulation
+clocks in such a way that they respect the advance of the global
+simulation clock.
+</p>
+
+<p>
+Strategies to coordinate the simulation clocks can go from perfect
+synchronisation to no synchronisation at all. The standard DEVS
+coordination algorithm is an example of perfect synchronisation
+as the coordinators select the most imminent internal step to be
+performed among all of their atomic models and then perform each of
+them one at a time making sure that the simulation clocks of all
+models advance at exactly the same global pace. Such globally
+synchronised algorithms ensure a deterministic execution of simulation
+runs but are ill-suited for parallel or distributed simulations as
+they force a fully serialised execution of all events. The classes
+<code>SimulationEngine</code>, <code>AtomicEngine</code>
+and <code>CoordinationEngine</code> implement the standard DEVS
+coordination algorithm with tightly synchronised simulation clocks.
+</p>
+
+<p>
+Other algorithms, like the real time one, align the simulation clocks
+to the real time (e.g., using the computer clock).
+These unsynchronised algorithms are fine when the models are loosely
+coupled and when the simulation results can admit some imprecision
+if the models remain sufficiently synchronised implicitly, like
+models carrying out continuous simulations over differential equations
+with integration steps among models that are small and close to each
+others so that the imprecision amounts to relatively small differences
+in the tiles at which the variables have been last updated.
+</p>
+
+</body>
+</html>
