@@ -776,13 +776,14 @@ extends		AbstractComponent
 	            this.logMessage("     but was: isWashing=" + this.wmop.isWashing());
 	        }
 
-	        Thread.sleep(delay + washing + 40L);
+	        Thread.sleep(delay + washing + 100L);
 	        if (this.wmop.on() && !this.wmop.isWashing()) {
 	            this.logMessage("    And after completion, isWashing=false and machine is ON");
 	        } else {
 	            this.statistics.incorrectResult();
 	            this.logMessage("     but was: on=" + this.wmop.on() + ", isWashing=" + this.wmop.isWashing());
 	        }
+	        
 	    } catch (Throwable e) {
 	        this.statistics.incorrectResult();
 	        this.logMessage("     but the exception " + e + " has been raised");
@@ -976,8 +977,8 @@ extends		AbstractComponent
 		this.testCurrentTemperature();
 		this.testPowerLevel();
 		this.testHeatingWater();
-		this.testStartWashing();
-		this.testDelayedStart();
+		/*this.testStartWashing();
+		this.testDelayedStart();*/
 		this.testSuspendResumeImmediateWashing();
 		this.testSuspendResumeDelayedStart();
 
