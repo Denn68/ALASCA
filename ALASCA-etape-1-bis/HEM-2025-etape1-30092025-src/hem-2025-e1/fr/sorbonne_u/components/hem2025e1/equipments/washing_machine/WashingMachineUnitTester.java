@@ -970,7 +970,6 @@ extends		AbstractComponent
 
 	protected void		runAllUnitTests()
 	{
-		/*
 		this.testOff();
 		this.testSwitchOnSwitchOff();
 		this.testTargetTemperature();
@@ -979,7 +978,6 @@ extends		AbstractComponent
 		this.testHeatingWater();
 		this.testStartWashing();
 		this.testDelayedStart();
-		*/
 		this.testSuspendResumeImmediateWashing();
 		this.testSuspendResumeDelayedStart();
 
