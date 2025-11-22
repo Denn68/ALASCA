@@ -11,5 +11,6 @@
 	<classpathentry kind="lib" path="/ALASCA/jing.jar"/>
 	<classpathentry kind="lib" path="/ALASCA-etape-2-ter/ALASCA-etape-2-ter/NeoSim4Java-10112025.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
+	<classpathentry kind="lib" path="/ALASCA/CommonSunCalculations-07102025.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

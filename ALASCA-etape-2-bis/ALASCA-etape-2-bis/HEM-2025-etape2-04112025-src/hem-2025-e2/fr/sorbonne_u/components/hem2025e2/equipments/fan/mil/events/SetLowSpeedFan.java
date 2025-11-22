@@ -1,6 +1,6 @@
 package fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events;
 
-import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.FanCoupledModel.FanSpeed;
+import fr.sorbonne_u.components.hem2025e1.equipments.fan.FanUserI.FanSpeed;
 import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.FanElectricityModel;
 import fr.sorbonne_u.devs_simulation.es.events.ES_Event;
 import fr.sorbonne_u.devs_simulation.models.events.EventI;

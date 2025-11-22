@@ -1,16 +1,16 @@
 package fr.sorbonne_u.components.hem2025e2.equipments.fan.mil;
 
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import fr.sorbonne_u.components.hem2025.tests_utils.AbstractTestScenarioBasedAtomicModel;
+import fr.sorbonne_u.components.hem2025.tests_utils.TestScenario;
 import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SetHighSpeedFan;
 import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SetLowSpeedFan;
 import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SwitchOffFan;
 import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SwitchOnFan;
-import fr.sorbonne_u.devs_simulation.models.AtomicModel;
+import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
 import fr.sorbonne_u.devs_simulation.models.annotations.ModelExternalEvents;
-import fr.sorbonne_u.devs_simulation.models.events.EventI;
-import fr.sorbonne_u.devs_simulation.models.time.Duration;
-import fr.sorbonne_u.devs_simulation.models.time.Time;
+import fr.sorbonne_u.devs_simulation.models.interfaces.ModelI;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.AtomicSimulatorI;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulationReportI;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
@@ -37,7 +37,6 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
  * * <pre>
  * invariant	{@code URI != null && !URI.isEmpty()}
  * </pre>
- *
  * * @author	Team DeMoh
  */
 @ModelExternalEvents(exported = {SwitchOnFan.class,
@@ -46,7 +45,7 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
 								 SetHighSpeedFan.class})
 // -----------------------------------------------------------------------------
 public class			FanUnitTesterModel
-extends		AtomicModel
+extends		AbstractTestScenarioBasedAtomicModel
 {
 	// -------------------------------------------------------------------------
 	// Constants and variables
@@ -55,9 +54,9 @@ extends		AtomicModel
 	private static final long serialVersionUID = 1L;
 	/** URI for a model; works when only one instance is created.			*/
 	public static final String	URI = FanUnitTesterModel.class.getSimpleName();
-
-	/** current step in the test scenario.									*/
-	protected int	step;
+	public static boolean		VERBOSE = true;
+	public static boolean		DEBUG = false;
+	public static final String	TEST_SCENARIO_RP_NAME = "TEST_SCENARIO";
 
 	// -------------------------------------------------------------------------
 	// Constructors
@@ -78,68 +77,24 @@ extends		AtomicModel
 	// -------------------------------------------------------------------------
 
 	@Override
-	public void			initialiseState(Time initialTime)
+	public void			setSimulationRunParameters(
+		Map<String, Object> simParams
+		) throws MissingRunParameterException
 	{
-		super.initialiseState(initialTime);
-		this.step = 1;
-		this.getSimulationEngine().toggleDebugMode();
-		this.logMessage("simulation begins.");
+		String testScenarioName = ModelI.createRunParameterName(this.getURI(),
+														TEST_SCENARIO_RP_NAME);
+
+		assert	simParams != null :
+				new MissingRunParameterException("simParams != null");
+		assert	simParams.containsKey(testScenarioName) :
+				new MissingRunParameterException(testScenarioName);
+
+		this.setTestScenario((TestScenario) simParams.get(testScenarioName));
 	}
 
-	@Override
-	public ArrayList<EventI>	output()
-	{
-		// Simple scenario for Fan testing:
-		// Step 1: ON (Low)
-		// Step 2: HIGH
-		// Step 3: LOW
-		// Step 4: OFF
-		
-		if (this.step > 0 && this.step < 5) {
-			ArrayList<EventI> ret = new ArrayList<EventI>();
-			switch (this.step) {
-			case 1:
-				ret.add(new SwitchOnFan(this.getTimeOfNextEvent()));
-				break;
-			case 2:
-				ret.add(new SetHighSpeedFan(this.getTimeOfNextEvent()));
-				break;
-			case 3:
-				ret.add(new SetLowSpeedFan(this.getTimeOfNextEvent()));
-				break;
-			case 4:
-				ret.add(new SwitchOffFan(this.getTimeOfNextEvent()));
-				break;
-			}
-			return ret;
-		} else {
-			return null;
-		}
-	}
-
-	@Override
-	public Duration		timeAdvance()
-	{
-		if (this.step < 5) {
-			return new Duration(1.0, this.getSimulatedTimeUnit());
-		} else {
-			return Duration.INFINITY;
-		}
-	}
-
-	@Override
-	public void			userDefinedInternalTransition(Duration elapsedTime)
-	{
-		super.userDefinedInternalTransition(elapsedTime);
-		this.step++;
-	}
-
-	@Override
-	public void			endSimulation(Time endTime)
-	{
-		this.logMessage("simulation ends.");
-		super.endSimulation(endTime);
-	}
+	// -------------------------------------------------------------------------
+	// Optional DEVS simulation protocol: simulation report
+	// -------------------------------------------------------------------------
 
 	@Override
 	public SimulationReportI	getFinalReport()

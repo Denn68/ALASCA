@@ -250,7 +250,7 @@ public class			RunKettleUnitaryMILSimulation
 						Instant.parse("2025-10-20T10:05:00.00Z"),
 						(m, t) -> {
 							ArrayList<EventI> ret = new ArrayList<>();
-							ret.add(new DoNotHeatKettle(t)); // Triggers Keep Warm
+							ret.add(new DoNotHeatKettle(t));
 							return ret;
 						},
 						(m, t) -> {}),

@@ -59,19 +59,22 @@ extends		AtomicHIOA
 
 	private static final long		serialVersionUID = 1L;
 
+	/** URI for a model; works when only one instance is created.			*/
 	public static String		URI = KettleTemperatureModel.class.getSimpleName();
+	/** when true, leaves a trace of the execution of the model.			*/
 	public static boolean		VERBOSE = true;
+	/** when true, leaves a debugging trace of the execution of the model.	*/
 	public static boolean		DEBUG = false;
 
 	public static double		INITIAL_TEMPERATURE = 20.0; 
-	public static double		ROOM_TEMPERATURE = 20.0;    
+	public static double		EXTERNAL_TEMPERATURE = 20.0;    
 	public static double		MAX_TEMPERATURE = 100.0;
 
 	protected static double		HEATING_CAPACITY = 0.86; 
 	protected static double 	COOLING_CONSTANT = 15.0; 
 
 	protected static double		TEMPERATURE_UPDATE_TOLERANCE = 0.0001;
-	protected static double		STEP = 1.0/3600.0;
+	protected static double		STEP = 5.0/3600.0;
 
 	protected KettleState		currentState = KettleState.OFF;
 
@@ -183,16 +186,16 @@ extends		AtomicHIOA
 		
 		if (this.currentState == KettleState.HEATING || this.currentState == KettleState.KEEP_WARM) {
 			if (this.currentHeatingPower.getValue() > 0.0) {
-				// If we are already at (or above) 100°C, we stop adding heat (energy goes to evaporation)
+				// If temp > 100°C, we stop heating and go to keep warming
 				if (current < MAX_TEMPERATURE) {
 					currentTempDerivative += this.currentHeatingPower.getValue() * HEATING_CAPACITY;
 				}
 			}
 		}
 
-		// Cooling happens regardless, but can't cool below room temp
-		if (current > ROOM_TEMPERATURE) {
-			currentTempDerivative -= (current - ROOM_TEMPERATURE) / COOLING_CONSTANT;
+		// Cooling happens only if temp > EXTERNAL_TEMP (20°C)
+		if (current > EXTERNAL_TEMPERATURE) {
+			currentTempDerivative -= (current - EXTERNAL_TEMPERATURE) / COOLING_CONSTANT;
 		}
 
 		return currentTempDerivative;
@@ -215,8 +218,8 @@ extends		AtomicHIOA
 			newTemp = MAX_TEMPERATURE;
 		}
 		
-		if (newTemp < ROOM_TEMPERATURE) {
-			newTemp = ROOM_TEMPERATURE;
+		if (newTemp < EXTERNAL_TEMPERATURE) {
+			newTemp = EXTERNAL_TEMPERATURE;
 		}
 
 		this.temperatureAcc += ((oldTemp + newTemp)/2.0) * deltaT;
@@ -239,8 +242,12 @@ extends		AtomicHIOA
 
 		super.initialiseState(initialTime);
 
-		assert	KettleTemperatureModel.implementationInvariants(this);
-		assert	KettleTemperatureModel.invariants(this);
+		assert	KettleTemperatureModel.implementationInvariants(this) :
+			new NeoSim4JavaException(
+					"KettleTemperatureModel.implementationInvariants(this)");
+		assert	KettleTemperatureModel.invariants(this) :
+			new NeoSim4JavaException(
+					"KettleTemperatureModel.invariants(this)");
 	}
 
 	@Override
@@ -263,8 +270,12 @@ extends		AtomicHIOA
 			notInitialisedYet++;
 		}
 
-		assert	KettleTemperatureModel.implementationInvariants(this);
-		assert	KettleTemperatureModel.invariants(this);
+		assert	KettleTemperatureModel.implementationInvariants(this) :
+			new NeoSim4JavaException(
+					"KettleTemperatureModel.implementationInvariants(this)");
+		assert	KettleTemperatureModel.invariants(this) :
+			new NeoSim4JavaException(
+					"KettleTemperatureModel.invariants(this)");
 
 		return new Pair<>(justInitialised, notInitialisedYet);
 	}

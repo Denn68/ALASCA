@@ -47,6 +47,12 @@ import fr.sorbonne_u.components.hem2025e2.GlobalCoupledModel.GlobalReport;
 import fr.sorbonne_u.components.hem2025e2.equipments.batteries.mil.BatteriesPowerModel;
 import fr.sorbonne_u.components.hem2025e2.equipments.batteries.mil.BatteriesSimulationConfiguration;
 import fr.sorbonne_u.components.hem2025e2.equipments.batteries.mil.events.BatteriesRequiredPowerChanged;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.FanElectricityModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.FanSimpleUserModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SetHighSpeedFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SetLowSpeedFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SwitchOffFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SwitchOnFan;
 import fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.GeneratorFuelModel;
 import fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.GeneratorGlobalTesterModel;
 import fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.GeneratorPowerModel;
@@ -72,6 +78,14 @@ import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.Heat;
 import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.SetPowerHeater;
 import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.SwitchOffHeater;
 import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.SwitchOnHeater;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.KettleElectricityModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.KettleTemperatureModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.KettleUnitTesterModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.DoNotHeatKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.HeatKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SetPowerKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SwitchOffKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SwitchOnKettle;
 import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.SetPowerHeater.PowerValue;
 import fr.sorbonne_u.components.hem2025e2.equipments.meter.mil.ElectricMeterElectricityModel;
 import fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.AstronomicalSunRiseAndSetModel;
@@ -84,15 +98,24 @@ import fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.SunIntensit
 import fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.SunRiseAndSetModelI;
 import fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.events.SunriseEvent;
 import fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.events.SunsetEvent;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.VacuumCleanerElectricityModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.VacuumCleanerSimpleUserModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SetHighVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SetLowVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SetMediumVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SwitchOffVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SwitchOnVacuumCleaner;
 import fr.sorbonne_u.devs_simulation.architectures.Architecture;
 import fr.sorbonne_u.devs_simulation.architectures.ArchitectureI;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.AtomicHIOA_Descriptor;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.CoupledHIOA_Descriptor;
+import fr.sorbonne_u.devs_simulation.hioa.architectures.RTAtomicHIOA_Descriptor;
 import fr.sorbonne_u.devs_simulation.hioa.models.vars.VariableSink;
 import fr.sorbonne_u.devs_simulation.hioa.models.vars.VariableSource;
 import fr.sorbonne_u.devs_simulation.models.architectures.AbstractAtomicModelDescriptor;
 import fr.sorbonne_u.devs_simulation.models.architectures.AtomicModelDescriptor;
 import fr.sorbonne_u.devs_simulation.models.architectures.CoupledModelDescriptor;
+import fr.sorbonne_u.devs_simulation.models.architectures.RTAtomicModelDescriptor;
 import fr.sorbonne_u.devs_simulation.models.events.EventI;
 import fr.sorbonne_u.devs_simulation.models.events.EventSink;
 import fr.sorbonne_u.devs_simulation.models.events.EventSource;
@@ -231,6 +254,24 @@ public class			RunGlobalSimulation
 							HairDryerSimpleUserModel.URI,
 							GlobalSimulationConfigurationI.TIME_UNIT,
 							null));
+			
+			// the vacuum cleaner model simulating its electricity consumption, an
+			// atomic HIOA model hence we use an AtomicHIOA_Descriptor
+			atomicModelDescriptors.put(
+					VacuumCleanerElectricityModel.URI,
+					AtomicHIOA_Descriptor.create(
+							VacuumCleanerElectricityModel.class,
+							VacuumCleanerElectricityModel.URI,
+							GlobalSimulationConfigurationI.TIME_UNIT,
+							null));
+			// for atomic model, we use an AtomicModelDescriptor
+			atomicModelDescriptors.put(
+					VacuumCleanerSimpleUserModel.URI,
+					AtomicModelDescriptor.create(
+							VacuumCleanerSimpleUserModel.class,
+							VacuumCleanerSimpleUserModel.URI,
+							GlobalSimulationConfigurationI.TIME_UNIT,
+							null));
 
 			// Heater models
 
@@ -262,6 +303,48 @@ public class			RunGlobalSimulation
 							HeaterUnitTesterModel.URI,
 							GlobalSimulationConfigurationI.TIME_UNIT,
 							null));
+
+			// Fan models
+
+            atomicModelDescriptors.put(
+                    FanElectricityModel.URI,
+                    RTAtomicHIOA_Descriptor.create(
+                            FanElectricityModel.class,
+                            FanElectricityModel.URI,
+                            GlobalSimulationConfigurationI.TIME_UNIT,
+                            null));
+            
+            atomicModelDescriptors.put(
+                    FanSimpleUserModel.URI,
+                    RTAtomicModelDescriptor.create(
+                            FanSimpleUserModel.class,
+                            FanSimpleUserModel.URI,
+                            GlobalSimulationConfigurationI.TIME_UNIT,
+                            null));
+			
+            // Kettle models
+			
+            atomicModelDescriptors.put(
+                    KettleElectricityModel.URI,
+                    AtomicHIOA_Descriptor.create(
+                            KettleElectricityModel.class,
+                            KettleElectricityModel.URI,
+                            GlobalSimulationConfigurationI.TIME_UNIT,
+                            null));
+            atomicModelDescriptors.put(
+                    KettleTemperatureModel.URI,
+                    AtomicHIOA_Descriptor.create(
+                            KettleTemperatureModel.class,
+                            KettleTemperatureModel.URI,
+                            GlobalSimulationConfigurationI.TIME_UNIT,
+                            null));
+            atomicModelDescriptors.put(
+                    KettleUnitTesterModel.URI,
+                    AtomicModelDescriptor.create(
+                            KettleUnitTesterModel.class,
+                            KettleUnitTesterModel.URI,
+                            GlobalSimulationConfigurationI.TIME_UNIT,
+                            null));
 
 			// Batteries models
 
@@ -387,12 +470,25 @@ public class			RunGlobalSimulation
 
 			// the set of submodels of the coupled model, given by their URIs
 			Set<String> submodels = new HashSet<String>();
+			
 			submodels.add(HairDryerElectricityModel.URI);
 			submodels.add(HairDryerSimpleUserModel.URI);
+			
+			submodels.add(VacuumCleanerElectricityModel.URI);
+			submodels.add(VacuumCleanerSimpleUserModel.URI);
+			
 			submodels.add(HeaterElectricityModel.URI);
 			submodels.add(HeaterTemperatureModel.URI);
 			submodels.add(ExternalTemperatureModel.URI);
 			submodels.add(HeaterUnitTesterModel.URI);
+			
+			submodels.add(FanElectricityModel.URI);
+            submodels.add(FanSimpleUserModel.URI);
+			
+			submodels.add(KettleElectricityModel.URI);
+            submodels.add(KettleTemperatureModel.URI);
+            submodels.add(KettleUnitTesterModel.URI);
+            
 			submodels.add(BatteriesPowerModel.URI);
 			submodels.add(sunRiseAndSetURI);
 			submodels.add(sunIntensityModelURI);
@@ -439,6 +535,44 @@ public class			RunGlobalSimulation
 					new EventSink(HairDryerElectricityModel.URI,
 								  SetLowHairDryer.class)
 				});
+			
+			// Vacuum cleaner events
+			
+			connections.put(
+					new EventSource(VacuumCleanerSimpleUserModel.URI,
+									SwitchOnVacuumCleaner.class),
+					new EventSink[] {
+							new EventSink(VacuumCleanerElectricityModel.URI,
+										  SwitchOnVacuumCleaner.class)
+					});
+			connections.put(
+					new EventSource(VacuumCleanerSimpleUserModel.URI,
+									SwitchOffVacuumCleaner.class),
+					new EventSink[] {
+							new EventSink(VacuumCleanerElectricityModel.URI,
+										  SwitchOffVacuumCleaner.class)
+					});
+			connections.put(
+					new EventSource(VacuumCleanerSimpleUserModel.URI,
+									SetHighVacuumCleaner.class),
+					new EventSink[] {
+							new EventSink(VacuumCleanerElectricityModel.URI,
+										  SetHighVacuumCleaner.class)
+					});
+			connections.put(
+					new EventSource(VacuumCleanerSimpleUserModel.URI,
+									SetMediumVacuumCleaner.class),
+					new EventSink[] {
+							new EventSink(VacuumCleanerElectricityModel.URI,
+										  SetMediumVacuumCleaner.class)
+					});
+			connections.put(
+					new EventSource(VacuumCleanerSimpleUserModel.URI,
+									SetLowVacuumCleaner.class),
+					new EventSink[] {
+							new EventSink(VacuumCleanerElectricityModel.URI,
+										  SetLowVacuumCleaner.class)
+					});
 
 			// Heater events
 
@@ -477,6 +611,61 @@ public class			RunGlobalSimulation
 					new EventSink(HeaterElectricityModel.URI, DoNotHeat.class),
 					new EventSink(HeaterTemperatureModel.URI, DoNotHeat.class)
 				});
+
+			// Fan events
+
+            connections.put(
+                new EventSource(FanSimpleUserModel.URI, SwitchOnFan.class),
+                new EventSink[] {
+                    new EventSink(FanElectricityModel.URI, SwitchOnFan.class)
+                });
+            connections.put(
+                new EventSource(FanSimpleUserModel.URI, SwitchOffFan.class),
+                new EventSink[] {
+                    new EventSink(FanElectricityModel.URI, SwitchOffFan.class)
+                });
+            connections.put(
+                new EventSource(FanSimpleUserModel.URI, SetHighSpeedFan.class),
+                new EventSink[] {
+                    new EventSink(FanElectricityModel.URI, SetHighSpeedFan.class)
+                });
+            connections.put(
+                new EventSource(FanSimpleUserModel.URI, SetLowSpeedFan.class),
+                new EventSink[] {
+                    new EventSink(FanElectricityModel.URI, SetLowSpeedFan.class)
+                });
+
+            // Kettle events
+			
+            connections.put(
+                new EventSource(KettleUnitTesterModel.URI, SwitchOnKettle.class),
+                new EventSink[] {
+                    new EventSink(KettleElectricityModel.URI, SwitchOnKettle.class),
+                    new EventSink(KettleTemperatureModel.URI, SwitchOnKettle.class)
+                });
+            connections.put(
+                new EventSource(KettleUnitTesterModel.URI, SwitchOffKettle.class),
+                new EventSink[] {
+                    new EventSink(KettleElectricityModel.URI, SwitchOffKettle.class),
+                    new EventSink(KettleTemperatureModel.URI, SwitchOffKettle.class)
+                });
+            connections.put(
+                new EventSource(KettleUnitTesterModel.URI, HeatKettle.class),
+                new EventSink[] {
+                    new EventSink(KettleElectricityModel.URI, HeatKettle.class),
+                    new EventSink(KettleTemperatureModel.URI, HeatKettle.class)
+                });
+            connections.put(
+                new EventSource(KettleUnitTesterModel.URI, DoNotHeatKettle.class),
+                new EventSink[] {
+                    new EventSink(KettleElectricityModel.URI, DoNotHeatKettle.class),
+                    new EventSink(KettleTemperatureModel.URI, DoNotHeatKettle.class)
+                });
+            connections.put(
+                new EventSource(KettleUnitTesterModel.URI, SetPowerKettle.class),
+                new EventSink[] {
+                    new EventSink(KettleElectricityModel.URI, SetPowerKettle.class)
+                });
 
 			// Batteries events
 
@@ -574,6 +763,16 @@ public class			RunGlobalSimulation
 									 HeaterTemperatureModel.URI)
 				});
 
+			// Bindings among kettle models
+			
+			bindings.put(
+                new VariableSource("currentHeatingPower", Double.class,
+                                   KettleElectricityModel.URI),
+                new VariableSink[] {
+                    new VariableSink("currentHeatingPower", Double.class,
+                                     KettleTemperatureModel.URI)
+                });
+
 			// Bindings among solar panel models
 
 			bindings.put(
@@ -646,12 +845,36 @@ public class			RunGlobalSimulation
 				});
 			bindings.put(
 				new VariableSource("currentIntensity", Double.class,
+								   VacuumCleanerElectricityModel.URI),
+				new VariableSink[] {
+					new VariableSink("currentIntensity", Double.class,
+									 "currentVacuumCleanerIntensity", Double.class,
+									 ElectricMeterElectricityModel.URI)
+				});
+			bindings.put(
+				new VariableSource("currentIntensity", Double.class,
 								   HeaterElectricityModel.URI),
 				new VariableSink[] {
 					new VariableSink("currentIntensity", Double.class,
 									 "currentHeaterIntensity", Double.class,
 									 ElectricMeterElectricityModel.URI)
 				});
+			bindings.put(
+                new VariableSource("currentIntensity", Double.class,
+                                   FanElectricityModel.URI),
+                new VariableSink[] {
+                    new VariableSink("currentIntensity", Double.class,
+                                     "currentFanIntensity", Double.class,
+                                     ElectricMeterElectricityModel.URI)
+                });
+            bindings.put(
+                new VariableSource("currentIntensity", Double.class,
+                                   KettleElectricityModel.URI),
+                new VariableSink[] {
+                    new VariableSink("currentIntensity", Double.class,
+                                     "currentKettleIntensity", Double.class,
+                                     ElectricMeterElectricityModel.URI)
+                });
 
 			// -----------------------------------------------------------------
 			// Overall simulation architecture
@@ -711,6 +934,29 @@ public class			RunGlobalSimulation
 				ModelI.createRunParameterName(
 					HairDryerSimpleUserModel.URI,
 					HairDryerSimpleUserModel.MEAN_DELAY_RPNAME),
+				2.0);
+			
+			// run parameters for vacuum cleaner models
+
+			simParams.put(
+				ModelI.createRunParameterName(
+					VacuumCleanerElectricityModel.URI,
+					VacuumCleanerElectricityModel.LOW_MODE_CONSUMPTION_RPNAME),
+				660.0);
+			simParams.put(
+				ModelI.createRunParameterName(
+						VacuumCleanerElectricityModel.URI,
+						VacuumCleanerElectricityModel.HIGH_MODE_CONSUMPTION_RPNAME),
+				1320.0);
+			simParams.put(
+				ModelI.createRunParameterName(
+					VacuumCleanerSimpleUserModel.URI,
+					VacuumCleanerSimpleUserModel.MEAN_STEP_RPNAME),
+				0.05);
+			simParams.put(
+				ModelI.createRunParameterName(
+					VacuumCleanerSimpleUserModel.URI,
+					VacuumCleanerSimpleUserModel.MEAN_DELAY_RPNAME),
 				2.0);
 
 			// run parameters for solar panel models
@@ -815,6 +1061,11 @@ public class			RunGlobalSimulation
 			HairDryerSimpleUserModel.VERBOSE = false;
 			HairDryerSimpleUserModel.DEBUG = false;
 
+			VacuumCleanerElectricityModel.VERBOSE = false;
+			VacuumCleanerElectricityModel.DEBUG = false;
+			VacuumCleanerSimpleUserModel.VERBOSE = false;
+			VacuumCleanerSimpleUserModel.DEBUG = false;
+
 			HeaterElectricityModel.VERBOSE = false;
 			HeaterElectricityModel.DEBUG = false;
 			HeaterTemperatureModel.VERBOSE = false;
@@ -823,6 +1074,13 @@ public class			RunGlobalSimulation
 			ExternalTemperatureModel.DEBUG  = false;
 			HeaterUnitTesterModel.VERBOSE = false;
 			HeaterUnitTesterModel.DEBUG  = false;
+			
+			KettleElectricityModel.VERBOSE = true;
+            KettleElectricityModel.DEBUG = false;
+            KettleTemperatureModel.VERBOSE = true;
+            KettleTemperatureModel.DEBUG = false;
+            KettleUnitTesterModel.VERBOSE = true;
+            KettleUnitTesterModel.DEBUG = false;
 
 			BatteriesPowerModel.VERBOSE = true;
 			BatteriesPowerModel.DEBUG = false;
@@ -928,6 +1186,11 @@ public class			RunGlobalSimulation
 							HeaterUnitTesterModel.URI,
 							HeaterUnitTesterModel.TEST_SCENARIO_RP_NAME),
 						testScenario);
+					simulationParameters.put(
+	                        ModelI.createRunParameterName(
+	                            KettleUnitTesterModel.URI,
+	                            KettleUnitTesterModel.TEST_SCENARIO_RP_NAME),
+	                        testScenario);
 					simulationParameters.put(
 						ModelI.createRunParameterName(
 							BatteriesPowerModel.URI,
@@ -1069,8 +1332,44 @@ public class			RunGlobalSimulation
 						},
 						(m, t) -> {}),
 					new SimulationTestStep(
+                        KettleUnitTesterModel.URI,
+                        Instant.parse("2025-10-20T17:50:00.00Z"),
+                        (m, t) -> {
+                            ArrayList<EventI> ret = new ArrayList<>();
+                            ret.add(new SwitchOnKettle(t));
+                            return ret;
+                        },
+                        (m, t) -> {}),
+                    new SimulationTestStep(
+                        KettleUnitTesterModel.URI,
+                        Instant.parse("2025-10-20T17:51:00.00Z"),
+                        (m, t) -> {
+                            ArrayList<EventI> ret = new ArrayList<>();
+                            ret.add(new HeatKettle(t));
+                            return ret;
+                        },
+                        (m, t) -> {}),
+                    new SimulationTestStep(
+                        KettleUnitTesterModel.URI,
+                        Instant.parse("2025-10-20T17:55:00.00Z"),
+                        (m, t) -> {
+                            ArrayList<EventI> ret = new ArrayList<>();
+                            ret.add(new DoNotHeatKettle(t));
+                            return ret;
+                        },
+                        (m, t) -> {}),
+                    new SimulationTestStep(
+                        KettleUnitTesterModel.URI,
+                        Instant.parse("2025-10-20T18:15:00.00Z"),
+                        (m, t) -> {
+                            ArrayList<EventI> ret = new ArrayList<>();
+                            ret.add(new SwitchOffKettle(t));
+                            return ret;
+                        },
+                        (m, t) -> {}),
+					new SimulationTestStep(
 						GeneratorGlobalTesterModel.URI,
-						Instant.parse("2025-10-20T17:30:00.00Z"),
+						Instant.parse("2025-10-20T18:45:00.00Z"),
 						(m, t) -> {
 							ArrayList<EventI> ret = new ArrayList<>();
 							ret.add(new Stop(t));

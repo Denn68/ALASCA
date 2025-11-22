@@ -1,46 +1,16 @@
 package fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil;
 
-// Copyright Jacques Malenfant, Sorbonne Universite.
-// Jacques.Malenfant@lip6.fr
-//
-// This software is a computer program whose purpose is to implement a mock-up
-// of household energy management system.
-//
-// This software is governed by the CeCILL-C license under French law and
-// abiding by the rules of distribution of free software.  You can use,
-// modify and/ or redistribute the software under the terms of the
-// CeCILL-C license as circulated by CEA, CNRS and INRIA at the following
-// URL "http://www.cecill.info".
-//
-// As a counterpart to the access to the source code and  rights to copy,
-// modify and redistribute granted by the license, users are provided only
-// with a limited warranty  and the software's author,  the holder of the
-// economic rights,  and the successive licensors  have only  limited
-// liability. 
-//
-// In this respect, the user's attention is drawn to the risks associated
-// with loading,  using,  modifying and/or developing or reproducing the
-// software by the user in light of its specific status of free software,
-// that may mean  that it is complicated to manipulate,  and  that  also
-// therefore means  that it is reserved for developers  and  experienced
-// professionals having in-depth computer knowledge. Users are therefore
-// encouraged to load and test the software's suitability as regards their
-// requirements in conditions enabling the security of their systems and/or 
-// data to be ensured and,  more generally, to use and operate it in the 
-// same conditions as regards security. 
-//
-// The fact that you are presently reading this means that you have had
-// knowledge of the CeCILL-C license and that you accept its terms.
-
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.math3.random.RandomDataGenerator;
 
-import fr.sorbonne_u.components.hem2025e2.equipments.hairdryer.mil.events.SetHighHairDryer;
-import fr.sorbonne_u.components.hem2025e2.equipments.hairdryer.mil.events.SetLowHairDryer;
-import fr.sorbonne_u.components.hem2025e2.equipments.hairdryer.mil.events.SwitchOffHairDryer;
-import fr.sorbonne_u.components.hem2025e2.equipments.hairdryer.mil.events.SwitchOnHairDryer;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SetHighVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SetLowVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SetMediumVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SwitchOffVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SwitchOnVacuumCleaner;
 import fr.sorbonne_u.devs_simulation.es.events.ES_EventI;
 import fr.sorbonne_u.devs_simulation.es.models.AtomicES_Model;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
@@ -52,24 +22,23 @@ import fr.sorbonne_u.devs_simulation.models.time.Duration;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.AtomicSimulatorI;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulationReportI;
+import fr.sorbonne_u.devs_simulation.utils.AssertionChecking;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
-import fr.sorbonne_u.exceptions.AssertionChecking;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>HairDryerTesterModel</code> defines a very simple test
- * model for the hair dryer simulator.
+ * The class <code>VacuumCleanerSimpleUserModel</code> defines a very simple user
+ * model for the vacuum cleaner simulator.
  *
  * <p><strong>Description</strong></p>
- * 
- * <p>
+ * * <p>
  * This model is meant to illustrate how to program MIL models simulating user
  * actions by sending events to other models.
  * </p>
  * <p>
  * Here, we use an event scheduling atomic model to output events at random
  * time intervals in a predefined cycle to test all of the different modes in
- * the hair dryer. Note that the exported events are indeed subclasses of
+ * the vacuum cleaner. Note that the exported events are indeed subclasses of
  * event scheduling events {@code ES_Event}. Hence, this example also shows
  * how to program this type of event scheduling simulation models.
  * </p>
@@ -83,43 +52,37 @@ import fr.sorbonne_u.exceptions.AssertionChecking;
  * event. If the next event is external, it must be emitted towards other
  * models. This is performed by the method {@code AtomicES_Model#output}
  * </p>
- * 
- * <ul>
+ * * <ul>
  * <li>Imported events: none</li>
  * <li>Exported events:
- *   {@code SwitchOnHairDryer},
- *   {@code SwitchOffHairDryer},
- *   {@code SetLowHairDryer},
- *   {@code SetHighHairDryer}</li>
+ * {@code SwitchOnVacuumCleaner},
+ * {@code SwitchOffVacuumCleaner},
+ * {@code SetLowVacuumCleaner},
+ * {@code SetMediumVacuumCleaner},
+ * {@code SetHighVacuumCleaner}</li>
  * </ul>
- * 
- * <p><strong>Implementation Invariants</strong></p>
- * 
- * <pre>
+ * * <p><strong>Implementation Invariants</strong></p>
+ * * <pre>
  * invariant	{@code STEP_MEAN_DURATION > 0.0}
  * invariant	{@code DELAY_MEAN_DURATION > 0.0}
  * invariant	{@code rg != null}
  * </pre>
- * 
- * <p><strong>Invariants</strong></p>
- * 
- * <pre>
+ * * <p><strong>Invariants</strong></p>
+ * * <pre>
  * invariant	{@code URI != null && !URI.isEmpty()}
  * invariant	{@code MEAN_STEP_RPNAME != null && !MEAN_STEP_RPNAME.isEmpty()}
  * invariant	{@code MEAN_DELAY_RPNAME != null && !MEAN_DELAY_RPNAME.isEmpty()}
  * </pre>
- * 
- * <p>Created on : 2023-09-29</p>
- * 
- * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ * * @author	Team DeMoh
  */
 // -----------------------------------------------------------------------------
-@ModelExternalEvents(exported = {SwitchOnHairDryer.class,
-								 SwitchOffHairDryer.class,
-								 SetLowHairDryer.class,
-								 SetHighHairDryer.class})
+@ModelExternalEvents(exported = {SwitchOnVacuumCleaner.class,
+								 SwitchOffVacuumCleaner.class,
+								 SetLowVacuumCleaner.class,
+								 SetMediumVacuumCleaner.class,
+								 SetHighVacuumCleaner.class})
 // -----------------------------------------------------------------------------
-public class			HairDryerTesterModel
+public class			VacuumCleanerSimpleUserModel
 extends		AtomicES_Model
 {
 	// -------------------------------------------------------------------------
@@ -128,12 +91,17 @@ extends		AtomicES_Model
 
 	private static final long	serialVersionUID = 1L;
 	/** URI for an instance model; works as long as only one instance is
-	 *  created.															*/
-	public static final String	URI = HairDryerTesterModel.class.getSimpleName();
+	 * created.															*/
+	public static final String	URI =
+								VacuumCleanerSimpleUserModel.class.getSimpleName();
+	/** when true, leaves a trace of the execution of the model.			*/
+	public static boolean		VERBOSE = true;
+	/** when true, leaves a debugging trace of the execution of the model.	*/
+	public static boolean		DEBUG = false;
 
 	/** time interval between event outputs in hours.						*/
 	protected static double		STEP_MEAN_DURATION = 5.0/60.0; // 5 minutes
-	/** time interval between hair dryer usages in hours.					*/
+	/** time interval between vacuum cleaner usages in hours.					*/
 	protected static double		DELAY_MEAN_DURATION = 4.0;
 
 	/**	the random number generator from common math library.				*/
@@ -146,10 +114,8 @@ extends		AtomicES_Model
 	/**
 	 * return true if the static implementation invariants are observed, false
 	 * otherwise.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
+	 * * <p><strong>Contract</strong></p>
+	 * * <pre>
 	 * pre	{@code true}	// no precondition.
 	 * post	{@code true}	// no postcondition.
 	 * </pre>
@@ -161,11 +127,11 @@ extends		AtomicES_Model
 		boolean ret = true;
 		ret &= AssertionChecking.checkStaticImplementationInvariant(
 				STEP_MEAN_DURATION > 0.0,
-				HairDryerTesterModel.class,
+				VacuumCleanerSimpleUserModel.class,
 				"STEP_MEAN_DURATION > 0.0");
 		ret &= AssertionChecking.checkStaticImplementationInvariant(
 				DELAY_MEAN_DURATION > 0.0,
-				HairDryerTesterModel.class,
+				VacuumCleanerSimpleUserModel.class,
 				"DELAY_MEAN_DURATION > 0.0");
 		return ret;
 	}
@@ -173,10 +139,8 @@ extends		AtomicES_Model
 	/**
 	 * return true if the implementation invariants are observed, false
 	 * otherwise.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
+	 * * <p><strong>Contract</strong></p>
+	 * * <pre>
 	 * pre	{@code instance != null}
 	 * post	{@code true}	// no postcondition.
 	 * </pre>
@@ -185,7 +149,7 @@ extends		AtomicES_Model
 	 * @return			true if the implementation invariants are observed, false otherwise.
 	 */
 	protected static boolean	implementationInvariants(
-		HairDryerTesterModel instance
+		VacuumCleanerSimpleUserModel instance
 		)
 	{
 		assert	instance != null :
@@ -196,7 +160,7 @@ extends		AtomicES_Model
 		ret &= staticImplementationInvariants();
 		ret &= AssertionChecking.checkImplementationInvariant(
 				instance.rg != null,
-				HairDryerTesterModel.class,
+				VacuumCleanerSimpleUserModel.class,
 				instance,
 				"rg != null");
 		return ret;
@@ -204,10 +168,8 @@ extends		AtomicES_Model
 
 	/**
 	 * return true if the static invariants are observed, false otherwise.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
+	 * * <p><strong>Contract</strong></p>
+	 * * <pre>
 	 * pre	{@code true}	// no precondition.
 	 * post	{@code true}	// no postcondition.
 	 * </pre>
@@ -219,25 +181,23 @@ extends		AtomicES_Model
 		boolean ret = true;
 		ret &= AssertionChecking.checkStaticInvariant(
 				URI != null && !URI.isEmpty(),
-				HairDryerTesterModel.class,
+				VacuumCleanerSimpleUserModel.class,
 				"URI != null && !URI.isEmpty()");
 		ret &= AssertionChecking.checkStaticInvariant(
 				MEAN_STEP_RPNAME != null && !MEAN_STEP_RPNAME.isEmpty(),
-				HairDryerTesterModel.class,
+				VacuumCleanerSimpleUserModel.class,
 				"MEAN_STEP_RPNAME != null && !MEAN_STEP_RPNAME.isEmpty()");
 		ret &= AssertionChecking.checkStaticInvariant(
 				MEAN_DELAY_RPNAME != null && !MEAN_DELAY_RPNAME.isEmpty(),
-				HairDryerTesterModel.class,
+				VacuumCleanerSimpleUserModel.class,
 				"MEAN_DELAY_RPNAME != null && !MEAN_DELAY_RPNAME.isEmpty()");
 		return ret;
 	}
 
 	/**
 	 * return true if the invariants are observed, false otherwise.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
+	 * * <p><strong>Contract</strong></p>
+	 * * <pre>
 	 * pre	{@code instance != null}
 	 * post	{@code true}	// no postcondition.
 	 * </pre>
@@ -245,7 +205,7 @@ extends		AtomicES_Model
 	 * @param instance	instance to be tested.
 	 * @return			true if the black-box invariants are observed, false otherwise.
 	 */
-	protected static boolean	invariants(HairDryerTesterModel instance)
+	protected static boolean	invariants(VacuumCleanerSimpleUserModel instance)
 	{
 		assert	instance != null :
 				new NeoSim4JavaException("Precondition violation: "
@@ -261,15 +221,13 @@ extends		AtomicES_Model
 	// -------------------------------------------------------------------------
 
 	/**
-	 * create a hair dryer user MIL model instance.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
+	 * create a vacuum cleaner tester MIL model instance.
+	 * * <p><strong>Contract</strong></p>
+	 * * <pre>
 	 * pre	{@code uri == null || !uri.isEmpty()}
 	 * pre	{@code simulatedTimeUnit != null}
-	 * pre	{@code simulationEngine == null || !simulationEngine.isModelSet()}
-	 * pre	{@code simulationEngine == null || simulationEngine instanceof AtomicEngine}
+	 * pre	{@code simulationEngine != null && !simulationEngine.isModelSet()}
+	 * pre	{@code simulationEngine instanceof AtomicEngine}
 	 * post	{@code !isDebugModeOn()}
 	 * post	{@code getURI() != null && !getURI().isEmpty()}
 	 * post	{@code uri == null || getURI().equals(uri)}
@@ -282,7 +240,7 @@ extends		AtomicES_Model
 	 * @param simulationEngine	simulation engine to which the model is attached.
 	 * @throws Exception		<i>to do.</i>
 	 */
-	public				HairDryerTesterModel(
+	public				VacuumCleanerSimpleUserModel(
 		String uri,
 		TimeUnit simulatedTimeUnit,
 		AtomicSimulatorI simulationEngine
@@ -293,11 +251,11 @@ extends		AtomicES_Model
 		this.rg = new RandomDataGenerator();
 		this.getSimulationEngine().setLogger(new StandardLogger());
 
-		assert	HairDryerTesterModel.implementationInvariants(this) :
+		assert	VacuumCleanerSimpleUserModel.implementationInvariants(this) :
 				new NeoSim4JavaException(
-						"HairDryerTesterModel.implementationInvariants(this)");
-		assert	HairDryerTesterModel.invariants(this) :
-				new NeoSim4JavaException("HairDryerTesterModel.invariants(this)");
+						"VacuumCleanerTesterModel.implementationInvariants(this)");
+		assert	VacuumCleanerSimpleUserModel.invariants(this) :
+				new NeoSim4JavaException("VacuumCleanerTesterModel.invariants(this)");
 	}
 
 	// -------------------------------------------------------------------------
@@ -306,15 +264,13 @@ extends		AtomicES_Model
 
 	/**
 	 * generate the next event in the test scenario; current implementation
-	 * cycles through {@code SwitchOnHairDryer}, {@code SetHighHairDryer},
-	 * {@code SetLowHairDryer} and {@code SwitchOffHairDryer} in this order
+	 * cycles through {@code SwitchOnVacuumCleaner}, {@code SetHighVacuumCleaner},
+	 * {@code SetMediumVacuumCleaner}, {@code SetLowVacuumCleaner} and {@code SwitchOffVacuumCleaner} in this order
 	 * at a random time interval following a gaussian distribution with
 	 * mean {@code STEP_MEAN_DURATION} and standard deviation
 	 * {@code STEP_MEAN_DURATION/2.0}.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
+	 * * <p><strong>Contract</strong></p>
+	 * * <pre>
 	 * pre	{@code eventList.peek() != null}
 	 * post	{@code eventList.peek() != null}
 	 * </pre>
@@ -325,23 +281,25 @@ extends		AtomicES_Model
 		EventI current = this.eventList.peek();
 		// compute the next event type given the current event
 		ES_EventI nextEvent = null;
-		if (current instanceof SwitchOffHairDryer) {
-			// compute the time of occurrence for the next hair dryer usage
+		if (current instanceof SwitchOffVacuumCleaner) {
+			// compute the time of occurrence for the next vacuum cleaner usage
 			Time t2 = this.computeTimeOfNextUsage(current.getTimeOfOccurrence());
-			// after switching off the hair dryer, the next event must be a
+			// after switching off the vacuum cleaner, the next event must be a
 			// switch on
-			nextEvent = new SwitchOnHairDryer(t2);
+			nextEvent = new SwitchOnVacuumCleaner(t2);
 		} else {
 			// compute the time of occurrence for the next event
 			Time t = this.computeTimeOfNextEvent(current.getTimeOfOccurrence());
 			// establish a sequence of actions i.e., events, that tests all
-			// states and modes of the hair dryer
-			if (current instanceof SwitchOnHairDryer) {
-				nextEvent = new SetHighHairDryer(t);
-			} else if (current instanceof SetHighHairDryer) {
-				nextEvent = new SetLowHairDryer(t);
-			} else if (current instanceof SetLowHairDryer) {
-				nextEvent = new SwitchOffHairDryer(t);
+			// states and modes of the vacuum cleaner
+			if (current instanceof SwitchOnVacuumCleaner) {
+				nextEvent = new SetHighVacuumCleaner(t);
+			} else if (current instanceof SetHighVacuumCleaner) {
+				nextEvent = new SetMediumVacuumCleaner(t);
+			} else if (current instanceof SetMediumVacuumCleaner) {
+				nextEvent = new SetLowVacuumCleaner(t);
+			} else if (current instanceof SetLowVacuumCleaner) {
+				nextEvent = new SwitchOffVacuumCleaner(t);
 			}
 		}
 		// schedule the event to be executed by this model
@@ -351,10 +309,8 @@ extends		AtomicES_Model
 	/**
 	 * compute the time of the next event, adding a random delay to
 	 * {@code from}.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
+	 * * <p><strong>Contract</strong></p>
+	 * * <pre>
 	 * pre	{@code from != null}
 	 * post	{@code true}	// no postcondition.
 	 * </pre>
@@ -377,12 +333,10 @@ extends		AtomicES_Model
 	}
 
 	/**
-	 * compute the time of the next hair dryer usage, adding a random delay to
+	 * compute the time of the next vacuum cleaner usage, adding a random delay to
 	 * {@code from}.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
+	 * * <p><strong>Contract</strong></p>
+	 * * <pre>
 	 * pre	{@code from != null}
 	 * post	{@code true}	// no postcondition.
 	 * </pre>
@@ -422,15 +376,16 @@ extends		AtomicES_Model
 		// compute the time of occurrence for the first event
 		Time t = this.computeTimeOfNextEvent(this.getCurrentStateTime());
 		// schedule the first event
-		this.scheduleEvent(new SwitchOnHairDryer(t));
+		this.scheduleEvent(new SwitchOnVacuumCleaner(t));
 		// re-initialisation of the time of occurrence of the next event
 		// required here after adding a new event in the schedule.
 		this.nextTimeAdvance = this.timeAdvance();
 		this.timeOfNextEvent =
 				this.getCurrentStateTime().add(this.getNextTimeAdvance());
 
-		this.getSimulationEngine().toggleDebugMode();
-		this.logMessage("simulation begins.");
+		if (VERBOSE) {
+			this.logMessage("simulation begins.");
+		}
 	}
 
 	/**
@@ -453,7 +408,9 @@ extends		AtomicES_Model
 	@Override
 	public void			endSimulation(Time endTime)
 	{
-		this.logMessage("simulation ends.");
+		if (VERBOSE) {
+			this.logMessage("simulation ends.");
+		}
 		super.endSimulation(endTime);
 	}
 

@@ -4,7 +4,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.time.Instant;
+import java.util.ArrayList;
 
+import fr.sorbonne_u.components.hem2025.tests_utils.SimulationTestStep;
+import fr.sorbonne_u.components.hem2025.tests_utils.TestScenario;
 import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SetHighSpeedFan;
 import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SetLowSpeedFan;
 import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SwitchOffFan;
@@ -16,8 +21,12 @@ import fr.sorbonne_u.devs_simulation.hioa.architectures.CoupledHIOA_Descriptor;
 import fr.sorbonne_u.devs_simulation.models.architectures.AbstractAtomicModelDescriptor;
 import fr.sorbonne_u.devs_simulation.models.architectures.AtomicModelDescriptor;
 import fr.sorbonne_u.devs_simulation.models.architectures.CoupledModelDescriptor;
+import fr.sorbonne_u.devs_simulation.models.events.EventI;
 import fr.sorbonne_u.devs_simulation.models.events.EventSink;
 import fr.sorbonne_u.devs_simulation.models.events.EventSource;
+import fr.sorbonne_u.devs_simulation.models.interfaces.ModelI;
+import fr.sorbonne_u.devs_simulation.models.time.Duration;
+import fr.sorbonne_u.devs_simulation.models.time.Time;
 import fr.sorbonne_u.devs_simulation.simulators.SimulationEngine;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulatorI;
 
@@ -118,7 +127,7 @@ public class			RunFanUnitaryMILSimulation
 							null,
 							null,
 							null,
-							null)); // No bindings
+							null));
 
 			ArchitectureI architecture =
 					new Architecture(
@@ -132,14 +141,105 @@ public class			RunFanUnitaryMILSimulation
 			// this add additional time at each simulation step in
 			// standard simulations (useful when debugging)
 			SimulationEngine.SIMULATION_STEP_SLEEP_TIME = 0L;
-			// run a simulation with the simulation beginning at 0.0 and
-			// ending at 24.0
-			se.doStandAloneSimulation(0.0, 24.0);
+			
+			// run the test scenario
+			CLASSICAL.setUpSimulator(se);
+			Time startTime = CLASSICAL.getStartTime();
+			Duration d = CLASSICAL.getEndTime().subtract(startTime);
+			se.doStandAloneSimulation(startTime.getSimulatedTime(),
+									  d.getSimulatedDuration());
 			System.exit(0);
 			
 		} catch (Exception e) {
 			throw new RuntimeException(e) ;
 		}
 	}
+
+	// -------------------------------------------------------------------------
+	// Test scenarios
+	// -------------------------------------------------------------------------
+
+	protected static Instant	START_INSTANT =
+									Instant.parse("2025-10-20T12:00:00.00Z");
+	protected static Instant	END_INSTANT =
+									Instant.parse("2025-10-20T18:00:00.00Z");
+	protected static Time		START_TIME = new Time(0.0, TimeUnit.HOURS);
+
+	protected static TestScenario	CLASSICAL =
+		new TestScenario(
+			"-----------------------------------------------------\n" +
+			"Classical Fan Test\n" +
+			"  Gherkin specification\n\n" +
+			"    Feature: fan operation\n\n" +
+			"      Scenario: fan switched on\n" +
+			"        Given a fan that is off\n" +
+			"        When it is switched on\n" +
+			"        Then it is on and starts at LOW speed\n" +
+			"      Scenario: fan set to high speed\n" +
+			"        Given a fan that is on LOW\n" +
+			"        When it is set to HIGH speed\n" +
+			"        Then it runs at HIGH speed\n" +
+			"      Scenario: fan set to low speed\n" +
+			"        Given a fan that is on HIGH\n" +
+			"        When it is set to LOW speed\n" +
+			"        Then it runs at LOW speed\n" +
+			"      Scenario: fan switched off\n" +
+			"        Given a fan that is on\n" +
+			"        When it is switched off\n" +
+			"        Then it is off\n" +
+			"-----------------------------------------------------\n",
+			"\n-----------------------------------------------------\n" +
+			"End Classical Fan Test\n" +
+			"-----------------------------------------------------",
+			START_INSTANT,
+			END_INSTANT,
+			START_TIME,
+			(se, ts) -> { 
+				HashMap<String, Object> simParams = new HashMap<>();
+				simParams.put(
+					ModelI.createRunParameterName(
+						FanUnitTesterModel.URI,
+						FanUnitTesterModel.TEST_SCENARIO_RP_NAME),
+					ts);
+				se.setSimulationRunParameters(simParams);
+			},
+			new SimulationTestStep[]{
+				new SimulationTestStep(
+					FanUnitTesterModel.URI,
+					Instant.parse("2025-10-20T12:30:00.00Z"),
+					(m, t) -> {
+						ArrayList<EventI> ret = new ArrayList<>();
+						ret.add(new SwitchOnFan(t));
+						return ret;
+					},
+					(m, t) -> {}),
+				new SimulationTestStep(
+						FanUnitTesterModel.URI,
+						Instant.parse("2025-10-20T13:00:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new SetHighSpeedFan(t));
+							return ret;
+						},
+						(m, t) -> {}),
+				new SimulationTestStep(
+						FanUnitTesterModel.URI,
+						Instant.parse("2025-10-20T14:00:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new SetLowSpeedFan(t));
+							return ret;
+						},
+						(m, t) -> {}),
+				new SimulationTestStep(
+						FanUnitTesterModel.URI,
+						Instant.parse("2025-10-20T15:00:00.00Z"),
+						(m, t) -> {
+							ArrayList<EventI> ret = new ArrayList<>();
+							ret.add(new SwitchOffFan(t));
+							return ret;
+						},
+						(m, t) -> {})
+			});
 }
 // -----------------------------------------------------------------------------

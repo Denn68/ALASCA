@@ -3,8 +3,7 @@ package fr.sorbonne_u.components.hem2025e1.equipments.hairdryer;
 import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 import fr.sorbonne_u.components.hem2025e1.equipments.hairdryer.HairDryer;
-import fr.sorbonne_u.components.hem2025e1.equipments.hairdryer.HairDryerImplementationI;
-import fr.sorbonne_u.components.hem2025e1.equipments.hairdryer.HairDryerUserCI;
+
 
 // Copyright Jacques Malenfant, Sorbonne Universite.
 // Jacques.Malenfant@lip6.fr

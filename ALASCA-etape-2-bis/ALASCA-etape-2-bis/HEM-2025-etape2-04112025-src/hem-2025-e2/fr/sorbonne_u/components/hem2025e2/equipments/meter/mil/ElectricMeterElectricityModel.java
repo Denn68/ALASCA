@@ -1,37 +1,5 @@
 package fr.sorbonne_u.components.hem2025e2.equipments.meter.mil;
 
-// Copyright Jacques Malenfant, Sorbonne Universite.
-// Jacques.Malenfant@lip6.fr
-//
-// This software is a computer program whose purpose is to implement a mock-up
-// of household energy management system.
-//
-// This software is governed by the CeCILL-C license under French law and
-// abiding by the rules of distribution of free software.  You can use,
-// modify and/ or redistribute the software under the terms of the
-// CeCILL-C license as circulated by CEA, CNRS and INRIA at the following
-// URL "http://www.cecill.info".
-//
-// As a counterpart to the access to the source code and  rights to copy,
-// modify and redistribute granted by the license, users are provided only
-// with a limited warranty  and the software's author,  the holder of the
-// economic rights,  and the successive licensors  have only  limited
-// liability. 
-//
-// In this respect, the user's attention is drawn to the risks associated
-// with loading,  using,  modifying and/or developing or reproducing the
-// software by the user in light of its specific status of free software,
-// that may mean  that it is complicated to manipulate,  and  that  also
-// therefore means  that it is reserved for developers  and  experienced
-// professionals having in-depth computer knowledge. Users are therefore
-// encouraged to load and test the software's suitability as regards their
-// requirements in conditions enabling the security of their systems and/or 
-// data to be ensured and,  more generally, to use and operate it in the 
-// same conditions as regards security. 
-//
-// The fact that you are presently reading this means that you have had
-// knowledge of the CeCILL-C license and that you accept its terms.
-
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +48,10 @@ import java.text.NumberFormat;
  * <li>Imported variables:
  *   <ul>
  *   <i>name = {@code currentHeaterIntensity}, type = {@code Double}</li>
+ *   <i>name = {@code currentFanIntensity}, type = {@code Double}</li>
+ *   <i>name = {@code currentKettleIntensity}, type = {@code Double}</li>
  *   <i>name = {@code currentHairDryerIntensity}, type = {@code Double}</li>
+ *   <i>name = {@code currentVacuumCleanerIntensity}, type = {@code Double}</li>
  *   <i>name = {@code solarPanelOutputPower}, type = {@code Double}</li>
  *   <i>name = {@code batteriesInputPower}, type = {@code Double}</li>
  *   <i>name = {@code batteriesOutputPower}, type = {@code Double}</li>
@@ -102,7 +73,10 @@ import java.text.NumberFormat;
  * invariant	{@code evaluationStep.getSimulatedDuration() > 0.0}
  * invariant	{@code solarPanelOutputPower == null || !solarPanelOutputPower.isInitialised() || solarPanelOutputPower.getValue() >= 0.0}
  * invariant	{@code currentHeaterIntensity == null || !currentHeaterIntensity.isInitialised() || currentHeaterIntensity.getValue() >= 0.0}
+ * invariant	{@code currentFanIntensity == null || !currentFanIntensity.isInitialised() || currentFanIntensity.getValue() >= 0.0}
+ * invariant	{@code currentKettleIntensity == null || !currentKettleIntensity.isInitialised() || currentKettleIntensity.getValue() >= 0.0}
  * invariant	{@code currentHairDryerIntensity == null || !currentHairDryerIntensity.isInitialised() || currentHairDryerIntensity.getValue() >= 0.0}
+ * invariant	{@code currentVacuumCleanerIntensity == null || !currentVacuumCleanerIntensity.isInitialised() || currentVacuumCleanerIntensity.getValue() >= 0.0}
  * invariant	{@code currentIntensity != null && (!currentIntensity.isInitialised() || currentIntensity.getValue() >= 0.0)}
  * invariant	{@code cumulativeConsumption != null && (!cumulativeConsumption.isInitialised() || cumulativeConsumption.getValue() >= 0.0)}
  * invariant	{@code powerProduction != null && (!powerProduction.isInitialised() || powerProduction.getValue() >= 0.0)}
@@ -114,9 +88,7 @@ import java.text.NumberFormat;
  * invariant	{@code URI != null && !URI.isEmpty()}
  * </pre>
  * 
- * <p>Created on : 2023-10-02</p>
- * 
- * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ * @author	Team DeMoh
  */
 // -----------------------------------------------------------------------------
 @ModelExternalEvents(
@@ -126,8 +98,14 @@ import java.text.NumberFormat;
 @ModelImportedVariables(
 	{@ModelImportedVariable(name = "currentHeaterIntensity",
 							type = Double.class),
+	 @ModelImportedVariable(name = "currentFanIntensity",
+							type = Double.class),
+	 @ModelImportedVariable(name = "currentKettleIntensity",
+							type = Double.class),
 	 @ModelImportedVariable(name = "currentHairDryerIntensity",
 	 						type = Double.class),
+	 @ModelImportedVariable(name = "currentVacuumCleanerIntensity",
+							type = Double.class),
 	 @ModelImportedVariable(name = "solarPanelOutputPower",
 	 						type = Double.class),
 	 @ModelImportedVariable(name = "batteriesInputPower",
@@ -210,9 +188,19 @@ extends		AtomicHIOA
 	/** current intensity of the heater in amperes.							*/
 	@ImportedVariable(type = Double.class)
 	protected Value<Double>			currentHeaterIntensity;
+	/** current intensity of the fan in amperes.							*/
+	@ImportedVariable(type = Double.class)
+	protected Value<Double>			currentFanIntensity;
 	/** current intensity of the hair dryer in amperes.						*/
 	@ImportedVariable(type = Double.class)
 	protected Value<Double>			currentHairDryerIntensity;
+
+	/** current intensity of the kettle in amperes.							*/
+	@ImportedVariable(type = Double.class)
+	protected Value<Double>			currentKettleIntensity;
+	/** current intensity of the vacuum cleaner in amperes.						*/
+	@ImportedVariable(type = Double.class)
+	protected Value<Double>			currentVacuumCleanerIntensity;
 
 	/** current total power production of the house in the power unit
 	 *  defined by the electric meter.										*/
@@ -285,6 +273,24 @@ extends		AtomicHIOA
 				+ "!currentHeaterIntensity.isInitialised() || "
 				+ "currentHeaterIntensity.getValue() >= 0.0");
 		ret &= AssertionChecking.checkImplementationInvariant(
+				instance.currentFanIntensity == null ||
+					!instance.currentFanIntensity.isInitialised() ||
+						instance.currentFanIntensity.getValue() >= 0.0,
+				ElectricMeterElectricityModel.class,
+				instance,
+				"currentFanIntensity == null || "
+				+ "!currentFanIntensity.isInitialised() || "
+				+ "currentFanIntensity.getValue() >= 0.0");
+		ret &= AssertionChecking.checkImplementationInvariant(
+				instance.currentKettleIntensity == null ||
+					!instance.currentKettleIntensity.isInitialised() ||
+						instance.currentKettleIntensity.getValue() >= 0.0,
+				ElectricMeterElectricityModel.class,
+				instance,
+				"currentKettleIntensity == null || "
+				+ "!currentKettleIntensity.isInitialised() || "
+				+ "currentKettleIntensity.getValue() >= 0.0");
+		ret &= AssertionChecking.checkImplementationInvariant(
 				instance.currentHairDryerIntensity == null ||
 					!instance.currentHairDryerIntensity.isInitialised() ||
 						instance.currentHairDryerIntensity.getValue() >= 0.0,
@@ -293,6 +299,15 @@ extends		AtomicHIOA
 				"currentHairDryerIntensity == null || !i "
 				+ "currentHairDryerIntensity.isInitialised() || "
 				+ "currentHairDryerIntensity.getValue() >= 0.0");
+		ret &= AssertionChecking.checkImplementationInvariant(
+				instance.currentVacuumCleanerIntensity == null ||
+					!instance.currentVacuumCleanerIntensity.isInitialised() ||
+						instance.currentVacuumCleanerIntensity.getValue() >= 0.0,
+				ElectricMeterElectricityModel.class,
+				instance,
+				"currentVacuumCleanerIntensity == null || !i "
+				+ "currentVacuumCleanerIntensity.isInitialised() || "
+				+ "currentVacuumCleanerIntensity.getValue() >= 0.0");
 		ret &= AssertionChecking.checkImplementationInvariant(
 				instance.currentIntensity != null &&
 					(!instance.currentIntensity.isInitialised() ||
@@ -468,7 +483,10 @@ extends		AtomicHIOA
 		// simple sum of all incoming intensities
 		return this.batteriesInputPower.getValue()
 					+ this.currentHairDryerIntensity.getValue()
-						+ this.currentHeaterIntensity.getValue();
+						+ this.currentVacuumCleanerIntensity.getValue()
+							+ this.currentHeaterIntensity.getValue()
+								+ this.currentFanIntensity.getValue()
+									+ this.currentKettleIntensity.getValue();
 	}
 
 	/**
@@ -551,7 +569,10 @@ extends		AtomicHIOA
 		if (!this.currentIntensity.isInitialised()
 				&& this.batteriesInputPower.isInitialised()
 				&& this.currentHairDryerIntensity.isInitialised()
-				&& this.currentHeaterIntensity.isInitialised()) {
+				&& this.currentVacuumCleanerIntensity.isInitialised()
+				&& this.currentHeaterIntensity.isInitialised()
+				&& this.currentFanIntensity.isInitialised()
+				&& this.currentKettleIntensity.isInitialised()) {
 			double i = this.computeTotalIntensity();
 			this.currentIntensity.initialise(i);
 			this.cumulativeConsumption.initialise(0.0);
