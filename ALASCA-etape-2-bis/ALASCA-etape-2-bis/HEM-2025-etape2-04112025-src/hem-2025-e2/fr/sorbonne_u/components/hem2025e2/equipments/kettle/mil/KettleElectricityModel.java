@@ -261,19 +261,15 @@ extends		AtomicHIOA
 		double voltage = KettleExternalControlI.VOLTAGE.getData();
 
 		if (this.currentState == KettleState.ON) {
-			// ON mais pas HEATING (veille) = 0 W (simplification)
 			this.currentIntensity.setNewValue(0.0, t);
 		} 
 		else if (this.currentState == KettleState.HEATING) {
-			// Puissance de chauffe (variable ou max par défaut)
 			this.currentIntensity.setNewValue(this.currentHeatingPower.getValue() / voltage, t);
 		} 
 		else if (this.currentState == KettleState.KEEP_WARM) {
-			// Puissance réduite pour maintenir au chaud
 			this.currentIntensity.setNewValue(KEEP_WARM_POWER / voltage, t);
 		}
 		else {
-			// OFF
 			this.currentIntensity.setNewValue(0.0, t);
 		}
 

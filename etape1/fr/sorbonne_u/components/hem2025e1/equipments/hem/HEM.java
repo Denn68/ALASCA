@@ -337,14 +337,13 @@ extends		AbstractComponent implements RegistrationI
 
 				Class<?> dynHeaterConnector =
 					    fr.sorbonne_u.generator.ControlAdapterGenerator.generateAndLoad(
-				    		java.nio.file.Paths.get("ALASCA-etape-1-bis/HEM-2025-etape1-30092025-src/hem-adapter/heaterci-descriptor.xml").toAbsolutePath().toString(),   // ton descripteur
-				            java.nio.file.Paths.get("ALASCA-etape-1-bis/HEM-2025-etape1-30092025-src/hem-adapter/control-adapter.rnc").toAbsolutePath().toString(),       // ton RNC
+				    		java.nio.file.Paths.get("ALASCA-etape-1-bis/HEM-2025-etape1-30092025-src/hem-adapter/heaterci-descriptor.xml").toAbsolutePath().toString(),
+				            java.nio.file.Paths.get("ALASCA-etape-1-bis/HEM-2025-etape1-30092025-src/hem-adapter/control-adapter.rnc").toAbsolutePath().toString(),
 				            "fr.sorbonne_u.components.connectors.AbstractConnector",
 					        "fr.sorbonne_u.components.hem2025e1.generated.HeaterConnectorDynamic",
 					        this.getClass().getClassLoader()
 					    );
 
-				// puis utiliser dynHeaterConnector.getCanonicalName() pour la connexion
 				this.doPortConnection(
 				    this.heaterop.getPortURI(),
 				    fr.sorbonne_u.components.hem2025e1.equipments.heater.Heater.EXTERNAL_CONTROL_INBOUND_PORT_URI,
@@ -370,14 +369,13 @@ extends		AbstractComponent implements RegistrationI
 				
 				Class<?> dynKettleConnector =
 					    fr.sorbonne_u.generator.ControlAdapterGenerator.generateAndLoad(
-				    		java.nio.file.Paths.get("ALASCA-etape-1-bis/HEM-2025-etape1-30092025-src/hem-adapter/kettleci-descriptor.xml").toAbsolutePath().toString(),   // ton descripteur
-				            java.nio.file.Paths.get("ALASCA-etape-1-bis/HEM-2025-etape1-30092025-src/hem-adapter/control-adapter.rnc").toAbsolutePath().toString(),       // ton RNC
+				    		java.nio.file.Paths.get("ALASCA-etape-1-bis/HEM-2025-etape1-30092025-src/hem-adapter/kettleci-descriptor.xml").toAbsolutePath().toString(),
+				            java.nio.file.Paths.get("ALASCA-etape-1-bis/HEM-2025-etape1-30092025-src/hem-adapter/control-adapter.rnc").toAbsolutePath().toString(),
 				            "fr.sorbonne_u.components.connectors.AbstractConnector",
 					        "fr.sorbonne_u.components.hem2025e1.generated.KettleConnectorDynamic",
 					        this.getClass().getClassLoader()
 					    );
 
-				// puis utiliser dynHeaterConnector.getCanonicalName() pour la connexion
 				this.doPortConnection(
 				    this.kettleop.getPortURI(),
 				    fr.sorbonne_u.components.hem2025e1.equipments.kettle.Kettle.EXTERNAL_CONTROL_INBOUND_PORT_URI,
@@ -1953,60 +1951,15 @@ extends		AbstractComponent implements RegistrationI
 	@Override
 	public boolean register(String uid, String controlPortURI, String xmlControlAdapter) throws Exception {
 		return false;
-	    /*assert uid != null && !uid.isEmpty() : new PreconditionException("uid != null && !uid.isEmpty()");
-	    assert controlPortURI != null && !controlPortURI.isEmpty() :
-	            new PreconditionException("controlPortURI != null && !controlPortURI.isEmpty()");
-	    assert xmlControlAdapter == null || !xmlControlAdapter.isEmpty() :
-	            new PreconditionException("xmlControlAdapter == null || !xmlControlAdapter.isEmpty()");
-	    assert !registered(uid) : new PreconditionException("!registered(uid)");
-
-	    try {
-	        if (xmlControlAdapter == null) {
-	            this.traceMessage("Registration of " + uid + " with direct interface.\n");
-	            AdjustableOutboundPort aop = new AdjustableOutboundPort(this);
-	            aop.publishPort();
-	            this.doPortConnection(aop.getPortURI(), controlPortURI,
-	                    "fr.sorbonne_u.components.hem2025.bases.AdjustableConnector");
-	            return true;
-	        }
-
-	        this.traceMessage("Generating connector dynamically for " + uid + "\n");
-
-	        File tmpXml = File.createTempFile("control-adapter-", ".xml");
-	        java.nio.file.Files.write(tmpXml.toPath(), xmlControlAdapter.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-
-
-	        fr.sorbonne_u.generator.ControlAdapterGenerator.main(new String[]{tmpXml.getAbsolutePath()});
-
-	        String connectorClassName = extractConnectorClassName(tmpXml);
-
-	        Class<?> connectorClass = Class.forName("fr.sorbonne_u.generated." + connectorClassName);
-
-	        AdjustableOutboundPort dynamicPort = new AdjustableOutboundPort(this);
-	        dynamicPort.publishPort();
-
-	        this.doPortConnection(dynamicPort.getPortURI(), controlPortURI, connectorClass.getCanonicalName());
-
-	        this.traceMessage("Equipment " + uid + " registered with dynamic connector: "
-	                + connectorClassName + "\n");
-	        registeredEquipments.put(uid, dynamicPort);
-	        return true;
-
-	    } catch (Throwable t) {
-	    	this.traceMessage("Failed to register equipment " + uid + ": " + t.getMessage() + "\n");
-	        t.printStackTrace();
-	        return false;
-	    }*/
 	}
 	
 	private String extractConnectorClassName(File xmlFile) throws Exception {
-	    // Lecture rapide du tag "offered" pour déduire le nom du connecteur
 	    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 	    DocumentBuilder db = dbf.newDocumentBuilder();
 	    Document doc = db.parse(xmlFile);
 	    String offered = doc.getDocumentElement().getAttribute("offered");
 	    String[] parts = offered.split("\\.");
-	    String last = parts[parts.length - 1]; // ex: HeaterExternalControlJava4CI
+	    String last = parts[parts.length - 1];
 	    return last.replace("ExternalControlJava4CI", "Connector");
 	}
 

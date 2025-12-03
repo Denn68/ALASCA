@@ -186,14 +186,12 @@ extends		AtomicHIOA
 		
 		if (this.currentState == KettleState.HEATING || this.currentState == KettleState.KEEP_WARM) {
 			if (this.currentHeatingPower.getValue() > 0.0) {
-				// If temp > 100°C, we stop heating and go to keep warming
 				if (current < MAX_TEMPERATURE) {
 					currentTempDerivative += this.currentHeatingPower.getValue() * HEATING_CAPACITY;
 				}
 			}
 		}
 
-		// Cooling happens only if temp > EXTERNAL_TEMP (20°C)
 		if (current > EXTERNAL_TEMPERATURE) {
 			currentTempDerivative -= (current - EXTERNAL_TEMPERATURE) / COOLING_CONSTANT;
 		}

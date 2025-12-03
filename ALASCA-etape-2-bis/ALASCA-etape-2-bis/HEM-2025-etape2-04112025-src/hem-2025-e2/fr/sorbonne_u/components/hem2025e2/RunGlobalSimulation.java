@@ -306,9 +306,9 @@ public class			RunGlobalSimulation
 
 			// Fan models
 
-            atomicModelDescriptors.put(
+			atomicModelDescriptors.put(
                     FanElectricityModel.URI,
-                    RTAtomicHIOA_Descriptor.create(
+                    AtomicHIOA_Descriptor.create(
                             FanElectricityModel.class,
                             FanElectricityModel.URI,
                             GlobalSimulationConfigurationI.TIME_UNIT,
@@ -316,7 +316,7 @@ public class			RunGlobalSimulation
             
             atomicModelDescriptors.put(
                     FanSimpleUserModel.URI,
-                    RTAtomicModelDescriptor.create(
+                    AtomicModelDescriptor.create(
                             FanSimpleUserModel.class,
                             FanSimpleUserModel.URI,
                             GlobalSimulationConfigurationI.TIME_UNIT,
@@ -958,6 +958,30 @@ public class			RunGlobalSimulation
 					VacuumCleanerSimpleUserModel.URI,
 					VacuumCleanerSimpleUserModel.MEAN_DELAY_RPNAME),
 				2.0);
+			
+			// run parameters for Fan models
+			
+            simParams.put(
+                ModelI.createRunParameterName(
+                    FanElectricityModel.URI,
+                    FanElectricityModel.LOW_MODE_CONSUMPTION_RPNAME),
+                20.0);
+            
+            simParams.put(
+                ModelI.createRunParameterName(
+                    FanElectricityModel.URI,
+                    FanElectricityModel.HIGH_MODE_CONSUMPTION_RPNAME),
+                60.0);
+            simParams.put(
+                ModelI.createRunParameterName(
+                    FanSimpleUserModel.URI,
+                    FanSimpleUserModel.MEAN_STEP_RPNAME),
+                0.5);
+            simParams.put(
+                ModelI.createRunParameterName(
+                    FanSimpleUserModel.URI,
+                    FanSimpleUserModel.MEAN_DELAY_RPNAME),
+                4.0);
 
 			// run parameters for solar panel models
 
@@ -1074,6 +1098,11 @@ public class			RunGlobalSimulation
 			ExternalTemperatureModel.DEBUG  = false;
 			HeaterUnitTesterModel.VERBOSE = false;
 			HeaterUnitTesterModel.DEBUG  = false;
+			
+			FanElectricityModel.VERBOSE = true;
+			FanElectricityModel.DEBUG = false;
+			FanSimpleUserModel.VERBOSE = true;
+			FanSimpleUserModel.DEBUG = false;
 			
 			KettleElectricityModel.VERBOSE = true;
             KettleElectricityModel.DEBUG = false;

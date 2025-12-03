@@ -6,5 +6,11 @@
 	<classpathentry kind="src" path="ALASCA-etape-2-ter/NeoSim4Java-10112025-src/extra"/>
 	<classpathentry kind="src" path="ALASCA-etape-2-ter/NeoSim4Java-10112025-src/src"/>
 	<classpathentry kind="lib" path="ALASCA-etape-2-ter/NeoSim4Java-10112025.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
+	<classpathentry kind="lib" path="/ALASCA/BCM4Java-10072025.jar"/>
+	<classpathentry kind="lib" path="/ALASCA/commons-math3-3.6.1.jar"/>
+	<classpathentry kind="lib" path="/ALASCA/CommonSunCalculations-07102025.jar"/>
+	<classpathentry kind="lib" path="/ALASCA/javassist.jar"/>
+	<classpathentry kind="lib" path="/ALASCA/jing.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
