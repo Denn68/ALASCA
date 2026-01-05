@@ -2,7 +2,9 @@ package fr.sorbonne_u.components.hem2025e1.equipments.washing_machine;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
+import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
+import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineExternalControlJava4InboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineInternalControlInboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineUserJava4InboundPort;
@@ -11,6 +13,12 @@ import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PostconditionException;
 import fr.sorbonne_u.exceptions.PreconditionException;
+import fr.sorbonne_u.components.hem2025e1.CVMIntegrationTest;
+import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
+import fr.sorbonne_u.utils.aclocks.ClocksServer;
+import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
+import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
+import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -20,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.alasca.physical_data.SignalData;
 
+@RequiredInterfaces(required = { ClocksServerCI.class })
 @OfferedInterfaces(offered = { WashingMachineUserJava4CI.class, WashingMachineInternalControlCI.class,
 		WashingMachineExternalControlJava4CI.class })
 public class WashingMachine extends AbstractComponent implements WashingMachineUserI, WashingMachineInternalControlI {
@@ -47,6 +56,10 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 	protected WashingMachineInternalControlInboundPort wmicip;
 
 	protected WashingMachineExternalControlJava4InboundPort wmecip;
+	
+	protected AcceleratedClock clock;
+	
+	protected ClocksServerOutboundPort csop;
 
 	public static boolean VERBOSE = false;
 
@@ -176,18 +189,63 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 				: new ImplementationInvariantException("WashingMachine.implementationInvariants(this)");
 		assert WashingMachine.invariants(this) : new InvariantException("WashingMachine.invariants(this)");
 	}
+	
+	@Override
+	public synchronized void start() throws ComponentStartException {
+	    super.start();
+	    try {
+	        this.csop = new ClocksServerOutboundPort(this);
+	        this.csop.publishPort();
+	        this.doPortConnection(
+	                this.csop.getPortURI(),
+	                ClocksServer.STANDARD_INBOUNDPORT_URI,
+	                ClocksServerConnector.class.getCanonicalName());
+
+	        this.clock = this.csop.getClock("hem-clock"); 
+	    } catch (Exception e) {
+	        throw new ComponentStartException(e);
+	    }
+	}
+	
+	@Override
+	public synchronized void execute() throws Exception {
+	    System.out.println("WashingMachine: execute() started. Waiting for clock..."); // DEBUG
+	    
+	    if (this.clock != null) {
+	        this.clock.waitUntilStart();
+	    }
+	    
+	    System.out.println("WashingMachine: Clock started ! Simulation begins."); // DEBUG
+	}
+	
+	@Override
+	public synchronized void finalise() throws Exception {
+	    if (this.csop != null && this.csop.connected()) {
+	        this.doPortDisconnection(this.csop.getPortURI());
+	    }
+	    super.finalise();
+	}
 
 	@Override
 	public synchronized void shutdown() throws ComponentShutdownException {
-		try {
-			this.wmip.unpublishPort();
-			this.wmicip.unpublishPort();
-			this.wmecip.unpublishPort();
-			this.scheduler.shutdownNow();
-		} catch (Throwable e) {
-			throw new ComponentShutdownException(e);
-		}
-		super.shutdown();
+	    try {
+	        if (this.csop != null && this.csop.isPublished()) {
+	            this.csop.unpublishPort();
+	        }
+	        
+	        try {
+				this.wmip.unpublishPort();
+				this.wmicip.unpublishPort();
+				this.wmecip.unpublishPort();
+				this.scheduler.shutdownNow();
+			} catch (Throwable e) {
+				throw new ComponentShutdownException(e);
+			}
+	        
+	    } catch (Throwable e) {
+	        throw new ComponentShutdownException(e);
+	    }
+	    super.shutdown();
 	}
 
 	@Override
@@ -385,7 +443,7 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 		// on garde en mémoire la durée de lavage programmée
 		this.programmedTargetTemperature = target;
 		this.remainingWashingTimeMS = washingTimeMS;
-		this.washingStartInstantMS = System.currentTimeMillis();
+		this.washingStartInstantMS = this.clock.currentInstant().toEpochMilli();
 
 		this.currentState = WashingMachineState.WASHING;
 
@@ -393,6 +451,8 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 		if (this.washingFuture != null && !this.washingFuture.isDone()) {
 			this.washingFuture.cancel(false);
 		}
+		
+		long realDelay = toRealTime(washingTimeMS);
 
 		this.washingFuture = scheduler.schedule(() -> {
 			try {
@@ -400,7 +460,7 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		}, washingTimeMS, TimeUnit.MILLISECONDS);
+		}, realDelay, TimeUnit.MILLISECONDS);
 	}
 
 	@Override
@@ -415,7 +475,9 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 		this.remainingDelayMS = delayMS;
 		this.remainingWashingTimeMS = washingTimeMS;
 		this.programmedTargetTemperature = target;
-		this.delayStartInstantMS = System.currentTimeMillis();
+		this.delayStartInstantMS = this.clock.currentInstant().toEpochMilli();
+
+        long realDelay = toRealTime(delayMS);
 
 		if (WashingMachine.VERBOSE) {
 			this.traceMessage("Washing Machine will start in " + delayMS + " ms.\n");
@@ -428,7 +490,7 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		}, delayMS, TimeUnit.MILLISECONDS);
+		}, realDelay, TimeUnit.MILLISECONDS);
 	}
 	
 	public void suspendCycle() throws Exception {
@@ -438,7 +500,7 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 
 		assert this.on() : new PreconditionException("on()");
 
-		long now = System.currentTimeMillis();
+		long now = this.clock.currentInstant().toEpochMilli();
 
 		// 1) Si un lavage est en cours, on le met en pause
 		if (this.currentState == WashingMachineState.WASHING &&
@@ -476,17 +538,17 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 
 		assert this.on() : new PreconditionException("on()");
 
-		long now = System.currentTimeMillis();
+		long now = this.clock.currentInstant().toEpochMilli();
 
 		// 1) S'il reste encore un délai à consommer, on reprend le compte à rebours
 		if (this.remainingDelayMS > 0L &&
 				(this.delayFuture == null || this.delayFuture.isDone())) {
 
 			this.delayStartInstantMS = now;
-			long delay = this.remainingDelayMS;
+			long realDelay = toRealTime(this.remainingDelayMS);
 
 			if (WashingMachine.VERBOSE) {
-				this.traceMessage("Resuming delayed start with remaining delay = " + delay + " ms.\n");
+				this.traceMessage("Resuming delayed start with remaining delay = " + realDelay + " ms.\n");
 			}
 
 			this.delayFuture = scheduler.schedule(() -> {
@@ -495,7 +557,7 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			}, delay, TimeUnit.MILLISECONDS);
+			}, realDelay, TimeUnit.MILLISECONDS);
 
 			return;
 		}
@@ -506,10 +568,10 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 
 			this.currentState = WashingMachineState.WASHING;
 			this.washingStartInstantMS = now;
-			long remaining = this.remainingWashingTimeMS;
+			long realWashingDelay = toRealTime(this.remainingWashingTimeMS);
 
 			if (WashingMachine.VERBOSE) {
-				this.traceMessage("Resuming washing, remaining time = " + remaining + " ms.\n");
+				this.traceMessage("Resuming washing, remaining time = " + realWashingDelay + " ms.\n");
 			}
 
 			this.washingFuture = scheduler.schedule(() -> {
@@ -518,7 +580,7 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			}, remaining, TimeUnit.MILLISECONDS);
+			}, realWashingDelay, TimeUnit.MILLISECONDS);
 		}
 	}
 
@@ -531,5 +593,10 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 		}
 		return this.currentState == WashingMachineState.WASHING;
 	}
+	
+	protected long toRealTime(long simulatedDelayMS) {
+        if (this.clock == null) return simulatedDelayMS;
+        return (long) (simulatedDelayMS / this.clock.getAccelerationFactor());
+    }
 }
 // -----------------------------------------------------------------------------

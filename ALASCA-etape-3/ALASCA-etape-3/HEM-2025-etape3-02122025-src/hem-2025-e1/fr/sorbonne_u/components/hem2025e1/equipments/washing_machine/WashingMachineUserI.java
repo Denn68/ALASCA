@@ -1,0 +1,26 @@
+package fr.sorbonne_u.components.hem2025e1.equipments.washing_machine;
+
+import fr.sorbonne_u.alasca.physical_data.Measure;
+
+public interface		WashingMachineUserI
+extends		WashingMachineExternalControlI
+{
+	
+	public boolean		on() throws Exception;
+
+	public void			switchOn() throws Exception;
+
+	public void			switchOff() throws Exception;
+
+	public void			setTargetTemperature(Measure<Double> target) throws Exception;
+	
+	public boolean 		isWashing() throws Exception;
+	
+	public void 		startWashing(long washingTimeMS, Measure<Double> target) throws Exception;
+	
+	public void 		delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception;
+	
+	public void 		suspendCycle() throws Exception;
+	
+	public void 		resumeCycle() throws Exception;
+}

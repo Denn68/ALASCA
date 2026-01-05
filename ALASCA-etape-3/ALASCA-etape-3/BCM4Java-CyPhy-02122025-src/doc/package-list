@@ -1,0 +1,12 @@
+fr.sorbonne_u.alasca.physical_data
+fr.sorbonne_u.components.cyphy
+fr.sorbonne_u.components.cyphy.annotations
+fr.sorbonne_u.components.cyphy.connections
+fr.sorbonne_u.components.cyphy.interfaces
+fr.sorbonne_u.components.cyphy.plugins.devs
+fr.sorbonne_u.components.cyphy.plugins.devs.architectures
+fr.sorbonne_u.components.cyphy.plugins.devs.connections
+fr.sorbonne_u.components.cyphy.plugins.devs.interfaces
+fr.sorbonne_u.components.cyphy.plugins.devs.utils
+fr.sorbonne_u.components.cyphy.utils.aclocks
+fr.sorbonne_u.components.cyphy.utils.tests
