@@ -379,7 +379,7 @@ implements	WashingMachineUserI,
 									accelerationFactor);
 		} else if (architectureURI.equals(INTEGRATION_TEST_ARCHITECTURE_URI)) {
 			ret = Local_SIL_SimulationArchitectures.
-						cr(
+						createWashingMachineSIL_LocalArchitecture4IntegrationTest(
 									architectureURI,
 									rootModelURI,
 									simulatedTimeUnit,

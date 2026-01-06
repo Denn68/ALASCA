@@ -36,6 +36,7 @@ implements	WashingMachineEventI
 						+ "model instanceof WashingMachineOperationI ");
 
 		WashingMachineOperationI wm = (WashingMachineOperationI)model;
+		
 		assert	wm.getState() == WashingMachineState.OFF :
 				new NeoSim4JavaException(
 						"model not in the right state, should be "

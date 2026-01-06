@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 import fr.sorbonne_u.components.cyphy.utils.tests.SimulationTestStep;
 import fr.sorbonne_u.components.cyphy.utils.tests.TestScenarioWithSimulation;
+import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.HeaterSimulationConfigurationI;
+import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.HeaterTemperatureModel;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.*;
 import fr.sorbonne_u.devs_simulation.architectures.Architecture;
 import fr.sorbonne_u.devs_simulation.architectures.ArchitectureI;
@@ -36,7 +38,7 @@ public class RunWashingMachineUnitaryMILSimulation
 	protected static final Instant START_INSTANT = Instant.parse("2025-10-20T12:00:00.00Z");
 	
 	/** l'instant de fin de la simulation. */
-	protected static final Instant END_INSTANT = Instant.parse("2025-10-20T14:00:00.00Z");
+	protected static final Instant END_INSTANT = Instant.parse("2025-10-20T12:40:00.00Z");
 	
 	/** le temps de démarrage dans le temps simulé (t=0). */
 	protected static final Time START_TIME = new Time(0.0, TimeUnit.MINUTES);
@@ -56,10 +58,17 @@ public class RunWashingMachineUnitaryMILSimulation
 				AtomicHIOA_Descriptor.create(
 					WashingMachineElectricityModel.class,
 					WashingMachineElectricityModel.URI,
-					TimeUnit.MINUTES,
+					WashingMachineSimulationConfigurationI.TIME_UNIT,
 					null
 				)
 			);
+			atomicModelDescriptors.put(
+					WashingMachineTemperatureModel.URI,
+					AtomicHIOA_Descriptor.create(
+							WashingMachineTemperatureModel.class,
+							WashingMachineTemperatureModel.URI,
+							WashingMachineSimulationConfigurationI.TIME_UNIT,
+							null));
 
 			// Le Tester est un AtomicModel standard (hérite de AbstractTestScenarioBasedAtomicModel)
 			atomicModelDescriptors.put(
@@ -67,7 +76,7 @@ public class RunWashingMachineUnitaryMILSimulation
 				AtomicModelDescriptor.create(
 					WashingMachineUnitTesterModel.class,
 					WashingMachineUnitTesterModel.URI,
-					TimeUnit.MINUTES,
+					WashingMachineSimulationConfigurationI.TIME_UNIT,
 					null
 				)
 			);
@@ -76,38 +85,95 @@ public class RunWashingMachineUnitaryMILSimulation
 
 			Set<String> submodels = new HashSet<>();
 			submodels.add(WashingMachineElectricityModel.URI);
+			submodels.add(WashingMachineTemperatureModel.URI);
 			submodels.add(WashingMachineUnitTesterModel.URI);
 
 			Map<EventSource, EventSink[]> connections = new HashMap<>();
 			
 			connections.put(
-				new EventSource(WashingMachineUnitTesterModel.URI, SwitchOnWashingMachine.class),
-				new EventSink[] { new EventSink(WashingMachineElectricityModel.URI, SwitchOnWashingMachine.class) }
+				new EventSource(WashingMachineUnitTesterModel.URI,
+						SwitchOnWashingMachine.class),
+				new EventSink[] {
+						new EventSink(WashingMachineElectricityModel.URI,
+								SwitchOnWashingMachine.class),
+						new EventSink(WashingMachineTemperatureModel.URI,
+								SwitchOnWashingMachine.class)
+						}
 			);
 			connections.put(
-				new EventSource(WashingMachineUnitTesterModel.URI, SwitchOffWashingMachine.class),
-				new EventSink[] { new EventSink(WashingMachineElectricityModel.URI, SwitchOffWashingMachine.class) }
+				new EventSource(WashingMachineUnitTesterModel.URI,
+						SwitchOffWashingMachine.class),
+				new EventSink[] {
+						new EventSink(WashingMachineElectricityModel.URI,
+								SwitchOffWashingMachine.class),
+						new EventSink(WashingMachineTemperatureModel.URI,
+								SwitchOffWashingMachine.class)
+						}
 			);
 			connections.put(
-				new EventSource(WashingMachineUnitTesterModel.URI, StartWashing.class),
-				new EventSink[] { new EventSink(WashingMachineElectricityModel.URI, StartWashing.class) }
+				new EventSource(WashingMachineUnitTesterModel.URI,
+						StartWashing.class),
+				new EventSink[] {
+						new EventSink(WashingMachineElectricityModel.URI,
+								StartWashing.class),
+						new EventSink(WashingMachineTemperatureModel.URI,
+								StartWashing.class)
+						}
 			);
 			connections.put(
-			    new EventSource(WashingMachineUnitTesterModel.URI, SetDelayedStart.class),
-			    new EventSink[] { new EventSink(WashingMachineElectricityModel.URI, SetDelayedStart.class) }
+			    new EventSource(WashingMachineUnitTesterModel.URI,
+			    		SetDelayedStart.class),
+			    new EventSink[] {
+						new EventSink(WashingMachineElectricityModel.URI,
+								SetDelayedStart.class),
+						new EventSink(WashingMachineTemperatureModel.URI,
+								SetDelayedStart.class)
+						}
 			);
 			connections.put(
-				new EventSource(WashingMachineUnitTesterModel.URI, SuspendWashing.class),
-				new EventSink[] { new EventSink(WashingMachineElectricityModel.URI, SuspendWashing.class) }
+				new EventSource(WashingMachineUnitTesterModel.URI,
+						SuspendWashing.class),
+				new EventSink[] {
+						new EventSink(WashingMachineElectricityModel.URI,
+								SuspendWashing.class),
+						new EventSink(WashingMachineTemperatureModel.URI,
+								SuspendWashing.class)
+						}
 			);
 			connections.put(
 				new EventSource(WashingMachineUnitTesterModel.URI, ResumeWashing.class),
-				new EventSink[] { new EventSink(WashingMachineElectricityModel.URI, ResumeWashing.class) }
+				new EventSink[] {
+						new EventSink(WashingMachineElectricityModel.URI,
+								ResumeWashing.class),
+						new EventSink(WashingMachineTemperatureModel.URI,
+								ResumeWashing.class)
+						}
 			);
 			connections.put(
-				new EventSource(WashingMachineUnitTesterModel.URI, SetPowerWashingMachine.class),
-				new EventSink[] { new EventSink(WashingMachineElectricityModel.URI, SetPowerWashingMachine.class) }
-			);
+					new EventSource(WashingMachineElectricityModel.URI, WashingEnded.class),
+					new EventSink[] {
+							new EventSink(WashingMachineTemperatureModel.URI,
+									WashingEnded.class) }
+				);
+			connections.put(
+					new EventSource(WashingMachineTemperatureModel.URI, HeatingFinished.class),
+					new EventSink[] {
+							new EventSink(WashingMachineElectricityModel.URI,
+									HeatingFinished.class) }
+				);
+			connections.put(
+				    new EventSource(WashingMachineElectricityModel.URI, StartWashing.class),
+				    new EventSink[] { 
+				        new EventSink(WashingMachineTemperatureModel.URI, StartWashing.class) 
+				    }
+				);
+			connections.put(
+				new EventSource(WashingMachineUnitTesterModel.URI,
+						SetPowerWashingMachine.class),
+				new EventSink[] {
+						new EventSink(WashingMachineElectricityModel.URI,
+								SetPowerWashingMachine.class) 
+						});
 
 			coupledModelDescriptors.put(
 				WashingMachineCoupledModel.URI,
@@ -115,10 +181,13 @@ public class RunWashingMachineUnitaryMILSimulation
 					WashingMachineCoupledModel.class,
 					WashingMachineCoupledModel.URI,
 					submodels,
-					null, null,
+					null,
+					null,
 					connections,
 					null, 
-					null, null, null
+					null,
+					null,
+					null
 				)
 			);
 
@@ -127,11 +196,11 @@ public class RunWashingMachineUnitaryMILSimulation
 				WashingMachineCoupledModel.URI,
 				atomicModelDescriptors,
 				coupledModelDescriptors,
-				TimeUnit.MINUTES 
+				WashingMachineSimulationConfigurationI.TIME_UNIT 
 			);
 
 			SimulatorI se = architecture.constructSimulator();
-			SimulationEngine.SIMULATION_STEP_SLEEP_TIME = 0L;
+			SimulationEngine.SIMULATION_STEP_SLEEP_TIME = 10L;
 
 			// 4. Récupération et Injection du Scénario
 			TestScenarioWithSimulation scenario = standardScenario();
@@ -193,25 +262,23 @@ public class RunWashingMachineUnitaryMILSimulation
 			        START_INSTANT.plusSeconds(2 * 60),
 			        (m, t) -> {
 			            ArrayList<EventI> ret = new ArrayList<>();
-			            // Délai 10 min, Cycle 30 min, 40°C
-			            // Elle devrait démarrer toute seule à T = 12 min
-			            ret.add(new SetDelayedStart(t, 10L, 30L, 40.0));
+			            ret.add(new SetDelayedStart(t, 5L, 10L, 15.8));
 			            return ret;
 			        }, (m, t) -> {}
 			    ),
 			    /*new SimulationTestStep(
 					WashingMachineUnitTesterModel.URI,
-					START_INSTANT.plusSeconds(5 * 60), // + 5 minutes
+					START_INSTANT.plusSeconds(1 * 60), // + 5 minutes
 					(m, t) -> {
 						ArrayList<EventI> ret = new ArrayList<>();
-						ret.add(new StartWashing(t, 30L, 40.0));
+						ret.add(new StartWashing(t, 20L, 16));
 						return ret;
 					}, (m, t) -> {}
 				),*/
-			    // T=15.0 min : Pause (Elle aura démarré depuis 3 min)
+
 			    new SimulationTestStep(
 			        WashingMachineUnitTesterModel.URI,
-			        START_INSTANT.plusSeconds(15 * 60),
+			        START_INSTANT.plusSeconds(10 * 60),
 			        (m, t) -> {
 			            ArrayList<EventI> ret = new ArrayList<>();
 			            ret.add(new SuspendWashing(t));
@@ -221,17 +288,17 @@ public class RunWashingMachineUnitaryMILSimulation
 			    // T=25.0 min : Reprise
 			    new SimulationTestStep(
 			        WashingMachineUnitTesterModel.URI,
-			        START_INSTANT.plusSeconds(25 * 60),
+			        START_INSTANT.plusSeconds(15 * 60),
 			        (m, t) -> {
 			            ArrayList<EventI> ret = new ArrayList<>();
 			            ret.add(new ResumeWashing(t));
 			            return ret;
 			        }, (m, t) -> {}
 			    ),
-			    // T=100.0 min : Éteindre (On laisse large pour finir le cycle)
+
 			    new SimulationTestStep(
 			        WashingMachineUnitTesterModel.URI,
-			        START_INSTANT.plusSeconds(100 * 60), 
+			        START_INSTANT.plusSeconds(40 * 60), 
 			        (m, t) -> {
 			            ArrayList<EventI> ret = new ArrayList<>();
 			            ret.add(new SwitchOffWashingMachine(t));

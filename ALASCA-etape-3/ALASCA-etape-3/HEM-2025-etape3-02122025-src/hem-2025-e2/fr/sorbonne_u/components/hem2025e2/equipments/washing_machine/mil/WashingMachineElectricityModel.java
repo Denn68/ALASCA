@@ -4,13 +4,16 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.WashingMachine.WashingMachineState;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.WashingMachineExternalControlI;
 import fr.sorbonne_u.components.hem2025e2.GlobalReportI;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.*;
+import fr.sorbonne_u.components.hem2025e2.utils.Electricity;
 import fr.sorbonne_u.devs_simulation.hioa.annotations.ExportedVariable;
 import fr.sorbonne_u.devs_simulation.hioa.annotations.ModelExportedVariable;
 import fr.sorbonne_u.devs_simulation.hioa.models.AtomicHIOA;
 import fr.sorbonne_u.devs_simulation.hioa.models.vars.Value;
 import fr.sorbonne_u.devs_simulation.models.annotations.ModelExternalEvents;
+import fr.sorbonne_u.devs_simulation.models.events.Event;
 import fr.sorbonne_u.devs_simulation.models.events.EventI;
 import fr.sorbonne_u.devs_simulation.models.time.Duration;
 import fr.sorbonne_u.devs_simulation.models.time.Time;
@@ -26,7 +29,11 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
     SetDelayedStart.class,
     SuspendWashing.class, 
     ResumeWashing.class,
-    SetPowerWashingMachine.class
+    SetPowerWashingMachine.class,
+    HeatingFinished.class
+}, exported = {
+	WashingEnded.class,
+	StartWashing.class
 })
 @ModelExportedVariable(name = "currentIntensity", type = Double.class)
 @ModelExportedVariable(name = "currentHeatingPower", type = Double.class)
@@ -56,6 +63,8 @@ implements WashingMachineOperationI
 
     // --- Variables pour le départ différé ---
     protected boolean isDelayRunning = false; // Est-on en train d'attendre un départ ?
+    protected boolean delayedStart = false;
+    protected boolean washingEnded = false;   // Flag pour émettre WashingEnded
     protected long programmedDuration;        // Durée du cycle prévu après le délai
     protected double programmedTemperature;   // Température prévue après le délai
 
@@ -81,14 +90,15 @@ implements WashingMachineOperationI
     // -------------------------------------------------------------------------
 
     @Override public void switchOn() { 
-        if(currentState == WashingMachineState.OFF) { 
-            currentState = WashingMachineState.ON; 
+
+        if(this.currentState == WashingMachineState.OFF) { 
+        	this.currentState = WashingMachineState.ON; 
             consumptionHasChanged = true; 
         } 
     }
     
     @Override public void switchOff() { 
-        currentState = WashingMachineState.OFF; 
+    	this.currentState = WashingMachineState.OFF; 
         remainingTimeInCurrentPhase = null; 
         timeForNextPhase = null; 
         isDelayRunning = false; // On annule tout départ différé
@@ -96,7 +106,7 @@ implements WashingMachineOperationI
     }
     
     @Override public void startWashing(long duration, double targetTemperature) {
-        if (currentState == WashingMachineState.ON) {
+if (this.currentState == WashingMachineState.ON) {
             
             // Si on lance manuellement, on annule tout délai en cours
             if (isDelayRunning) {
@@ -104,44 +114,38 @@ implements WashingMachineOperationI
                 isDelayRunning = false;
             }
 
-            double total = (double) duration;
-            double heat = (targetTemperature > 20.0) ? Math.min(10.0, total) : 0.0;
-            double wash = total - heat;
-
-            if (heat > 0) {
-                currentState = WashingMachineState.HEATINGWATER;
-                remainingTimeInCurrentPhase = new Duration(heat, getSimulatedTimeUnit());
-                timeForNextPhase = new Duration(wash, getSimulatedTimeUnit());
-            } else {
-                currentState = WashingMachineState.WASHING;
-                remainingTimeInCurrentPhase = new Duration(wash, getSimulatedTimeUnit());
-                timeForNextPhase = null;
-            }
-            consumptionHasChanged = true;
+            // On passe en chauffe (même si c'est froid, le modèle Température
+            // verra que TempActuelle >= Cible et renverra HeatingFinished tout de suite)
+            this.currentState = WashingMachineState.HEATINGWATER;
+            
+            // On attend indéfiniment la réponse de la physique
+            this.remainingTimeInCurrentPhase = Duration.INFINITY;
+            
+            // On garde en mémoire la durée du lavage Moteur pour plus tard
+            this.timeForNextPhase = new Duration((double) duration, getSimulatedTimeUnit());
+            
+            this.consumptionHasChanged = true;
         }
     }
 
     @Override
     public void setDelayedStart(long delay, long washingDuration, double targetTemperature) {
-        if (currentState == WashingMachineState.ON && !isDelayRunning) {
+    	if (this.currentState == WashingMachineState.ON && !isDelayRunning) {
             if(VERBOSE) logMessage("Delayed Start programmed for " + delay + " min.\n");
             
             this.isDelayRunning = true;
             this.programmedDuration = washingDuration;
             this.programmedTemperature = targetTemperature;
             
-            // Le "temps restant" devient le temps d'attente avant démarrage
+            // On attend la fin du délai
             this.remainingTimeInCurrentPhase = new Duration((double)delay, getSimulatedTimeUnit());
-            
-            // Pas de changement de consommation (reste à 0), donc pas de consumptionHasChanged = true nécessaire
-            // sauf si on voulait logger un état "WAITING".
         }
     }
 
     @Override public void suspendWashing() {
-        if (currentState == WashingMachineState.WASHING || currentState == WashingMachineState.HEATINGWATER) {
-            stateBeforeSuspension = currentState;
-            currentState = WashingMachineState.ON;
+        if (this.currentState == WashingMachineState.WASHING || this.currentState == WashingMachineState.HEATINGWATER) {
+            stateBeforeSuspension = this.currentState;
+            this.currentState = WashingMachineState.ON;
             consumptionHasChanged = true;
         }
         // Note: on pourrait aussi suspendre le compte à rebours du délai si besoin, 
@@ -149,15 +153,15 @@ implements WashingMachineOperationI
     }
 
     @Override public void resumeWashing() {
-        if (currentState == WashingMachineState.ON && stateBeforeSuspension != null) {
-            currentState = stateBeforeSuspension;
+        if (this.currentState == WashingMachineState.ON && stateBeforeSuspension != null) {
+        	this.currentState = stateBeforeSuspension;
             stateBeforeSuspension = null;
             consumptionHasChanged = true;
         }
     }
 
     @Override public void setCurrentPowerLevel(double p) {}
-    @Override public WashingMachineState getState() { return currentState; }
+    @Override public WashingMachineState getState() { return this.currentState; }
 
     // -------------------------------------------------------------------------
     // DEVS Simulation Protocol
@@ -166,11 +170,13 @@ implements WashingMachineOperationI
     @Override
     public void initialiseState(Time initialTime) {
         super.initialiseState(initialTime);
-        currentState = WashingMachineState.OFF;
+        this.currentState = WashingMachineState.OFF;
         remainingTimeInCurrentPhase = null;
         timeForNextPhase = null;
         stateBeforeSuspension = null;
         isDelayRunning = false;
+        delayedStart = false;
+        washingEnded = false;
         totalConsumption = 0.0;
         consumptionHasChanged = false;
         if(VERBOSE) logMessage("simulation begins.\n");
@@ -193,7 +199,33 @@ implements WashingMachineOperationI
         return new Pair<>(initialised, 0);
     }
 
-    @Override public ArrayList<EventI> output() { return null; }
+    @Override
+    public ArrayList<EventI> output() {
+
+    	// Cas 1 : Fin du délai -> On envoie StartWashing
+    	if (delayedStart) {
+            ArrayList<EventI> ret = new ArrayList<>();
+            Time t = this.getCurrentStateTime().add(this.getNextTimeAdvance());
+
+            // On envoie l'événement avec les paramètres programmés
+            ret.add(new StartWashing(t, programmedDuration, programmedTemperature));
+
+            if(VERBOSE) logMessage("Delay elapsed. Emitting StartWashing event.\n");
+            delayedStart = false;
+            return ret;
+        }
+
+        // Cas 2 : Fin du lavage -> On envoie WashingEnded
+        if (washingEnded) {
+            ArrayList<EventI> ret = new ArrayList<>();
+            Time t = this.getCurrentStateTime().add(this.getNextTimeAdvance());
+            ret.add(new WashingEnded(t));
+            if(VERBOSE) logMessage("Emitting WashingEnded event.\n");
+            washingEnded = false;
+            return ret;
+        }
+        return null;
+    }
 
     @Override
     public Duration timeAdvance() {
@@ -213,49 +245,78 @@ implements WashingMachineOperationI
 
     @Override
     public void userDefinedExternalTransition(Duration elapsedTime) {
-        super.userDefinedExternalTransition(elapsedTime);
-        
-        // Mise à jour du temps restant (valable pour le lavage ET pour le compte à rebours délai)
-        if (remainingTimeInCurrentPhase != null) {
-            remainingTimeInCurrentPhase = remainingTimeInCurrentPhase.subtract(elapsedTime);
+
+		super.userDefinedExternalTransition(elapsedTime);
+
+		ArrayList<EventI> currentEvents = this.getStoredEventAndReset();
+		assert	currentEvents != null && currentEvents.size() == 1;
+
+		Event ce = (Event) currentEvents.get(0);
+		assert	ce instanceof WashingMachineEventI;
+
+		this.totalConsumption += Electricity.computeConsumption(
+						elapsedTime,
+						WashingMachineExternalControlI.VOLTAGE.getData() * this.currentIntensity.getValue());
+
+		if (VERBOSE) {
+			StringBuffer sb = new StringBuffer("execute the external event: ");
+			sb.append(ce.eventAsString());
+			sb.append(".");
+			this.logMessage(sb.toString());
+		}
+
+		for (EventI event : currentEvents) {
+            event.executeOn(this);
+            
+            // --- NOUVEAU : Réception du signal de fin de chauffe ---
+            if (event instanceof HeatingFinished) {
+                if (this.currentState == WashingMachineState.HEATINGWATER) {
+                    if(VERBOSE) logMessage("HeatingFinished received. Switching to WASHING.\n");
+                    
+                    this.currentState = WashingMachineState.WASHING;
+                    
+                    // Maintenant on active le timer pour la durée du lavage (30 min par ex)
+                    this.remainingTimeInCurrentPhase = this.timeForNextPhase;
+                    this.timeForNextPhase = null;
+                    
+                    this.consumptionHasChanged = true;
+                }
+            }
         }
-        
-        updateConsumption(elapsedTime);
-        
-        ArrayList<EventI> events = getStoredEventAndReset();
-        for (EventI e : events) e.executeOn(this);
+
+		assert	WashingMachineElectricityModel.implementationInvariants(this);
+		assert	WashingMachineElectricityModel.invariants(this);
     }
 
     @Override
     public void userDefinedInternalTransition(Duration elapsedTime) {
         super.userDefinedInternalTransition(elapsedTime);
+
+    	System.out.println("remainingTimeInCurrentPhase : " + remainingTimeInCurrentPhase);
         
         // Vérification si le temps écoulé est significatif (pas juste une maj de variable)
         boolean timeElapsed = elapsedTime.getSimulatedDuration() > 0.000001;
 
         if (timeElapsed) {
-            // Cas 1 : Fin du délai d'attente (Départ Différé)
+        	// Cas 1 : Fin du délai d'attente
             if (isDelayRunning) {
-                if(VERBOSE) logMessage("Delay elapsed. Auto-starting washing cycle.\n");
+                if(VERBOSE) logMessage("Delay processed internally. Starting logic.\n");
                 isDelayRunning = false;
-                remainingTimeInCurrentPhase = null; // Reset avant démarrage
-                // On lance le lavage comme si on avait reçu l'ordre
+                remainingTimeInCurrentPhase = null;
+                delayedStart = true;
+                
+                // IMPORTANT : On démarre aussi la logique locale pour se mettre en état HEATING
+                // (Ceci permet de synchroniser l'état local même si l'événement StartWashing
+                //  part vers le TemperatureModel)
                 startWashing(programmedDuration, programmedTemperature);
             }
-            // Cas 2 : Fin de phase de chauffe
-            else if (currentState == WashingMachineState.HEATINGWATER) {
-                if(VERBOSE) logMessage("Heating finished. Washing...\n");
-                currentState = WashingMachineState.WASHING;
-                remainingTimeInCurrentPhase = timeForNextPhase;
-                timeForNextPhase = null;
-                consumptionHasChanged = true;
-            } 
-            // Cas 3 : Fin de phase de lavage
-            else if (currentState == WashingMachineState.WASHING) {
+            // Cas 2 : Fin de phase de lavage (Le Heating est géré par ExternalTransition via HeatingFinished)
+            else if (this.currentState == WashingMachineState.WASHING) {
                 if(VERBOSE) logMessage("Washing finished. Idle.\n");
-                currentState = WashingMachineState.ON;
+                this.currentState = WashingMachineState.ON;
                 remainingTimeInCurrentPhase = null;
                 consumptionHasChanged = true;
+                washingEnded = true;  // Flag pour émettre WashingEnded dans output()
             }
         } 
         else if (remainingTimeInCurrentPhase != null) {
@@ -269,7 +330,7 @@ implements WashingMachineOperationI
         double heatingPower = 0.0;
 
         // Si le délai court, on est en "ON" (0W), donc pas besoin de cas spécial ici
-        switch (currentState) {
+        switch (this.currentState) {
             case HEATINGWATER:
                 power = HEATING_POWER;
                 heatingPower = HEATING_POWER;  // Exporter la puissance de chauffe

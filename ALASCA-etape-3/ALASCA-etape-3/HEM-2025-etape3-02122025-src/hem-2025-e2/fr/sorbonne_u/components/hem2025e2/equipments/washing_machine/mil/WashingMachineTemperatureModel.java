@@ -60,8 +60,11 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
     StartWashing.class,
     SetDelayedStart.class,
     SuspendWashing.class,
-    ResumeWashing.class
-})
+    ResumeWashing.class,
+    WashingEnded.class
+}, exported = {
+		HeatingFinished.class
+	})
 @ModelImportedVariable(name = "currentHeatingPower", type = Double.class)
 public class WashingMachineTemperatureModel
 extends AtomicHIOA
@@ -106,7 +109,7 @@ implements WashingMachineOperationI
     protected static double TEMPERATURE_UPDATE_TOLERANCE = 0.0001;
 
     /** Integration step for the differential equation (in hours). */
-    protected static double STEP = 60.0 / 3600.0; // 60 seconds
+    protected static double STEP = 300.0 / 3600.0; // 60 seconds
 
     // --- State variables ---
 
@@ -115,6 +118,7 @@ implements WashingMachineOperationI
 
     /** Target temperature for the current wash cycle. */
     protected double targetTemperature = COLD_WATER_TEMPERATURE;
+    protected long washingDuration;
 
     /** State before suspension (for resume). */
     protected WashingMachineState stateBeforeSuspension = null;
@@ -132,6 +136,7 @@ implements WashingMachineOperationI
 
     /** The mean temperature over the simulation duration for the report. */
     protected double meanTemperature;
+    protected boolean heateingFinished = false;
 
     // -------------------------------------------------------------------------
     // HIOA model variables
@@ -211,7 +216,7 @@ implements WashingMachineOperationI
 
             // Check if we need to heat the water first
             double currentTemp = this.currentWaterTemperature.getValue();
-            if (currentTemp < targetTemp - 1.0) {
+            if (currentTemp < targetTemp - 0.5) {
                 // Need to heat water first
                 this.currentState = WashingMachineState.HEATINGWATER;
                 if (VERBOSE) {
@@ -233,6 +238,7 @@ implements WashingMachineOperationI
         // For the temperature model, delayed start doesn't change state immediately
         // The actual start will be triggered later by a StartWashing event
         this.targetTemperature = targetTemp;
+        this.washingDuration = washingDuration;
     }
 
     @Override
@@ -354,6 +360,7 @@ implements WashingMachineOperationI
         this.currentState = WashingMachineState.OFF;
         this.targetTemperature = COLD_WATER_TEMPERATURE;
         this.stateBeforeSuspension = null;
+        this.heateingFinished = false;
 
         if (VERBOSE) {
             this.logMessage("simulation begins.");
@@ -384,6 +391,17 @@ implements WashingMachineOperationI
 
     @Override
     public ArrayList<EventI> output() {
+
+    	if (this.currentState == WashingMachineState.HEATINGWATER &&
+            heateingFinished) {
+            ArrayList<EventI> ret = new ArrayList<>();
+            this.currentState = WashingMachineState.WASHING;
+            this.heateingFinished = false;  // Reset du flag pour éviter de réémettre
+            Time t = this.getCurrentStateTime().add(this.getNextTimeAdvance());
+            ret.add(new HeatingFinished(t));
+            if(VERBOSE) logMessage("Target temperature reached! Emitting HeatingFinished.\n");
+            return ret;
+        }
         return null;
     }
 
@@ -400,7 +418,7 @@ implements WashingMachineOperationI
         // Check if we should transition from HEATINGWATER to WASHING
         if (this.currentState == WashingMachineState.HEATINGWATER &&
             newTemp >= this.targetTemperature - 0.5) {
-            this.currentState = WashingMachineState.WASHING;
+            this.heateingFinished = true;
             if (VERBOSE) {
                 this.logMessage("Water heated to " + newTemp +
                                "°C, target was " + this.targetTemperature +
@@ -460,12 +478,19 @@ implements WashingMachineOperationI
             sb.append(".");
             this.logMessage(sb.toString());
         }
-
-        // First, update the temperature until current time
+        
         double newTemp = this.computeNewTemperature(elapsedTime.getSimulatedDuration());
 
-        // Execute the event (updates state)
-        ce.executeOn(this);
+        for (EventI event : currentEvents) {
+            event.executeOn(this);
+
+            if (event instanceof WashingEnded) {
+                this.currentState = WashingMachineState.ON;
+                if (VERBOSE) {
+                    this.logMessage("Received WashingEnded. State forced to ON (Idle).");
+                }
+            }
+        }
 
         // Compute new derivative based on new state
         double newDerivative = this.computeDerivatives(newTemp);
