@@ -87,7 +87,7 @@ implements	WashingMachineUserCI
 	}
 
 	@Override
-	public Measure<Double>	getTargetTemperature() throws Exception
+	public SignalData<Double>	getTargetTemperature() throws Exception
 	{
 		return ((WashingMachineUserCI)this.offering).getTargetTemperature();
 	}

@@ -43,7 +43,7 @@ public interface		WashingMachineTemperatureI
 		return ret;
 	}
 	
-	public Measure<Double>	getTargetTemperature() throws Exception;
+	public SignalData<Double>	getTargetTemperature() throws Exception;
 	
 	public SignalData<Double>	getCurrentTemperature() throws Exception;
 }

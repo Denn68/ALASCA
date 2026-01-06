@@ -21,7 +21,7 @@ extends		RequiredCI,
 	public SignalData<Double> getCurrentPowerLevel() throws Exception;
 
 	@Override
-	public Measure<Double> getTargetTemperature() throws Exception;
+	public SignalData<Double> getTargetTemperature() throws Exception;
 
 	@Override
 	public SignalData<Double> getCurrentTemperature() throws Exception;

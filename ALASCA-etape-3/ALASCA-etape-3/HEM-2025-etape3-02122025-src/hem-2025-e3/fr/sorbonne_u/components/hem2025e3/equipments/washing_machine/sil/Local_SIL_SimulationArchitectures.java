@@ -1,87 +1,208 @@
 package fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.sil;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import fr.sorbonne_u.devs_simulation.architectures.Architecture;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.WashingMachineCoupledModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.WashingMachineUnitTesterModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.*;
 import fr.sorbonne_u.devs_simulation.architectures.RTArchitecture;
+import fr.sorbonne_u.devs_simulation.hioa.architectures.RTAtomicHIOA_Descriptor;
+import fr.sorbonne_u.devs_simulation.hioa.architectures.RTCoupledHIOA_Descriptor;
+import fr.sorbonne_u.devs_simulation.hioa.models.vars.VariableSink;
+import fr.sorbonne_u.devs_simulation.hioa.models.vars.VariableSource;
 import fr.sorbonne_u.devs_simulation.models.architectures.AbstractAtomicModelDescriptor;
 import fr.sorbonne_u.devs_simulation.models.architectures.CoupledModelDescriptor;
 import fr.sorbonne_u.devs_simulation.models.architectures.RTAtomicModelDescriptor;
-import fr.sorbonne_u.exceptions.PreconditionException;
+import fr.sorbonne_u.devs_simulation.models.events.EventI;
+import fr.sorbonne_u.devs_simulation.models.events.EventSink;
+import fr.sorbonne_u.devs_simulation.models.events.EventSource;
 
-// -----------------------------------------------------------------------------
-/**
- * The class <code>Local_SIL_SimulationArchitectures</code> defines the
- * local SIL simulation architecture for the washing machine component.
- *
- * <p><strong>Description</strong></p>
- * Defines a single atomic RT model architecture.
- *
- * @author	Team DeMoh
- */
-public class			Local_SIL_SimulationArchitectures
+public abstract class Local_SIL_SimulationArchitectures
 {
-	/** URI of the simulation architecture and the root model. */
-	public static final String WM_SIL_URI = "washing-machine-sil";
-
 	/**
-	 * Create the local SIL simulation architecture for the washing machine.
-	 * * @param architectureURI		URI to be given to the created architecture.
-	 * @param rootModelURI			URI to be given to the root model.
-	 * @param simulatedTimeUnit		time unit used for the simulation time.
-	 * @param accelerationFactor	acceleration factor for the real time simulation.
-	 * @return						the local SIL simulation architecture.
-	 * @throws Exception			if an error occurs during creation.
+	 * create the SIL simulation architecture for the washing machine.
 	 */
-	public static Architecture	createWashingMachineSILArchitecture(
-		String architectureURI,
+	public static RTArchitecture createWashingMachineSILArchitecture(
+		String architectureURI, 
 		String rootModelURI,
-		TimeUnit simulatedTimeUnit,
+		TimeUnit simulatedTimeUnit, 
 		double accelerationFactor
-		) throws Exception
+		) throws Exception 
 	{
-		assert	architectureURI != null && !architectureURI.isEmpty() :
-				new PreconditionException(
-						"architectureURI != null && !architectureURI.isEmpty()");
-		assert	rootModelURI != null && !rootModelURI.isEmpty() :
-				new PreconditionException(
-						"rootModelURI != null && !rootModelURI.isEmpty()");
-		assert	simulatedTimeUnit != null :
-				new PreconditionException("simulatedTimeUnit != null");
-		assert	accelerationFactor > 0.0 :
-				new PreconditionException("accelerationFactor > 0.0");
+		// 1. Create Atomic Model Descriptors
+		Map<String, AbstractAtomicModelDescriptor> atomicModelDescriptors = new HashMap<>();
 
-		// 1. Descripteurs Atomiques
-		Map<String,AbstractAtomicModelDescriptor> atomicModelDescriptors =
-															new HashMap<>();
-
-		// On utilise le modèle SIL créé juste au-dessus
+		// State Model
 		atomicModelDescriptors.put(
-				rootModelURI,
+				WashingMachineStateSILModel.URI,
 				RTAtomicModelDescriptor.create(
-						WashingMachineElectricitySILModel.class,
-						rootModelURI,
+						WashingMachineStateSILModel.class,
+						WashingMachineStateSILModel.URI,
 						simulatedTimeUnit,
 						null,
 						accelerationFactor));
 
-		// 2. Descripteurs Couplés (Vide car modèle unique)
-		Map<String,CoupledModelDescriptor> coupledModelDescriptors =
-															new HashMap<>();
-
-		// 3. Architecture Temps Réel
-		RTArchitecture architecture =
-				new RTArchitecture(
-						architectureURI,
-						rootModelURI,
-						atomicModelDescriptors,
-						coupledModelDescriptors,
+		// Electricity Model (HIOA)
+		atomicModelDescriptors.put(
+				WashingMachineElectricitySILModel.URI,
+				RTAtomicHIOA_Descriptor.create(
+						WashingMachineElectricitySILModel.class,
+						WashingMachineElectricitySILModel.URI,
 						simulatedTimeUnit,
-						accelerationFactor);
+						null,
+						accelerationFactor));
 
-		return architecture;
+		// Temperature Model
+		atomicModelDescriptors.put(
+				WashingMachineTemperatureSILModel.URI,
+				RTAtomicModelDescriptor.create(
+						WashingMachineTemperatureSILModel.class,
+						WashingMachineTemperatureSILModel.URI,
+						simulatedTimeUnit,
+						null,
+						accelerationFactor));
+
+		// Unit Tester Model (Added because it exists in your files)
+		atomicModelDescriptors.put(
+				WashingMachineUnitTesterModel.URI,
+				RTAtomicModelDescriptor.create(
+						WashingMachineUnitTesterModel.class,
+						WashingMachineUnitTesterModel.URI,
+						simulatedTimeUnit,
+						null,
+						accelerationFactor));
+
+		// 2. Create Coupled Model Descriptors Container
+		Map<String, CoupledModelDescriptor> coupledModelDescriptors = new HashMap<>();
+
+		// 3. Define Submodels
+		Set<String> submodels = new HashSet<>();
+		submodels.add(WashingMachineStateSILModel.URI);
+		submodels.add(WashingMachineElectricitySILModel.URI);
+		submodels.add(WashingMachineTemperatureSILModel.URI);
+		submodels.add(WashingMachineUnitTesterModel.URI);
+
+		// 4. Define Event Connections
+		Map<EventSource, EventSink[]> connections = new HashMap<>();
+
+		// --- Connection: UnitTester -> StateModel ---
+		// The tester sends events to the state model to drive the simulation
+		connections.put(
+				new EventSource(WashingMachineUnitTesterModel.URI, SwitchOnWashingMachine.class),
+				new EventSink[] {
+						new EventSink(WashingMachineStateSILModel.URI, SwitchOnWashingMachine.class)
+				});
+		connections.put(
+				new EventSource(WashingMachineUnitTesterModel.URI, SwitchOffWashingMachine.class),
+				new EventSink[] {
+						new EventSink(WashingMachineStateSILModel.URI, SwitchOffWashingMachine.class)
+				});
+		connections.put(
+				new EventSource(WashingMachineUnitTesterModel.URI, StartWashing.class),
+				new EventSink[] {
+						new EventSink(WashingMachineStateSILModel.URI, StartWashing.class)
+				});
+		connections.put(
+				new EventSource(WashingMachineUnitTesterModel.URI, SetDelayedStart.class),
+				new EventSink[] {
+						new EventSink(WashingMachineStateSILModel.URI, SetDelayedStart.class)
+				});
+		connections.put(
+				new EventSource(WashingMachineUnitTesterModel.URI, SuspendWashing.class),
+				new EventSink[] {
+						new EventSink(WashingMachineStateSILModel.URI, SuspendWashing.class)
+				});
+		connections.put(
+				new EventSource(WashingMachineUnitTesterModel.URI, ResumeWashing.class),
+				new EventSink[] {
+						new EventSink(WashingMachineStateSILModel.URI, ResumeWashing.class)
+				});
+		connections.put(
+				new EventSource(WashingMachineUnitTesterModel.URI, SetPowerWashingMachine.class),
+				new EventSink[] {
+						new EventSink(WashingMachineStateSILModel.URI, SetPowerWashingMachine.class)
+				});
+
+		// --- Connection: StateModel -> Electricity & Temperature ---
+		// The state model re-emits events to update physics
+		
+		// SwitchOn -> Elec & Temp
+		connections.put(
+				new EventSource(WashingMachineStateSILModel.URI, SwitchOnWashingMachine.class),
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI, SwitchOnWashingMachine.class),
+						new EventSink(WashingMachineTemperatureSILModel.URI, SwitchOnWashingMachine.class)
+				});
+		
+		// SwitchOff -> Elec & Temp
+		connections.put(
+				new EventSource(WashingMachineStateSILModel.URI, SwitchOffWashingMachine.class),
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI, SwitchOffWashingMachine.class),
+						new EventSink(WashingMachineTemperatureSILModel.URI, SwitchOffWashingMachine.class)
+				});
+
+		// StartWashing -> Elec & Temp
+		connections.put(
+				new EventSource(WashingMachineStateSILModel.URI, StartWashing.class),
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI, StartWashing.class),
+						new EventSink(WashingMachineTemperatureSILModel.URI, StartWashing.class)
+				});
+
+		// Suspend -> Elec & Temp
+		connections.put(
+				new EventSource(WashingMachineStateSILModel.URI, SuspendWashing.class),
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI, SuspendWashing.class),
+						new EventSink(WashingMachineTemperatureSILModel.URI, SuspendWashing.class)
+				});
+
+		// Resume -> Elec & Temp
+		connections.put(
+				new EventSource(WashingMachineStateSILModel.URI, ResumeWashing.class),
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI, ResumeWashing.class),
+						new EventSink(WashingMachineTemperatureSILModel.URI, ResumeWashing.class)
+				});
+		
+		// SetPower -> Elec only
+		connections.put(
+				new EventSource(WashingMachineStateSILModel.URI, SetPowerWashingMachine.class),
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI, SetPowerWashingMachine.class)
+				});
+
+		// 5. Variable Bindings (Empty for now as there are no shared variables between these specific models)
+		Map<VariableSource, VariableSink[]> bindings = new HashMap<>();
+
+		// 6. Put Coupled Model Descriptor
+		coupledModelDescriptors.put(
+				rootModelURI,
+				new RTCoupledHIOA_Descriptor(
+						WashingMachineCoupledModel.class,
+						rootModelURI,
+						submodels,
+						null,
+						null,
+						connections,
+						null,
+						null,
+						null,
+						bindings,
+						accelerationFactor));
+
+		// 7. Return Architecture
+		return new RTArchitecture(
+				architectureURI,
+				rootModelURI,
+				atomicModelDescriptors,
+				coupledModelDescriptors,
+				simulatedTimeUnit,
+				accelerationFactor);
 	}
 }
-// -----------------------------------------------------------------------------

@@ -29,6 +29,7 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
     SetPowerWashingMachine.class
 })
 @ModelExportedVariable(name = "currentIntensity", type = Double.class)
+@ModelExportedVariable(name = "currentHeatingPower", type = Double.class)
 public class WashingMachineElectricityModel 
 extends AtomicHIOA 
 implements WashingMachineOperationI 
@@ -61,6 +62,10 @@ implements WashingMachineOperationI
     // --- Variables HIOA ---
     @ExportedVariable(type = Double.class)
     protected final Value<Double> currentIntensity = new Value<Double>(this);
+
+    /** The current heating power (in Watts), exported to the temperature model. */
+    @ExportedVariable(type = Double.class)
+    protected final Value<Double> currentHeatingPower = new Value<Double>(this);
 
     public WashingMachineElectricityModel(
         String uri, 
@@ -176,11 +181,16 @@ implements WashingMachineOperationI
 
     @Override
     public Pair<Integer, Integer> fixpointInitialiseVariables() {
+        int initialised = 0;
         if (!currentIntensity.isInitialised()) {
             currentIntensity.initialise(0.0);
-            return new Pair<>(1, 0);
+            initialised++;
         }
-        return new Pair<>(0, 0);
+        if (!currentHeatingPower.isInitialised()) {
+            currentHeatingPower.initialise(0.0);
+            initialised++;
+        }
+        return new Pair<>(initialised, 0);
     }
 
     @Override public ArrayList<EventI> output() { return null; }
@@ -253,21 +263,32 @@ implements WashingMachineOperationI
              remainingTimeInCurrentPhase = remainingTimeInCurrentPhase.subtract(elapsedTime);
         }
 
-        // --- Mise à jour de l'intensité (Ampères) ---
+        // --- Mise à jour de l'intensité (Ampères) et puissance de chauffe ---
         Time t = getCurrentStateTime();
         double power = 0.0;
-        
+        double heatingPower = 0.0;
+
         // Si le délai court, on est en "ON" (0W), donc pas besoin de cas spécial ici
         switch (currentState) {
-            case HEATINGWATER: power = HEATING_POWER; break;
-            case WASHING: power = WASHING_POWER; break;
-            default: power = 0.0; break;
+            case HEATINGWATER:
+                power = HEATING_POWER;
+                heatingPower = HEATING_POWER;  // Exporter la puissance de chauffe
+                break;
+            case WASHING:
+                power = WASHING_POWER;
+                heatingPower = 0.0;  // Pas de chauffe pendant le lavage
+                break;
+            default:
+                power = 0.0;
+                heatingPower = 0.0;
+                break;
         }
         double intensity = power / TENSION;
 
         currentIntensity.setNewValue(intensity, t);
+        currentHeatingPower.setNewValue(heatingPower, t);
 
-        if(VERBOSE) logMessage("new intensity: " + intensity + " Amps (" + power + " W) at " + t + "\n");
+        if(VERBOSE) logMessage("new intensity: " + intensity + " Amps (" + power + " W), heating power: " + heatingPower + " W at " + t + "\n");
     }
 
     protected void updateConsumption(Duration elapsedTime) {

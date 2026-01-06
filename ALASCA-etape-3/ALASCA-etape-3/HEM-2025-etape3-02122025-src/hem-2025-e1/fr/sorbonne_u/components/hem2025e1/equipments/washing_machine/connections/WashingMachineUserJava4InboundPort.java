@@ -62,7 +62,7 @@ implements	WashingMachineUserJava4CI
 	public double		getTargetTemperatureJava4() throws Exception
 	{
 		
-		return this.getTargetTemperature().getData();
+		return this.getTargetTemperature().getMeasure().getData();
 	}
 
 	@Override

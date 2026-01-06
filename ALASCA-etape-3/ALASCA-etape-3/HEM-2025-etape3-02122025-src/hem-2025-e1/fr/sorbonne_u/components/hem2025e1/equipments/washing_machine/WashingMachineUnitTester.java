@@ -259,7 +259,7 @@ extends		AbstractComponent
 		this.logMessage("    And the washingMachine has not been used yet");
 		this.logMessage("    And the washingMachine is on");
 		boolean result;
-		Measure<Double> temperature = null;
+		SignalData<Double> temperature = null;
 		try {
 			this.wmop.switchOn();
 			result = this.wmop.on();
@@ -270,14 +270,14 @@ extends		AbstractComponent
 			this.logMessage("    When I get the target temperature through the "
 							+ "user interface");
 			temperature = this.wmop.getTargetTemperature();
-			if (temperature.getData() ==
+			if (temperature.getMeasure().getData() ==
 									WashingMachine.STANDARD_TARGET_TEMPERATURE.getData()
-				&& temperature.getMeasurementUnit().equals(
+				&& temperature.getMeasure().getMeasurementUnit().equals(
 													MeasurementUnit.CELSIUS)) {
 				this.logMessage("    Then the target temperature of the washingMachine"
 								+ " is the washingMachine standard target temperature");
 			} else {
-				this.logMessage("     but was: " + temperature.getData());
+				this.logMessage("     but was: " + temperature.getMeasure().getData());
 				this.statistics.incorrectResult();
 			}
 		} catch (Throwable e) {
@@ -294,14 +294,14 @@ extends		AbstractComponent
 		try {
 			this.logMessage("    When I get the target temperature through the internal control interface");
 			temperature = this.wmicop.getTargetTemperature();
-			if (temperature.getData() ==
+			if (temperature.getMeasure().getData() ==
 									WashingMachine.STANDARD_TARGET_TEMPERATURE.getData()
-				&& temperature.getMeasurementUnit().equals(
+				&& temperature.getMeasure().getMeasurementUnit().equals(
 													MeasurementUnit.CELSIUS)) {
 				this.logMessage("    Then the target temperature of the washingMachine"
 								+ " is the washingMachine standard target temperature");
 			} else {
-				this.logMessage("     but was: " + temperature.getData());
+				this.logMessage("     but was: " + temperature.getMeasure().getData());
 				this.statistics.incorrectResult();
 			}
 		} catch (Throwable e) {
@@ -326,13 +326,13 @@ extends		AbstractComponent
 			this.wmop.setTargetTemperature(
 					new Measure<Double>(15.0, WashingMachine.TEMPERATURE_UNIT));
 			temperature = this.wmop.getTargetTemperature();
-			if (temperature.getData() == 15.0 &&
-				temperature.getMeasurementUnit().equals(MeasurementUnit.CELSIUS)) {
+			if (temperature.getMeasure().getData() == 15.0 &&
+				temperature.getMeasure().getMeasurementUnit().equals(MeasurementUnit.CELSIUS)) {
 				this.logMessage("    Then the target temperature of the water in the washingMachine"
 								+ " is the given temperature");
 			} else {
 				this.statistics.incorrectResult();
-				this.logMessage("     but was not: " + temperature.getData());
+				this.logMessage("     but was not: " + temperature.getMeasure().getData());
 			}
 			this.wmop.switchOff();
 		} catch (Throwable e) {
@@ -894,7 +894,9 @@ extends		AbstractComponent
 
 	        long delay = 6000L;
 	        long washing = 6000L;
-	        Measure<Double> target = new Measure<>(0.0, WashingMachine.TEMPERATURE_UNIT);
+	        Measure<Double> target = new Measure<>(
+	            WashingMachine.STANDARD_TARGET_TEMPERATURE.getData(),
+	            WashingMachine.TEMPERATURE_UNIT);
 
 	        this.logMessage("    When I call delayedStart(delay=6000 ms, target=STANDARD, washing=6000 ms)");
 	        this.wmop.delayedStart(delay, target, washing);
@@ -974,9 +976,9 @@ extends		AbstractComponent
 		this.testPowerLevel();
 		this.testHeatingWater();
 		this.testStartWashing();
-		//this.testDelayedStart();
+		this.testDelayedStart();
 		this.testSuspendResumeImmediateWashing();
-		//this.testSuspendResumeDelayedStart();
+		this.testSuspendResumeDelayedStart();
 
 		this.statistics.statisticsReport(this);
 	}

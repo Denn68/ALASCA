@@ -16,7 +16,7 @@ implements	WashingMachineInternalControlCI
 	}
 
 	@Override
-	public Measure<Double>	getTargetTemperature() throws Exception
+	public SignalData<Double>	getTargetTemperature() throws Exception
 	{
 		return ((WashingMachineInternalControlCI)this.offering).getTargetTemperature();
 	}

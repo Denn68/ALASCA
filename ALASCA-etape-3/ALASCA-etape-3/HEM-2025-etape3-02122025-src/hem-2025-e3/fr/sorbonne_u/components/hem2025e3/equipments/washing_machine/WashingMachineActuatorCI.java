@@ -4,16 +4,23 @@ import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.components.interfaces.RequiredCI;
 
-public interface		WashingMachineActuatorCI
-extends		OfferedCI,
-			RequiredCI
+/**
+ * Actuator CI used by a controller to drive the washing machine.
+ * Kept minimal and aligned with the washing machine external/user services.
+ */
+public interface WashingMachineActuatorCI
+extends OfferedCI, RequiredCI
 {
-	public void			switchOn() throws Exception;
-	public void			switchOff() throws Exception;
-	
-	// Paramètres : durée du lavage, température cible
-	public void			startWashing(long washingTimeMS, Measure<Double> target) throws Exception;
-	
-	public void			suspendCycle() throws Exception;
-	public void			resumeCycle() throws Exception;
+	void switchOn() throws Exception;
+	void switchOff() throws Exception;
+
+	void setTargetTemperature(Measure<Double> target) throws Exception;
+
+	void startWashing(long washingTimeMS, Measure<Double> target) throws Exception;
+
+	void delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception;
+
+	void suspendCycle() throws Exception;
+	void resumeCycle() throws Exception;
 }
+

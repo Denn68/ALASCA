@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.alasca.physical_data.SignalData;
+import fr.sorbonne_u.alasca.physical_data.TimedMeasure;
 
 @RequiredInterfaces(required = { ClocksServerCI.class })
 @OfferedInterfaces(offered = { WashingMachineUserJava4CI.class, WashingMachineInternalControlCI.class,
@@ -74,7 +75,7 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 
 	protected WashingMachineState currentState;
 	protected SignalData<Double> currentPowerLevel;
-	protected Measure<Double> targetTemperature;
+	protected TimedMeasure<Double> targetTemperature;
 	
 	protected final ScheduledExecutorService scheduler;
 
@@ -169,7 +170,10 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 
 		this.currentState = WashingMachineState.OFF;
 		this.currentPowerLevel = new SignalData<>(MAX_POWER_LEVEL);
-		this.targetTemperature = STANDARD_TARGET_TEMPERATURE;
+		this.targetTemperature =
+				new TimedMeasure<>(
+						STANDARD_TARGET_TEMPERATURE.getData(),
+						STANDARD_TARGET_TEMPERATURE.getMeasurementUnit());
 
 		this.wmip = new WashingMachineUserJava4InboundPort(washingMachineUserInboundPortURI, this);
 		this.wmip.publishPort();
@@ -296,23 +300,25 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 				: new PreconditionException("target.getData() >= MIN_TARGET_TEMPERATURE.getData() "
 						+ "&& target.getData() <= MAX_TARGET_TEMPERATURE.getData()");
 
-		this.targetTemperature = target;
+		this.targetTemperature =
+				new TimedMeasure<Double>(target.getData(),
+						 target.getMeasurementUnit());
 
-		assert getTargetTemperature().equals(target)
+		assert getTargetTemperature().getMeasure().equals(target)
 				: new PostconditionException("getTargetTemperature().equals(target)");
 	}
 
 	@Override
-	public Measure<Double> getTargetTemperature() throws Exception {
+	public SignalData<Double> getTargetTemperature() throws Exception {
 		if (WashingMachine.VERBOSE) {
 			this.traceMessage("Washing Machine returns its target" + " temperature " + this.targetTemperature + ".\n");
 		}
 
-		Measure<Double> ret = this.targetTemperature;
+		SignalData<Double> ret = new SignalData<Double>(this.targetTemperature);
 
-		assert ret != null && TEMPERATURE_UNIT.equals(ret.getMeasurementUnit()) : new PostconditionException(
+		assert ret != null && TEMPERATURE_UNIT.equals(ret.getMeasure().getMeasurementUnit()) : new PostconditionException(
 				"return != null && TEMPERATURE_UNIT.equals(" + "return.getMeasurementUnit())");
-		assert ret.getData() >= MIN_TARGET_TEMPERATURE.getData() && ret.getData() <= MAX_TARGET_TEMPERATURE.getData()
+		assert ret.getMeasure().getData() >= MIN_TARGET_TEMPERATURE.getData() && ret.getMeasure().getData() <= MAX_TARGET_TEMPERATURE.getData()
 				: new PostconditionException("return.getData() >= MIN_TARGET_TEMPERATURE.getData() "
 						+ "&& return.getData() <= MAX_TARGET_TEMPERATURE.getData()");
 
@@ -365,7 +371,9 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 		assert this.on() : new PreconditionException("on()");
 		assert this.heatWater() : new PreconditionException("heating()");
 
+		// Arrêt de la chauffe.
 		this.currentState = WashingMachineState.ON;
+
 
 		assert !this.heatWater() : new PostconditionException("!heating()");
 	}
@@ -434,34 +442,38 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 		this.setTargetTemperature(target);
 
 		double current = this.getCurrentTemperature().getMeasure().getData();
-		if (current < target.getData()) {
-			this.startHeatingWater();
-			// ici on simule que la température est atteinte immédiatement
-			this.stopHeatingWater();
-		}
-
 		// on garde en mémoire la durée de lavage programmée
 		this.programmedTargetTemperature = target;
 		this.remainingWashingTimeMS = washingTimeMS;
-		this.washingStartInstantMS = this.clock.currentInstant().toEpochMilli();
+		// a washing cycle starts now -> any delayed start is consumed
+		this.remainingDelayMS = 0L;
+		if (this.delayFuture != null && !this.delayFuture.isDone()) {
+			this.delayFuture.cancel(false);
+		}
 
+
+		// NOTE: la chauffe est simulée au niveau des modèles de simulation (TemperatureModel),
+		// le composant démarre le cycle de lavage immédiatement.
+		this.washingStartInstantMS = this.clock.currentInstant().toEpochMilli();
 		this.currentState = WashingMachineState.WASHING;
 
 		// on annule une éventuelle ancienne tâche
 		if (this.washingFuture != null && !this.washingFuture.isDone()) {
 			this.washingFuture.cancel(false);
 		}
-		
+
 		long realDelay = toRealTime(washingTimeMS);
 
 		this.washingFuture = scheduler.schedule(() -> {
 			try {
 				this.currentState = WashingMachineState.ON;
+				this.remainingWashingTimeMS = 0L;
+				this.programmedTargetTemperature = null;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}, realDelay, TimeUnit.MILLISECONDS);
-	}
+}
 
 	@Override
 	public void delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception {
@@ -477,7 +489,7 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 		this.programmedTargetTemperature = target;
 		this.delayStartInstantMS = this.clock.currentInstant().toEpochMilli();
 
-        long realDelay = toRealTime(delayMS);
+        long realDelay = Math.max(0L, toRealTime(delayMS) - 1L);
 
 		if (WashingMachine.VERBOSE) {
 			this.traceMessage("Washing Machine will start in " + delayMS + " ms.\n");
@@ -486,7 +498,9 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 		this.delayFuture = scheduler.schedule(() -> {
 			try {
 				// au moment où le délai finit, on lance un lavage
-				startWashing(this.remainingWashingTimeMS, this.programmedTargetTemperature);
+				this.remainingDelayMS = 0L;
+					this.remainingDelayMS = 0L;
+					startWashing(this.remainingWashingTimeMS, this.programmedTargetTemperature);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -512,6 +526,7 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 
 			this.washingFuture.cancel(false);
 			this.currentState = WashingMachineState.ON; // machine toujours allumée mais à l'arrêt
+			this.remainingDelayMS = 0L;
 
 			if (WashingMachine.VERBOSE) {
 				this.traceMessage("Washing paused, remaining time = " + this.remainingWashingTimeMS + " ms.\n");
@@ -545,7 +560,7 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 				(this.delayFuture == null || this.delayFuture.isDone())) {
 
 			this.delayStartInstantMS = now;
-			long realDelay = toRealTime(this.remainingDelayMS);
+			long realDelay = Math.max(0L, toRealTime(this.remainingDelayMS) - 1L);
 
 			if (WashingMachine.VERBOSE) {
 				this.traceMessage("Resuming delayed start with remaining delay = " + realDelay + " ms.\n");
@@ -553,6 +568,7 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 
 			this.delayFuture = scheduler.schedule(() -> {
 				try {
+					this.remainingDelayMS = 0L;
 					startWashing(this.remainingWashingTimeMS, this.programmedTargetTemperature);
 				} catch (Exception e) {
 					e.printStackTrace();

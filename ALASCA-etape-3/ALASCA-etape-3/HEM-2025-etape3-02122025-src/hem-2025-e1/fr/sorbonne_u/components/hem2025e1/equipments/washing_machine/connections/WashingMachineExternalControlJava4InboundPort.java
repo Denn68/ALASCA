@@ -48,7 +48,7 @@ implements	WashingMachineExternalControlJava4CI
 	@Override
 	public double		getTargetTemperatureJava4() throws Exception
 	{
-		return this.getTargetTemperature().getData();
+		return this.getTargetTemperature().getMeasure().getData();
 	}
 
 	@Override
