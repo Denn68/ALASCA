@@ -7,17 +7,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.time.Instant;
 import java.util.ArrayList;
+
 import fr.sorbonne_u.components.cyphy.utils.tests.SimulationTestStep;
 import fr.sorbonne_u.components.cyphy.utils.tests.TestScenarioWithSimulation;
-import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.HeaterCoupledModel;
-import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.HeaterSimulationConfigurationI;
-import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.HeaterUnitTesterModel;
-import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.DoNotHeat;
-import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.Heat;
-import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.SwitchOffHeater;
-import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.SwitchOnHeater;
-import fr.sorbonne_u.components.hem2025e3.equipments.heater.sil.events.SIL_SetPowerHeater;
-import fr.sorbonne_u.components.hem2025e3.equipments.heater.sil.events.SIL_SetPowerHeater.PowerValue;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.WashingMachineCoupledModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.WashingMachineUnitTesterModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.*;
 import fr.sorbonne_u.devs_simulation.architectures.ArchitectureI;
 import fr.sorbonne_u.devs_simulation.architectures.RTArchitecture;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.RTAtomicHIOA_Descriptor;
@@ -37,37 +32,34 @@ import fr.sorbonne_u.devs_simulation.simulators.SimulationEngine;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulatorI;
 import fr.sorbonne_u.exceptions.VerboseException;
 
-public class			RunWashingMachineUnitarySILSimulation
+/**
+ * The class <code>RunWashingMachineUnitarySILSimulation</code> creates a simulator
+ * for the washing machine and then runs a typical simulation.
+ *
+ * <p><strong>Description</strong></p>
+ *
+ * <p>
+ * The simulation architecture for the washing machine contains four atomic models
+ * composed under a coupled model:
+ * </p>
+ * <ul>
+ * <li>WashingMachineUnitTesterModel - drives the simulation by emitting events</li>
+ * <li>WashingMachineStateSILModel - keeps track of the washing machine state</li>
+ * <li>WashingMachineElectricitySILModel - simulates electricity consumption</li>
+ * <li>WashingMachineTemperatureSILModel - simulates water temperature</li>
+ * </ul>
+ */
+public class RunWashingMachineUnitarySILSimulation
 {
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
 
-	/** the acceleration factor used in the real time MIL simulations.	 	*/
-	public static final double		ACCELERATION_FACTOR = 3600.0;
+	/** Time unit used in the simulation. */
+	public static final TimeUnit TIME_UNIT = TimeUnit.HOURS;
 
-	// -------------------------------------------------------------------------
-	// Invariants
-	// -------------------------------------------------------------------------
-
-	/**
-	 * return true if the static invariants are observed, false otherwise.
-	 * 
-	 * <p><strong>Contract</strong></p>
-	 * 
-	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
-	 * </pre>
-	 *
-	 * @return	true if the invariants are observed, false otherwise.
-	 */
-	public static boolean	staticInvariants()
-	{
-		boolean ret = true;
-		ret &= HeaterSimulationConfigurationI.staticInvariants();
-		return ret;
-	}
+	/** Acceleration factor for real-time simulation. */
+	public static final double ACCELERATION_FACTOR = 3600.0;
 
 	// -------------------------------------------------------------------------
 	// Methods
@@ -75,162 +67,181 @@ public class			RunWashingMachineUnitarySILSimulation
 
 	public static void main(String[] args)
 	{
-		staticInvariants();
 		Time.setPrintPrecision(4);
 		Duration.setPrintPrecision(4);
 
 		try {
-			// map that will contain the atomic model descriptors to construct
-			// the simulation architecture
-			Map<String,AbstractAtomicModelDescriptor> atomicModelDescriptors =
-															new HashMap<>();
+			// Map for atomic model descriptors
+			Map<String, AbstractAtomicModelDescriptor> atomicModelDescriptors = new HashMap<>();
 
-			// the heater state model only exchanges event, an atomic model
-			// hence we use an AtomicModelDescriptor
+			// State Model
 			atomicModelDescriptors.put(
-					HeaterStateSILModel.URI,
+					WashingMachineStateSILModel.URI,
 					RTAtomicModelDescriptor.create(
-							HeaterStateSILModel.class,
-							HeaterStateSILModel.URI,
-							HeaterSimulationConfigurationI.TIME_UNIT,
+							WashingMachineStateSILModel.class,
+							WashingMachineStateSILModel.URI,
+							TIME_UNIT,
 							null,
 							ACCELERATION_FACTOR));
-			// the heater models simulating its electricity consumption, its
-			// temperatures and the external temperature are atomic HIOA models
-			// hence we use an AtomicHIOA_Descriptor(s)
+
+			// Electricity Model (HIOA)
 			atomicModelDescriptors.put(
-					HeaterElectricitySILModel.URI,
+					WashingMachineElectricitySILModel.URI,
 					RTAtomicHIOA_Descriptor.create(
-							HeaterElectricitySILModel.class,
-							HeaterElectricitySILModel.URI,
-							HeaterSimulationConfigurationI.TIME_UNIT,
+							WashingMachineElectricitySILModel.class,
+							WashingMachineElectricitySILModel.URI,
+							TIME_UNIT,
 							null,
 							ACCELERATION_FACTOR));
+
+			// Temperature Model (HIOA)
 			atomicModelDescriptors.put(
-					HeaterTemperatureSILModel.URI,
+					WashingMachineTemperatureSILModel.URI,
 					RTAtomicHIOA_Descriptor.create(
-							HeaterTemperatureSILModel.class,
-							HeaterTemperatureSILModel.URI,
-							HeaterSimulationConfigurationI.TIME_UNIT,
+							WashingMachineTemperatureSILModel.class,
+							WashingMachineTemperatureSILModel.URI,
+							TIME_UNIT,
 							null,
 							ACCELERATION_FACTOR));
+
+			// Unit Tester Model
 			atomicModelDescriptors.put(
-					ExternalTemperatureSILModel.URI,
-					RTAtomicHIOA_Descriptor.create(
-							ExternalTemperatureSILModel.class,
-							ExternalTemperatureSILModel.URI,
-							HeaterSimulationConfigurationI.TIME_UNIT,
-							null,
-							ACCELERATION_FACTOR));
-			// the heater unit tester model only exchanges event, an
-			// atomic model hence we use an AtomicModelDescriptor
-			atomicModelDescriptors.put(
-					HeaterUnitTesterModel.URI,
+					WashingMachineUnitTesterModel.URI,
 					RTAtomicModelDescriptor.create(
-							HeaterUnitTesterModel.class,
-							HeaterUnitTesterModel.URI,
-							HeaterSimulationConfigurationI.TIME_UNIT,
+							WashingMachineUnitTesterModel.class,
+							WashingMachineUnitTesterModel.URI,
+							TIME_UNIT,
 							null,
 							ACCELERATION_FACTOR));
 
-			// map that will contain the coupled model descriptors to construct
-			// the simulation architecture
-			Map<String,CoupledModelDescriptor> coupledModelDescriptors =
-																new HashMap<>();
+			// Map for coupled model descriptors
+			Map<String, CoupledModelDescriptor> coupledModelDescriptors = new HashMap<>();
 
-			// the set of submodels of the coupled model, given by their URIs
-			Set<String> submodels = new HashSet<String>();
-			submodels.add(HeaterStateSILModel.URI);
-			submodels.add(HeaterElectricitySILModel.URI);
-			submodels.add(HeaterTemperatureSILModel.URI);
-			submodels.add(ExternalTemperatureSILModel.URI);
-			submodels.add(HeaterUnitTesterModel.URI);
-			
-			// event exchanging connections between exporting and importing
-			// models
-			Map<EventSource,EventSink[]> connections =
-										new HashMap<EventSource,EventSink[]>();
+			// Submodels
+			Set<String> submodels = new HashSet<>();
+			submodels.add(WashingMachineStateSILModel.URI);
+			submodels.add(WashingMachineElectricitySILModel.URI);
+			submodels.add(WashingMachineTemperatureSILModel.URI);
+			submodels.add(WashingMachineUnitTesterModel.URI);
 
-			connections.put(
-				new EventSource(HeaterUnitTesterModel.URI, SIL_SetPowerHeater.class),
-				new EventSink[] {
-					new EventSink(HeaterStateSILModel.URI, SIL_SetPowerHeater.class)
-					});
-			connections.put(
-				new EventSource(HeaterUnitTesterModel.URI, SwitchOnHeater.class),
-				new EventSink[] {
-					new EventSink(HeaterStateSILModel.URI, SwitchOnHeater.class)
-					});
-			connections.put(
-				new EventSource(HeaterUnitTesterModel.URI, SwitchOffHeater.class),
-				new EventSink[] {
-					new EventSink(HeaterStateSILModel.URI, SwitchOffHeater.class)
-					});
-			connections.put(
-				new EventSource(HeaterUnitTesterModel.URI, Heat.class),
-				new EventSink[] {
-					new EventSink(HeaterStateSILModel.URI, Heat.class)
-					});
-			connections.put(
-				new EventSource(HeaterUnitTesterModel.URI, DoNotHeat.class),
-				new EventSink[] {
-					new EventSink(HeaterStateSILModel.URI, DoNotHeat.class)
-					});
+			// Event connections
+			Map<EventSource, EventSink[]> connections = new HashMap<>();
 
+			// --- UnitTester -> StateModel ---
 			connections.put(
-				new EventSource(HeaterStateSILModel.URI, SIL_SetPowerHeater.class),
-				new EventSink[] {
-					new EventSink(HeaterElectricitySILModel.URI,
-								  SIL_SetPowerHeater.class),
-					new EventSink(HeaterTemperatureSILModel.URI,
-								  SIL_SetPowerHeater.class)
+					new EventSource(WashingMachineUnitTesterModel.URI, SwitchOnWashingMachine.class),
+					new EventSink[] {
+							new EventSink(WashingMachineStateSILModel.URI, SwitchOnWashingMachine.class)
 					});
 			connections.put(
-				new EventSource(HeaterStateSILModel.URI, SwitchOnHeater.class),
-				new EventSink[] {
-					new EventSink(HeaterElectricitySILModel.URI,
-								  SwitchOnHeater.class)
+					new EventSource(WashingMachineUnitTesterModel.URI, SwitchOffWashingMachine.class),
+					new EventSink[] {
+							new EventSink(WashingMachineStateSILModel.URI, SwitchOffWashingMachine.class)
 					});
 			connections.put(
-				new EventSource(HeaterStateSILModel.URI, SwitchOffHeater.class),
-				new EventSink[] {
-					new EventSink(HeaterElectricitySILModel.URI,
-								  SwitchOffHeater.class),
-					new EventSink(HeaterTemperatureSILModel.URI,
-								  SwitchOffHeater.class)
+					new EventSource(WashingMachineUnitTesterModel.URI, StartWashing.class),
+					new EventSink[] {
+							new EventSink(WashingMachineStateSILModel.URI, StartWashing.class)
 					});
 			connections.put(
-				new EventSource(HeaterStateSILModel.URI, Heat.class),
-				new EventSink[] {
-					new EventSink(HeaterElectricitySILModel.URI, Heat.class),
-					new EventSink(HeaterTemperatureSILModel.URI, Heat.class)
+					new EventSource(WashingMachineUnitTesterModel.URI, SetDelayedStart.class),
+					new EventSink[] {
+							new EventSink(WashingMachineStateSILModel.URI, SetDelayedStart.class)
 					});
 			connections.put(
-				new EventSource(HeaterStateSILModel.URI, DoNotHeat.class),
-				new EventSink[] {
-					new EventSink(HeaterElectricitySILModel.URI, DoNotHeat.class),
-					new EventSink(HeaterTemperatureSILModel.URI, DoNotHeat.class)
+					new EventSource(WashingMachineUnitTesterModel.URI, SuspendWashing.class),
+					new EventSink[] {
+							new EventSink(WashingMachineStateSILModel.URI, SuspendWashing.class)
+					});
+			connections.put(
+					new EventSource(WashingMachineUnitTesterModel.URI, ResumeWashing.class),
+					new EventSink[] {
+							new EventSink(WashingMachineStateSILModel.URI, ResumeWashing.class)
+					});
+			connections.put(
+					new EventSource(WashingMachineUnitTesterModel.URI, SetPowerWashingMachine.class),
+					new EventSink[] {
+							new EventSink(WashingMachineStateSILModel.URI, SetPowerWashingMachine.class)
 					});
 
-			// variable bindings between exporting and importing models
-			Map<VariableSource,VariableSink[]> bindings =
-								new HashMap<VariableSource,VariableSink[]>();
+			// --- StateModel -> Electricity & Temperature ---
+			connections.put(
+					new EventSource(WashingMachineStateSILModel.URI, SwitchOnWashingMachine.class),
+					new EventSink[] {
+							new EventSink(WashingMachineElectricitySILModel.URI, SwitchOnWashingMachine.class)
+					});
+			connections.put(
+					new EventSource(WashingMachineStateSILModel.URI, SwitchOffWashingMachine.class),
+					new EventSink[] {
+							new EventSink(WashingMachineElectricitySILModel.URI, SwitchOffWashingMachine.class),
+							new EventSink(WashingMachineTemperatureSILModel.URI, SwitchOffWashingMachine.class)
+					});
+			connections.put(
+					new EventSource(WashingMachineStateSILModel.URI, StartWashing.class),
+					new EventSink[] {
+							new EventSink(WashingMachineElectricitySILModel.URI, StartWashing.class),
+							new EventSink(WashingMachineTemperatureSILModel.URI, StartWashing.class)
+					});
+			connections.put(
+					new EventSource(WashingMachineStateSILModel.URI, SetDelayedStart.class),
+					new EventSink[] {
+							new EventSink(WashingMachineElectricitySILModel.URI, SetDelayedStart.class)
+					});
+			connections.put(
+					new EventSource(WashingMachineStateSILModel.URI, SuspendWashing.class),
+					new EventSink[] {
+							new EventSink(WashingMachineElectricitySILModel.URI, SuspendWashing.class),
+							new EventSink(WashingMachineTemperatureSILModel.URI, SuspendWashing.class)
+					});
+			connections.put(
+					new EventSource(WashingMachineStateSILModel.URI, ResumeWashing.class),
+					new EventSink[] {
+							new EventSink(WashingMachineElectricitySILModel.URI, ResumeWashing.class),
+							new EventSink(WashingMachineTemperatureSILModel.URI, ResumeWashing.class)
+					});
+			connections.put(
+					new EventSource(WashingMachineStateSILModel.URI, SetPowerWashingMachine.class),
+					new EventSink[] {
+							new EventSink(WashingMachineElectricitySILModel.URI, SetPowerWashingMachine.class)
+					});
 
-			bindings.put(new VariableSource("externalTemperature",
-											Double.class,
-											ExternalTemperatureSILModel.URI),
-						 new VariableSink[] {
-								 new VariableSink("externalTemperature",
-										 		  Double.class,
-										 		  HeaterTemperatureSILModel.URI)
-						 });
+			// --- Temperature -> Electricity (synchronization) ---
+			connections.put(
+					new EventSource(WashingMachineTemperatureSILModel.URI, HeatingFinished.class),
+					new EventSink[] {
+							new EventSink(WashingMachineElectricitySILModel.URI, HeatingFinished.class)
+					});
 
-			// coupled model descriptor
+			// --- Electricity -> Temperature (synchronization) ---
+			connections.put(
+					new EventSource(WashingMachineElectricitySILModel.URI, WashingEnded.class),
+					new EventSink[] {
+							new EventSink(WashingMachineTemperatureSILModel.URI, WashingEnded.class)
+					});
+			connections.put(
+					new EventSource(WashingMachineElectricitySILModel.URI, StartWashing.class),
+					new EventSink[] {
+							new EventSink(WashingMachineTemperatureSILModel.URI, StartWashing.class)
+					});
+
+			// Variable bindings
+			Map<VariableSource, VariableSink[]> bindings = new HashMap<>();
+
+			// currentHeatingPower: Electricity -> Temperature
+			bindings.put(
+					new VariableSource("currentHeatingPower", Double.class,
+									   WashingMachineElectricitySILModel.URI),
+					new VariableSink[] {
+							new VariableSink("currentHeatingPower", Double.class,
+											 WashingMachineTemperatureSILModel.URI)
+					});
+
+			// Coupled model descriptor
 			coupledModelDescriptors.put(
-					HeaterCoupledModel.URI,
+					WashingMachineCoupledModel.URI,
 					new RTCoupledHIOA_Descriptor(
-							HeaterCoupledModel.class,
-							HeaterCoupledModel.URI,
+							WashingMachineCoupledModel.class,
+							WashingMachineCoupledModel.URI,
 							submodels,
 							null,
 							null,
@@ -241,43 +252,44 @@ public class			RunWashingMachineUnitarySILSimulation
 							bindings,
 							ACCELERATION_FACTOR));
 
-			// simulation architecture
+			// Simulation architecture
 			ArchitectureI architecture =
 					new RTArchitecture(
-							HeaterCoupledModel.URI,
+							WashingMachineCoupledModel.URI,
 							atomicModelDescriptors,
 							coupledModelDescriptors,
-							HeaterSimulationConfigurationI.TIME_UNIT);
+							TIME_UNIT);
 
-			// create the simulator from the simulation architecture
+			// Create the simulator
 			SimulatorI se = architecture.constructSimulator();
-			// this add additional time at each simulation step in
-			// standard simulations (useful when debugging)
 			SimulationEngine.SIMULATION_STEP_SLEEP_TIME = 0L;
 
-			// run a CLASSICAL test scenario
-			TestScenarioWithSimulation classical = classical();
-			System.out.println(classical.beginMessage());
-			Map<String, Object> classicalRunParameters =
-												new HashMap<String, Object>();
-			classical.addToRunParameters(classicalRunParameters);
-			se.setSimulationRunParameters(classicalRunParameters);
-			Time startTime = classical.getStartTime();
-			Duration d = classical.getEndTime().subtract(startTime);
+			// Run a test scenario
+			TestScenarioWithSimulation testScenario = createTestScenario();
+			System.out.println(testScenario.beginMessage());
+
+			Map<String, Object> runParameters = new HashMap<>();
+			testScenario.addToRunParameters(runParameters);
+			se.setSimulationRunParameters(runParameters);
+
+			Time startTime = testScenario.getStartTime();
+			Duration d = testScenario.getEndTime().subtract(startTime);
+
 			long realTimeStart = System.currentTimeMillis() + 200;
 			se.startRTSimulation(realTimeStart,
 								 startTime.getSimulatedTime(),
 								 d.getSimulatedDuration());
-			long executionDuration =					
-				new Double(
-						HeaterSimulationConfigurationI.TIME_UNIT.toMillis(1)
-							* (d.getSimulatedDuration()/ACCELERATION_FACTOR)).
-																	longValue();
+
+			long executionDuration =
+				new Double(TIME_UNIT.toMillis(1)
+							* (d.getSimulatedDuration() / ACCELERATION_FACTOR)).longValue();
+
 			Thread.sleep(executionDuration + 2000L);
-			System.out.println(classical.endMessage());
+			System.out.println(testScenario.endMessage());
 			System.exit(0);
+
 		} catch (Exception e) {
-			throw new RuntimeException(e) ;
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -285,122 +297,76 @@ public class			RunWashingMachineUnitarySILSimulation
 	// Test scenarios
 	// -------------------------------------------------------------------------
 
-	/** the start instant used in the test scenarios.						*/
-	protected static Instant	START_INSTANT =
-									Instant.parse("2025-10-20T12:00:00.00Z");
-	/** the end instant used in the test scenarios.							*/
-	protected static Instant	END_INSTANT =
-									Instant.parse("2025-10-20T18:00:00.00Z");
-	/** the start time in simulated time, corresponding to
-	 *  {@code START_INSTANT}.												*/
-	protected static Time		START_TIME = new Time(0.0, TimeUnit.HOURS);
+	protected static Instant START_INSTANT = Instant.parse("2025-10-20T08:00:00.00Z");
+	protected static Instant END_INSTANT = Instant.parse("2025-10-20T10:00:00.00Z");
+	protected static Time START_TIME = new Time(0.0, TimeUnit.HOURS);
 
-	/** standard test scenario, see Gherkin specification.				 	
-	 * @throws VerboseException */
-	protected static TestScenarioWithSimulation	classical() throws VerboseException
+	/**
+	 * Create a test scenario for the washing machine simulation.
+	 *
+	 * Scenario:
+	 * 1. SwitchOn at 08:05
+	 * 2. StartWashing (30 min duration, 40C target) at 08:10
+	 * 3. SwitchOff at 09:50
+	 */
+	protected static TestScenarioWithSimulation createTestScenario() throws VerboseException
 	{
 		return new TestScenarioWithSimulation(
 			"-----------------------------------------------------\n" +
-			"Classical\n\n" +
-			"  Gherkin specification\n\n" +
-			"    Feature: heater operation\n\n" +
-			"      Scenario: heater switched on\n" +
-			"        Given a heater that is off\n" +
-			"        When it is switched on\n" +
-			"        Then it is on but not heating though set at the highest power level\n" +
-			"      Scenario: heater heats\n" +
-			"        Given a heater that is on and not heating\n" +
-			"        When it is asked to heat\n" +
-			"        Then it is on and it heats at the current power level\n" +
-			"      Scenario: heater stops heating\n" +
-			"        Given a hair dryer that is heating\n" +
-			"        When it is asked not to heat\n" +
-			"        Then it is on but it stops heating\n" +
-			"      Scenario: heater heats\n" +
-			"        Given a heater that is on and not heating\n" +
-			"        When it is asked to heat\n" +
-			"        Then it is on and it heats at the current power level\n" +
-			"      Scenario: heater set a different power level\n" +
-			"        Given a heater that is heating\n" +
-			"        When it is set to a new power level\n" +
-			"        Then it is on and it heats at the new power level\n" +
-			"      Scenario: hair dryer switched off\n" +
-			"        Given a hair dryer that is on\n" +
-			"        When it is switched of\n" +
-			"        Then it is off\n" +
+			"WashingMachine SIL Test\n\n" +
+			"  Scenario:\n" +
+			"    1. Switch on the washing machine\n" +
+			"    2. Start washing (30 min, 40C)\n" +
+			"    3. Wait for heating + washing cycle\n" +
+			"    4. Switch off\n" +
 			"-----------------------------------------------------\n",
 			"\n-----------------------------------------------------\n" +
-			"End Classical\n" +
+			"End WashingMachine SIL Test\n" +
 			"-----------------------------------------------------",
-			"fake-clock-URI",	// for simulation only test scenario, no clock needed
+			"fake-clock-URI",
 			START_INSTANT,
 			END_INSTANT,
-			HeaterCoupledModel.URI,
+			WashingMachineCoupledModel.URI,
 			START_TIME,
 			(ts, simParams) -> {
 				simParams.put(
 					ModelI.createRunParameterName(
-						HeaterUnitTesterModel.URI,
-						HeaterUnitTesterModel.TEST_SCENARIO_RP_NAME),
+						WashingMachineUnitTesterModel.URI,
+						WashingMachineUnitTesterModel.TEST_SCENARIO_RP_NAME),
 					ts);
 			},
 			new SimulationTestStep[]{
+				// Switch on at 08:05 (5 min after start)
 				new SimulationTestStep(
-					HeaterUnitTesterModel.URI,
-					Instant.parse("2025-10-20T12:30:00.00Z"),
+					WashingMachineUnitTesterModel.URI,
+					Instant.parse("2025-10-20T08:05:00.00Z"),
 					(m, t) -> {
 						ArrayList<EventI> ret = new ArrayList<>();
-						ret.add(new SwitchOnHeater(t));
+						ret.add(new SwitchOnWashingMachine(t));
 						return ret;
 					},
 					(m, t) -> {}),
+				// Start washing at 08:10 (10 min after start)
+				// Duration: 30 min (0.5 hours), Target temp: 40C
 				new SimulationTestStep(
-						HeaterUnitTesterModel.URI,
-						Instant.parse("2025-10-20T13:00:00.00Z"),
-						(m, t) -> {
-							ArrayList<EventI> ret = new ArrayList<>();
-							ret.add(new Heat(t));
-							return ret;
-						},
-						(m, t) -> {}),
+					WashingMachineUnitTesterModel.URI,
+					Instant.parse("2025-10-20T08:10:00.00Z"),
+					(m, t) -> {
+						ArrayList<EventI> ret = new ArrayList<>();
+						ret.add(new StartWashing(t, 30, 40.0));
+						return ret;
+					},
+					(m, t) -> {}),
+				// Switch off at 09:50 (110 min after start)
 				new SimulationTestStep(
-						HeaterUnitTesterModel.URI,
-						Instant.parse("2025-10-20T13:30:00.00Z"),
-						(m, t) -> {
-							ArrayList<EventI> ret = new ArrayList<>();
-							ret.add(new DoNotHeat(t));
-							return ret;
-						},
-						(m, t) -> {}),
-				new SimulationTestStep(
-						HeaterUnitTesterModel.URI,
-						Instant.parse("2025-10-20T14:00:00.00Z"),
-						(m, t) -> {
-							ArrayList<EventI> ret = new ArrayList<>();
-							ret.add(new Heat(t));
-							return ret;
-						},
-						(m, t) -> {}),
-				new SimulationTestStep(
-						HeaterUnitTesterModel.URI,
-						Instant.parse("2025-10-20T14:30:00.00Z"),
-						(m, t) -> {
-							ArrayList<EventI> ret = new ArrayList<>();
-							ret.add(new SIL_SetPowerHeater(t,
-									   				   new PowerValue(880.0)));
-							return ret;
-						},
-						(m, t) -> {}),
-				new SimulationTestStep(
-						HeaterUnitTesterModel.URI,
-						Instant.parse("2025-10-20T16:30:00.00Z"),
-						(m, t) -> {
-							ArrayList<EventI> ret = new ArrayList<>();
-							ret.add(new SwitchOffHeater(t));
-							return ret;
-						},
-						(m, t) -> {})
+					WashingMachineUnitTesterModel.URI,
+					Instant.parse("2025-10-20T09:50:00.00Z"),
+					(m, t) -> {
+						ArrayList<EventI> ret = new ArrayList<>();
+						ret.add(new SwitchOffWashingMachine(t));
+						return ret;
+					},
+					(m, t) -> {})
 			});
 	}
 }
-// -----------------------------------------------------------------------------

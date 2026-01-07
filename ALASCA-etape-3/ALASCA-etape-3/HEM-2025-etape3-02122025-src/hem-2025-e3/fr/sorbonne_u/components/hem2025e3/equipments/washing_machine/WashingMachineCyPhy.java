@@ -372,7 +372,7 @@ implements	WashingMachineUserI,
 		RTArchitecture ret = null;
 		if (architectureURI.equals(UNIT_TEST_ARCHITECTURE_URI)) {
 			ret = Local_SIL_SimulationArchitectures.
-						createWashingMachineSILArchitecture(
+						createWashingMachineSIL_Architecture4UnitTest(
 									architectureURI,
 									rootModelURI,
 									simulatedTimeUnit,

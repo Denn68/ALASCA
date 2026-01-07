@@ -24,10 +24,11 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
 		ResumeWashing.class,
 		SetPowerWashingMachine.class
 	}, exported = {
-		// Ré-émission vers les autres modèles (Elec/Temp)
+		// Re-emission towards other models (Elec/Temp)
 		SwitchOnWashingMachine.class,
 		SwitchOffWashingMachine.class,
 		StartWashing.class,
+		SetDelayedStart.class,
 		SuspendWashing.class,
 		ResumeWashing.class,
 		SetPowerWashingMachine.class
