@@ -23,28 +23,6 @@ import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulationReportI;
 import fr.sorbonne_u.devs_simulation.utils.Pair;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
 
-/**
- * The class <code>WashingMachineElectricitySILModel</code> defines a simulation
- * model for the electricity consumption of a washing machine.
- *
- * <p><strong>Description</strong></p>
- *
- * <p>
- * This model tracks the electricity consumption based on the washing machine state.
- * It exports currentIntensity and currentHeatingPower variables.
- * It handles HeatingFinished events to transition from HEATINGWATER to WASHING.
- * It emits WashingEnded when washing duration is complete, and StartWashing
- * when delayed start triggers.
- * </p>
- *
- * <ul>
- * <li>Imported events: SwitchOnWashingMachine, SwitchOffWashingMachine, StartWashing,
- *     SetDelayedStart, SuspendWashing, ResumeWashing, SetPowerWashingMachine,
- *     HeatingFinished</li>
- * <li>Exported events: WashingEnded, StartWashing</li>
- * <li>Exported variables: currentIntensity, currentHeatingPower</li>
- * </ul>
- */
 @ModelExternalEvents(imported = {
 		SwitchOnWashingMachine.class,
 		SwitchOffWashingMachine.class,
@@ -72,26 +50,22 @@ implements	SIL_WashingMachineOperationI
 	public static final String URI = "WashingMachineElectricityModel";
 	public static boolean VERBOSE = true;
 
-	// Power constants
 	protected static final double TENSION = 220.0;
-	protected static final double STANDBY_CONSUMPTION = 5.0;    // Watts
-	protected static final double WASHING_CONSUMPTION = 400.0;  // Watts
-	protected static final double HEATING_CONSUMPTION = 2000.0; // Watts
+	protected static final double STANDBY_CONSUMPTION = 5.0;
+	protected static final double WASHING_CONSUMPTION = 400.0;
+	protected static final double HEATING_CONSUMPTION = 2000.0;
 
-	// State variables
 	protected WashingMachineState currentState = WashingMachineState.OFF;
 	protected WashingMachineState stateBeforeSuspension = null;
 	protected boolean consumptionHasChanged = false;
 	protected double totalConsumption;
 
-	// Timing for delayed start and washing duration
 	protected Duration remainingTimeInCurrentPhase;
 	protected Duration washingDuration;
 	protected boolean isDelayRunning = false;
 	protected boolean delayedStartTriggered = false;
 	protected boolean washingEnded = false;
 
-	// Programmed values for delayed start
 	protected long programmedDuration;
 	protected double programmedTemperature;
 
@@ -183,7 +157,6 @@ implements	SIL_WashingMachineOperationI
 	{
 		ArrayList<EventI> ret = null;
 
-		// Case 1: Delayed start triggered -> emit StartWashing
 		if (this.delayedStartTriggered) {
 			ret = new ArrayList<>();
 			Time t = this.getCurrentStateTime().add(this.getNextTimeAdvance());
@@ -195,7 +168,6 @@ implements	SIL_WashingMachineOperationI
 			this.delayedStartTriggered = false;
 		}
 
-		// Case 2: Washing ended -> emit WashingEnded
 		if (this.washingEnded) {
 			if (ret == null) ret = new ArrayList<>();
 			Time t = this.getCurrentStateTime().add(this.getNextTimeAdvance());
@@ -213,12 +185,10 @@ implements	SIL_WashingMachineOperationI
 	@Override
 	public Duration timeAdvance()
 	{
-		// Immediate transition for consumption update or event emission
 		if (this.consumptionHasChanged || this.delayedStartTriggered || this.washingEnded) {
 			return Duration.zero(this.getSimulatedTimeUnit());
 		}
 
-		// Waiting for delay or washing duration
 		if (this.remainingTimeInCurrentPhase != null) {
 			return this.remainingTimeInCurrentPhase;
 		}
@@ -231,12 +201,10 @@ implements	SIL_WashingMachineOperationI
 	{
 		super.userDefinedExternalTransition(elapsedTime);
 
-		// Update consumption based on elapsed time
 		double durationInHours = elapsedTime.getSimulatedDuration();
 		double power = this.currentIntensity.getValue() * TENSION;
 		this.totalConsumption += (power * durationInHours) / 1000.0;
 
-		// Update remaining time if applicable
 		if (this.remainingTimeInCurrentPhase != null &&
 			!this.remainingTimeInCurrentPhase.equals(Duration.INFINITY)) {
 			this.remainingTimeInCurrentPhase =
@@ -252,7 +220,6 @@ implements	SIL_WashingMachineOperationI
 			this.logMessage("executing external event: " + ce.eventAsString());
 		}
 
-		// Handle HeatingFinished specially
 		if (ce instanceof HeatingFinished) {
 			if (this.currentState == WashingMachineState.HEATINGWATER) {
 				if (VERBOSE) {
@@ -260,14 +227,12 @@ implements	SIL_WashingMachineOperationI
 				}
 				this.currentState = WashingMachineState.WASHING;
 
-				// Start the washing timer
 				this.remainingTimeInCurrentPhase = this.washingDuration;
 				this.washingDuration = null;
 
 				this.consumptionHasChanged = true;
 			}
 		} else {
-			// Execute other events normally
 			ce.executeOn(this);
 		}
 	}
@@ -280,7 +245,6 @@ implements	SIL_WashingMachineOperationI
 		boolean timeElapsed = elapsedTime.getSimulatedDuration() > 0.000001;
 
 		if (timeElapsed && this.remainingTimeInCurrentPhase != null) {
-			// Case 1: Delay ended
 			if (this.isDelayRunning) {
 				if (VERBOSE) {
 					this.logMessage("Delay ended. Triggering StartWashing.");
@@ -289,13 +253,11 @@ implements	SIL_WashingMachineOperationI
 				this.remainingTimeInCurrentPhase = null;
 				this.delayedStartTriggered = true;
 
-				// Also update local state
 				this.currentState = WashingMachineState.HEATINGWATER;
 				this.washingDuration = new Duration((double) this.programmedDuration,
 						this.getSimulatedTimeUnit());
 				this.consumptionHasChanged = true;
 			}
-			// Case 2: Washing duration ended
 			else if (this.currentState == WashingMachineState.WASHING) {
 				if (VERBOSE) {
 					this.logMessage("Washing finished. Returning to ON state.");
@@ -307,7 +269,6 @@ implements	SIL_WashingMachineOperationI
 			}
 		}
 
-		// Update intensity and heating power based on current state
 		if (this.consumptionHasChanged) {
 			Time t = this.getCurrentStateTime();
 			double newIntensity = 0.0;
@@ -390,7 +351,6 @@ implements	SIL_WashingMachineOperationI
 	public void startWashing(long duration, double targetTemperature)
 	{
 		if (this.currentState == WashingMachineState.ON) {
-			// Cancel any delay
 			if (this.isDelayRunning) {
 				if (VERBOSE) {
 					this.logMessage("Manual start: cancelling delayed start.");
@@ -400,10 +360,8 @@ implements	SIL_WashingMachineOperationI
 
 			this.currentState = WashingMachineState.HEATINGWATER;
 
-			// Wait for HeatingFinished from temperature model
 			this.remainingTimeInCurrentPhase = Duration.INFINITY;
 
-			// Store washing duration for later (after heating)
 			this.washingDuration = new Duration((double) duration, this.getSimulatedTimeUnit());
 
 			this.consumptionHasChanged = true;
@@ -422,7 +380,6 @@ implements	SIL_WashingMachineOperationI
 			this.programmedDuration = washingDuration;
 			this.programmedTemperature = targetTemperature;
 
-			// Wait for delay
 			this.remainingTimeInCurrentPhase = new Duration((double) delay,
 					this.getSimulatedTimeUnit());
 		}

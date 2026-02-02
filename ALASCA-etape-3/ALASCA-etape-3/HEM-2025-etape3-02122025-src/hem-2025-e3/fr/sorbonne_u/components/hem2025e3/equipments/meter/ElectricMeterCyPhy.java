@@ -56,6 +56,13 @@ import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.Heat;
 import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.SwitchOffHeater;
 import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.SwitchOnHeater;
 import fr.sorbonne_u.components.hem2025e3.equipments.heater.sil.events.SIL_SetPowerHeater;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SwitchOnWashingMachine;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SwitchOffWashingMachine;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.StartWashing;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetDelayedStart;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SuspendWashing;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.ResumeWashing;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetPowerWashingMachine;
 import fr.sorbonne_u.components.hem2025e3.equipments.meter.sil.LocalSimulationArchitectures;
 import fr.sorbonne_u.components.utils.tests.TestScenario;
 import fr.sorbonne_u.devs_simulation.architectures.RTArchitecture;
@@ -199,7 +206,14 @@ import java.util.function.Supplier;
 						SwitchOnHeater.class,
 						SwitchOffHeater.class,
 						Heat.class,
-						DoNotHeat.class}
+						DoNotHeat.class,
+						SwitchOnWashingMachine.class,	// WashingMachine events
+						SwitchOffWashingMachine.class,
+						StartWashing.class,
+						SetDelayedStart.class,
+						SuspendWashing.class,
+						ResumeWashing.class,
+						SetPowerWashingMachine.class}
 		)
 	)
 })

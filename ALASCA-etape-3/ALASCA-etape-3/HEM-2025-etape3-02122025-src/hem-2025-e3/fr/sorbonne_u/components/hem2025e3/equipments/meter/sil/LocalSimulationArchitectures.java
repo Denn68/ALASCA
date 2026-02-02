@@ -49,6 +49,14 @@ import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.Heat;
 import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.SwitchOffHeater;
 import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.SwitchOnHeater;
 import fr.sorbonne_u.components.hem2025e3.equipments.heater.sil.events.SIL_SetPowerHeater;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.sil.WashingMachineElectricitySILModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SwitchOnWashingMachine;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SwitchOffWashingMachine;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.StartWashing;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetDelayedStart;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SuspendWashing;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.ResumeWashing;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetPowerWashingMachine;
 import fr.sorbonne_u.devs_simulation.architectures.RTArchitecture;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.HIOA_Composer;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.RTAtomicHIOA_Descriptor;
@@ -157,6 +165,14 @@ public abstract class	LocalSimulationArchitectures
 						simulatedTimeUnit,
 						null,
 						accelerationFactor));
+		atomicModelDescriptors.put(
+				WashingMachineElectricitySILModel.URI,
+				RTAtomicHIOA_Descriptor.create(
+						WashingMachineElectricitySILModel.class,
+						WashingMachineElectricitySILModel.URI,
+						simulatedTimeUnit,
+						null,
+						accelerationFactor));
 
 		// map that will contain the coupled model descriptors to construct
 		// the simulation architecture
@@ -168,6 +184,7 @@ public abstract class	LocalSimulationArchitectures
 		submodels.add(ElectricMeterElectricitySILModel.URI);
 		submodels.add(HairDryerElectricitySILModel.URI);
 		submodels.add(HeaterElectricitySILModel.URI);
+		submodels.add(WashingMachineElectricitySILModel.URI);
 
 		Map<Class<? extends EventI>,EventSink[]> imported = new HashMap<>();
 		imported.put(
@@ -226,6 +243,50 @@ public abstract class	LocalSimulationArchitectures
 									  DoNotHeat.class)
 				});
 
+		// WashingMachine events
+		imported.put(
+				SwitchOnWashingMachine.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+									  SwitchOnWashingMachine.class)
+				});
+		imported.put(
+				SwitchOffWashingMachine.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+									  SwitchOffWashingMachine.class)
+				});
+		imported.put(
+				StartWashing.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+									  StartWashing.class)
+				});
+		imported.put(
+				SetDelayedStart.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+									  SetDelayedStart.class)
+				});
+		imported.put(
+				SuspendWashing.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+									  SuspendWashing.class)
+				});
+		imported.put(
+				ResumeWashing.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+									  ResumeWashing.class)
+				});
+		imported.put(
+				SetPowerWashingMachine.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+									  SetPowerWashingMachine.class)
+				});
+
 		// variable bindings between exporting and importing models
 		Map<VariableSource,VariableSink[]> bindings =
 								new HashMap<VariableSource,VariableSink[]>();
@@ -244,6 +305,15 @@ public abstract class	LocalSimulationArchitectures
 								   HeaterElectricitySILModel.URI),
 				new VariableSink[] {
 					new VariableSink("currentHeaterIntensity",
+									 Double.class,
+									 ElectricMeterElectricitySILModel.URI)
+				});
+		bindings.put(
+				new VariableSource("currentIntensity",
+								   Double.class,
+								   WashingMachineElectricitySILModel.URI),
+				new VariableSink[] {
+					new VariableSink("currentWashingMachineIntensity",
 									 Double.class,
 									 ElectricMeterElectricitySILModel.URI)
 				});

@@ -128,6 +128,8 @@ import java.text.NumberFormat;
 	{@ModelImportedVariable(name = "currentHeaterIntensity",
 							type = Double.class),
 	 @ModelImportedVariable(name = "currentHairDryerIntensity",
+	 						type = Double.class),
+	 @ModelImportedVariable(name = "currentWashingMachineIntensity",
 	 						type = Double.class)
 //	 @ModelImportedVariable(name = "solarPanelOutputPower",
 //	 						type = Double.class),
@@ -216,6 +218,9 @@ extends		AtomicHIOA
 	/** current intensity of the hair dryer in amperes.						*/
 	@ImportedVariable(type = Double.class)
 	protected Value<Double>			currentHairDryerIntensity;
+	/** current intensity of the washing machine in amperes.				*/
+	@ImportedVariable(type = Double.class)
+	protected Value<Double>			currentWashingMachineIntensity;
 
 //	/** current total power production of the house in the power unit
 //	 *  defined by the electric meter.										*/
@@ -302,6 +307,15 @@ extends		AtomicHIOA
 				"currentHairDryerIntensity == null || !i "
 				+ "currentHairDryerIntensity.isInitialised() || "
 				+ "currentHairDryerIntensity.getValue() >= 0.0");
+		ret &= AssertionChecking.checkImplementationInvariant(
+				instance.currentWashingMachineIntensity == null ||
+					!instance.currentWashingMachineIntensity.isInitialised() ||
+						instance.currentWashingMachineIntensity.getValue() >= 0.0,
+				ElectricMeterElectricitySILModel.class,
+				instance,
+				"currentWashingMachineIntensity == null || "
+				+ "!currentWashingMachineIntensity.isInitialised() || "
+				+ "currentWashingMachineIntensity.getValue() >= 0.0");
 		ret &= AssertionChecking.checkImplementationInvariant(
 				instance.currentIntensity != null &&
 					(!instance.currentIntensity.isInitialised() ||
@@ -478,6 +492,7 @@ extends		AtomicHIOA
 		// simple sum of all incoming intensities
 		return this.currentHairDryerIntensity.getValue()
 					+ this.currentHeaterIntensity.getValue()
+					+ this.currentWashingMachineIntensity.getValue()
 //					+ this.batteriesInputPower.getValue()
 					;
 	}
@@ -562,7 +577,8 @@ extends		AtomicHIOA
 		if (!this.currentIntensity.isInitialised()
 //				&& this.batteriesInputPower.isInitialised()
 				&& this.currentHairDryerIntensity.isInitialised()
-				&& this.currentHeaterIntensity.isInitialised()) {
+				&& this.currentHeaterIntensity.isInitialised()
+				&& this.currentWashingMachineIntensity.isInitialised()) {
 			double i = this.computeTotalIntensity();
 			this.currentIntensity.initialise(i);
 			this.cumulativeConsumption.initialise(0.0);

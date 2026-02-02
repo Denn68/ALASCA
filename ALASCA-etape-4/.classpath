@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/BCM4Java-02012026-src/examples"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/BCM4Java-02012026-src/examples-basic-plugins"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/BCM4Java-02012026-src/src"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/BCM4Java-02012026-src/src-basic-plugins"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/BCM4Java-02012026-src/test_tools"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/BCM4Java-CyPhy-08012026-src/physical_data"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/BCM4Java-CyPhy-08012026-src/src"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/BCM4Java-CyPhy-08012026-src/test_tools"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/HEM-2025-etape3-08012026-src/hem-2025-base"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/HEM-2025-etape3-08012026-src/hem-2025-e1"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/HEM-2025-etape3-08012026-src/hem-2025-e2"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/HEM-2025-etape3-08012026-src/hem-2025-e3"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/NeoSim4Java-08012026-src/examples-advanced"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/NeoSim4Java-08012026-src/examples-basic"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/NeoSim4Java-08012026-src/extra"/>
+	<classpathentry kind="src" path="ALASCA-etape-4/NeoSim4Java-08012026-src/src"/>
+	<classpathentry kind="lib" path="ALASCA-etape-4/BCM4Java-22012026.jar"/>
+	<classpathentry kind="lib" path="ALASCA-etape-4/BCM4Java-CyPhy-08012026.jar"/>
+	<classpathentry kind="lib" path="ALASCA-etape-4/NeoSim4Java-08012026.jar"/>
+	<classpathentry kind="lib" path="ALASCA-etape-4/commons-math3-3.6.1.jar"/>
+	<classpathentry kind="lib" path="ALASCA-etape-4/CommonSunCalculations-07102025.jar"/>
+	<classpathentry kind="lib" path="ALASCA-etape-4/javassist.jar"/>
+	<classpathentry kind="lib" path="ALASCA-etape-4/jing.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
+	<classpathentry kind="lib" path="C:/Users/Moufees/Desktop/ALASCA/jfreechart-1.5.6.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

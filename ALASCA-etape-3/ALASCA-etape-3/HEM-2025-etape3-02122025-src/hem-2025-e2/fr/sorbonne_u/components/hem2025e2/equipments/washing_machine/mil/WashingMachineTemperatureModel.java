@@ -22,38 +22,7 @@ import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulationReportI;
 import fr.sorbonne_u.devs_simulation.utils.Pair;
 import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
 
-/**
- * La classe <code>WashingMachineTemperatureModel</code> définit un modèle de simulation
- * pour la température de l'eau dans le tambour d'une machine à laver.
- *
- * <p><strong>Description</strong></p>
- *
- * <p>
- * Le modèle est implémenté comme un modèle atomique HIOA. Une équation différentielle
- * définit la variation de température au fil du temps. Le modèle utilise une approche
- * mathématique simple où la dérivée est proportionnelle à la différence entre la
- * température actuelle et la température cible (élément chauffant ou refroidissement).
- * </p>
- *
- * <p>
- * Quand l'état est HEATINGWATER, la température monte vers la température de l'élément
- * chauffant. Quand la température cible est atteinte, la machine devrait passer en
- * mode WASHING.
- * </p>
- *
- * <ul>
- * <li>Événements importés:
- *   {@code SwitchOffWashingMachine},
- *   {@code StartWashing},
- *   {@code SuspendWashing},
- *   {@code ResumeWashing}</li>
- * <li>Événements exportés: aucun</li>
- * <li>Variables importées:
- *   name = {@code currentHeatingPower}, type = {@code Double}</li>
- * <li>Variables internes:
- *   name = {@code currentWaterTemperature}, type = {@code Double}</li>
- * </ul>
- */
+
 @ModelExternalEvents(imported = {
     SwitchOffWashingMachine.class,
     SwitchOnWashingMachine.class,
@@ -296,37 +265,24 @@ implements WashingMachineOperationI
         double derivative = 0.0;
 
         if (this.currentState == WashingMachineState.HEATINGWATER) {
-            // Heating: temperature rises towards heating element temperature
-            // but we limit it to target temperature
             double effectiveTarget = Math.min(HEATING_ELEMENT_TEMP, this.targetTemperature + 5.0);
             derivative = (effectiveTarget - currentTemp) / this.currentHeatTransferConstant();
 
-            // Check if target temperature is reached
             if (currentTemp >= this.targetTemperature - 0.5) {
-                // Target reached, transition to WASHING will happen in internal transition
                 if (VERBOSE && currentTemp >= this.targetTemperature) {
                     this.logMessage("Target temperature " + this.targetTemperature +
                                    "°C reached! Current: " + currentTemp + "°C");
                 }
             }
         } else if (this.currentState == WashingMachineState.WASHING) {
-            // During washing, try to maintain target temperature
-            // Slight cooling towards cold water temperature
             derivative = (COLD_WATER_TEMPERATURE - currentTemp) / COOLING_TRANSFER_CONSTANT;
         } else {
-            // OFF or ON (idle): cool down towards cold water temperature
             derivative = (COLD_WATER_TEMPERATURE - currentTemp) / COOLING_TRANSFER_CONSTANT;
         }
 
         return derivative;
     }
 
-    /**
-     * Compute the new temperature after a time step.
-     *
-     * @param deltaT the duration of the step since the last update.
-     * @return the new temperature in Celsius.
-     */
     protected double computeNewTemperature(double deltaT) {
         Time t = this.currentWaterTemperature.getTime();
         double oldTemp = this.currentWaterTemperature.evaluateAt(t);

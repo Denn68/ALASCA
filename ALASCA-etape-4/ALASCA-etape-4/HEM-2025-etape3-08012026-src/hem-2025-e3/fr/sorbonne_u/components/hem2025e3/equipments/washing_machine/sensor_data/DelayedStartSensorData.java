@@ -9,9 +9,6 @@ implements	WashingMachineSensorDataI
 {
 	private static final long serialVersionUID = 1L;
 
-	/**
-	 * @param remainingDelay	remaining delay in ms.
-	 */
 	public				DelayedStartSensorData(double remainingDelay)
 	{
 		super(new Measure<Double>(remainingDelay));

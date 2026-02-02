@@ -8,27 +8,12 @@ import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
 import fr.sorbonne_u.exceptions.PreconditionException;
 
-/**
- * The class <code>WashingMachineProgramSensorData</code> implements a composed
- * sensor data sent by the washing machine to the controller, which contains
- * information about the current program execution (phase and timers).
- *
- * Invariants: {@code size() == 3}
- */
 public class            WashingMachineProgramSensorData
 extends        ComposedSignalData
 implements    WashingMachineSensorDataI
 {
     private static final long serialVersionUID = 1L;
 
-    /**
-     * Create a new composed sensor data with the given phase and times at the current time
-     * under the hardware clock time reference.
-     *
-     * @param phase                    current phase as a sensor data.
-     * @param remainingPhaseTimeMS     remaining time of current phase (ms).
-     * @param remainingDelayMS         remaining delayed-start time (ms, 0 if none).
-     */
     public                WashingMachineProgramSensorData(
         WashingPhaseSensorData phase,
         RemainingTimeSensorData remainingPhaseTimeMS,
@@ -107,7 +92,7 @@ implements    WashingMachineSensorDataI
     }
 
     // -------------------------------------------------------------------------
-    // Accessors (same style as HeaterTemperaturesSensorData)
+    // Accessors
     // -------------------------------------------------------------------------
 
     public WashingPhaseSensorData        getPhase()

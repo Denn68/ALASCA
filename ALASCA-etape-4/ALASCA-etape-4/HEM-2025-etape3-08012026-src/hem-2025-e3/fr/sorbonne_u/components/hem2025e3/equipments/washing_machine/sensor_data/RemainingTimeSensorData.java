@@ -9,9 +9,6 @@ implements	WashingMachineSensorDataI
 {
 	private static final long serialVersionUID = 1L;
 
-	/**
-	 * @param remainingTime	remaining time in ms.
-	 */
 	public				RemainingTimeSensorData(double remainingTime)
 	{
 		super(new Measure<Double>(remainingTime));

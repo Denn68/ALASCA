@@ -6,21 +6,12 @@ import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.WashingMach
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.PreconditionException;
 
-/**
- * The class <code>WashingMachineStateSensorData</code> implements a sensor data
- * containing the most recent state of the Washing Machine.
- */
 public class			WashingMachineStateSensorData
 extends		SignalData<WashingMachineState>
 implements	WashingMachineSensorDataI
 {
 	private static final long serialVersionUID = 1L;
 
-	/**
-	 * create a washing machine state sensor data.
-	 * * @param s			the state of the washing machine.
-	 * @throws Exception 
-	 */
 	public				WashingMachineStateSensorData(WashingMachineState s) throws Exception 
 	{
 		super(AssertionChecking.assertTrueAndReturnOrThrow(

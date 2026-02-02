@@ -1,52 +1,58 @@
 package fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.connections;
 
-import fr.sorbonne_u.alasca.physical_data.Measure;
-import fr.sorbonne_u.components.connectors.AbstractConnector;
-import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMachineActuatorCI;
+import java.util.concurrent.TimeUnit;
+import fr.sorbonne_u.components.connectors.DataConnector;
+import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.WashingMachine.WashingMachineState;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMachineSensorDataCI;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.sensor_data.WashingMachineProgramSensorData;
 
+// -----------------------------------------------------------------------------
+/**
+ * The class <code>WashingMachineSensorDataConnector</code> implements the
+ * connector for the {@code WashingMachineSensorDataCI} component data interface.
+ */
 public class			WashingMachineSensorDataConnector
-extends		AbstractConnector
-implements	WashingMachineActuatorCI
+extends		DataConnector
+implements	WashingMachineSensorDataCI.WashingMachineSensorRequiredPullCI
 {
+	// -------------------------------------------------------------------------
+	// Methods
+	// -------------------------------------------------------------------------
+
 	@Override
-	public void			switchOn() throws Exception
+	public WashingMachineState getState() throws Exception
 	{
-		((WashingMachineActuatorCI)this.offering).switchOn();
+		return ((WashingMachineSensorDataCI.WashingMachineSensorOfferedPullCI)this.offering).
+															getState();
 	}
 
 	@Override
-	public void			switchOff() throws Exception
+	public WashingMachineProgramSensorData getProgramData() throws Exception
 	{
-		((WashingMachineActuatorCI)this.offering).switchOff();
+		return ((WashingMachineSensorDataCI.WashingMachineSensorOfferedPullCI)this.offering).
+															getProgramData();
 	}
 
 	@Override
-	public void			setTargetTemperature(Measure<Double> target) throws Exception
+	public void startProgramDataPushSensor(long controlPeriod, TimeUnit tu)
+	throws Exception
 	{
-		((WashingMachineActuatorCI)this.offering).setTargetTemperature(target);
+		((WashingMachineSensorDataCI.WashingMachineSensorOfferedPullCI)this.offering).
+								startProgramDataPushSensor(controlPeriod, tu);
 	}
 
 	@Override
-	public void			startWashing(long washingTimeMS, Measure<Double> target) throws Exception
+	public void startStatePushSensor() throws Exception
 	{
-		((WashingMachineActuatorCI)this.offering).startWashing(washingTimeMS, target);
+		((WashingMachineSensorDataCI.WashingMachineSensorOfferedPullCI)this.offering).
+								startStatePushSensor();
 	}
 
 	@Override
-	public void			delayedStart(long delayMS, Measure<Double> target, long washingTimeMS) throws Exception
+	public void stopPushing() throws Exception
 	{
-		((WashingMachineActuatorCI)this.offering).delayedStart(delayMS, target, washingTimeMS);
-	}
-
-	@Override
-	public void			suspendCycle() throws Exception
-	{
-		((WashingMachineActuatorCI)this.offering).suspendCycle();
-	}
-
-	@Override
-	public void			resumeCycle() throws Exception
-	{
-		((WashingMachineActuatorCI)this.offering).resumeCycle();
+		((WashingMachineSensorDataCI.WashingMachineSensorOfferedPullCI)this.offering).
+								stopPushing();
 	}
 }
+// -----------------------------------------------------------------------------

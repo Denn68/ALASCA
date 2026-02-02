@@ -442,10 +442,10 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 		this.setTargetTemperature(target);
 
 		double current = this.getCurrentTemperature().getMeasure().getData();
-		// on garde en mémoire la durée de lavage programmée
+
 		this.programmedTargetTemperature = target;
 		this.remainingWashingTimeMS = washingTimeMS;
-		// a washing cycle starts now -> any delayed start is consumed
+
 		this.remainingDelayMS = 0L;
 		if (this.delayFuture != null && !this.delayFuture.isDone()) {
 			this.delayFuture.cancel(false);

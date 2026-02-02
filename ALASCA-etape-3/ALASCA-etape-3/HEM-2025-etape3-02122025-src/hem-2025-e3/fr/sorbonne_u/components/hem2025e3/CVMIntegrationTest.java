@@ -45,6 +45,9 @@ import fr.sorbonne_u.components.hem2025e3.equipments.heater.HeaterTesterCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.heater.HeaterController.ControlMode;
 import fr.sorbonne_u.components.hem2025e3.equipments.hem.HEMCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.meter.ElectricMeterCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMachineCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMachineController;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMachineTesterCyPhy;
 import fr.sorbonne_u.components.utils.tests.TestScenario;
 import fr.sorbonne_u.components.utils.tests.TestStep;
 import fr.sorbonne_u.components.utils.tests.TestStepI;
@@ -258,6 +261,15 @@ extends		AbstractCVM
 		HeaterController.VERBOSE = true;
 		HeaterController.X_RELATIVE_POSITION = 2;
 		HeaterController.Y_RELATIVE_POSITION = 3;
+		WashingMachineTesterCyPhy.VERBOSE = true;
+		WashingMachineTesterCyPhy.X_RELATIVE_POSITION = 0;
+		WashingMachineTesterCyPhy.Y_RELATIVE_POSITION = 4;
+		WashingMachineCyPhy.VERBOSE = true;
+		WashingMachineCyPhy.X_RELATIVE_POSITION = 1;
+		WashingMachineCyPhy.Y_RELATIVE_POSITION = 4;
+		WashingMachineController.VERBOSE = true;
+		WashingMachineController.X_RELATIVE_POSITION = 2;
+		WashingMachineController.Y_RELATIVE_POSITION = 4;
 
 		assert	CVMIntegrationTest.implementationInvariants(this) :
 				new InvariantException(
@@ -335,6 +347,26 @@ extends		AbstractCVM
 						HeaterCyPhy.USER_INBOUND_PORT_URI,
 						HeaterCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
 						HeaterCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+						ExecutionMode.INTEGRATION_TEST,
+						testScenario
+				});
+
+			AbstractComponent.createComponent(
+				WashingMachineCyPhy.class.getCanonicalName(),
+				new Object[]{
+						WashingMachineCyPhy.REFLECTION_INBOUND_PORT_URI,
+						WashingMachineCyPhy.USER_INBOUND_PORT_URI,
+						WashingMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+						WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+						WashingMachineCyPhy.SENSOR_INBOUND_PORT_URI,
+						WashingMachineCyPhy.ACTUATOR_INBOUND_PORT_URI
+				});
+			AbstractComponent.createComponent(
+				WashingMachineTesterCyPhy.class.getCanonicalName(),
+				new Object[]{
+						WashingMachineCyPhy.USER_INBOUND_PORT_URI,
+						WashingMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+						WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
 						ExecutionMode.INTEGRATION_TEST,
 						testScenario
 				});
@@ -461,6 +493,40 @@ extends		AbstractCVM
 						testScenario
 				});
 
+			AbstractComponent.createComponent(
+				WashingMachineCyPhy.class.getCanonicalName(),
+				new Object[]{
+						WashingMachineCyPhy.REFLECTION_INBOUND_PORT_URI,
+						WashingMachineCyPhy.USER_INBOUND_PORT_URI,
+						WashingMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+						WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+						WashingMachineCyPhy.SENSOR_INBOUND_PORT_URI,
+						WashingMachineCyPhy.ACTUATOR_INBOUND_PORT_URI,
+						ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+						testScenario,
+						WashingMachineCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+						ACCELERATION_FACTOR
+				});
+			AbstractComponent.createComponent(
+				WashingMachineController.class.getCanonicalName(),
+				new Object[]{
+						WashingMachineCyPhy.SENSOR_INBOUND_PORT_URI,
+						WashingMachineCyPhy.ACTUATOR_INBOUND_PORT_URI,
+						WashingMachineController.STANDARD_CONTROL_PERIOD,
+						WashingMachineController.ControlMode.PULL,
+						ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+						ACCELERATION_FACTOR
+				});
+			AbstractComponent.createComponent(
+				WashingMachineTesterCyPhy.class.getCanonicalName(),
+				new Object[]{
+						WashingMachineCyPhy.USER_INBOUND_PORT_URI,
+						WashingMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+						WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+						ExecutionMode.INTEGRATION_TEST,
+						testScenario
+				});
+
 		}
 
 		super.deploy();
@@ -515,28 +581,31 @@ extends		AbstractCVM
 							TimeUtils.toNanos(SIMULATION_DURATION));
 		Instant endInstant = START_INSTANT.plusSeconds(d);
 
-		Instant heaterSwitchOn = START_INSTANT.plusSeconds(60);
+		//Instant heaterSwitchOn = START_INSTANT.plusSeconds(60);
 
-		Instant hemTestMeter = START_INSTANT.plusSeconds(120);
+		Instant hemTestMeter = START_INSTANT.plusSeconds(1);
 //		Instant hemTestBatteries = START_INSTANT.plusSeconds(180);
 //		Instant hemTestSolarPanel = START_INSTANT.plusSeconds(240);
 //		Instant hemTestGenerator = START_INSTANT.plusSeconds(300);
 
-		Instant hairDryerTurnOn = START_INSTANT.plusSeconds(600);
+		/*Instant hairDryerTurnOn = START_INSTANT.plusSeconds(600);
 		Instant hairDryerSetHigh = START_INSTANT.plusSeconds(660);
 		Instant hairDryerSetLow = START_INSTANT.plusSeconds(900);
 		Instant hairDryerTurnOff = START_INSTANT.plusSeconds(1200);
 
-		Instant hemTestHeater = START_INSTANT.plusSeconds(1500);
+		Instant hemTestHeater = START_INSTANT.plusSeconds(1500);*/
 
-		Instant heaterSwitchOff = START_INSTANT.plusSeconds(d - 60);
+		Instant washingMachineSwitchOn = START_INSTANT.plusSeconds(5);
+		Instant washingMachineSwitchOff = START_INSTANT.plusSeconds(d - 120);
+
+		//Instant heaterSwitchOff = START_INSTANT.plusSeconds(d - 60);
 
 		return new TestScenario(
 			CLOCK_URI,
 			START_INSTANT,
 			endInstant,
 			new TestStepI[] {
-				new TestStep(
+				/*new TestStep(
 					CLOCK_URI,
 					HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 					heaterSwitchOn,
@@ -546,7 +615,7 @@ extends		AbstractCVM
 						} catch (Exception e) {
 							throw new BCMRuntimeException(e) ;
 						}
-					}),
+					}),*/
 
 				// HEM test the meter
 				new TestStep(
@@ -598,7 +667,7 @@ extends		AbstractCVM
 //					}),
 
 				// Hair dryer test steps
-				new TestStep(
+				/*new TestStep(
 					CLOCK_URI,
 					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 					hairDryerTurnOn,
@@ -654,9 +723,33 @@ extends		AbstractCVM
 						} catch (Exception e) {
 							throw new BCMRuntimeException(e) ;
 						}
+					}),*/
+
+				// WashingMachine test steps
+				new TestStep(
+					CLOCK_URI,
+					WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+					washingMachineSwitchOn,
+					owner ->  {
+						try {
+							((WashingMachineTesterCyPhy)owner).getWmop().switchOn();
+						} catch (Exception e) {
+							throw new BCMRuntimeException(e) ;
+						}
+					}),
+				new TestStep(
+					CLOCK_URI,
+					WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+					washingMachineSwitchOff,
+					owner ->  {
+						try {
+							((WashingMachineTesterCyPhy)owner).getWmop().switchOff();
+						} catch (Exception e) {
+							throw new BCMRuntimeException(e) ;
+						}
 					}),
 
-				new TestStep(
+				/*new TestStep(
 					CLOCK_URI,
 					HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 					heaterSwitchOff,
@@ -666,7 +759,7 @@ extends		AbstractCVM
 						} catch (Exception e) {
 							throw new BCMRuntimeException(e) ;
 						}
-					})
+					})*/
 			});
 	}
 
@@ -698,17 +791,20 @@ extends		AbstractCVM
 									TimeUtils.toNanos(SIMULATION_DURATION));
 		Instant endInstant = START_INSTANT.plusSeconds(d);
 
-		Instant heaterSwitchOn = START_INSTANT.plusSeconds(60);
-		Instant heaterSwitchOff = START_INSTANT.plusSeconds(d - 60);
+		/*Instant heaterSwitchOn = START_INSTANT.plusSeconds(60);
+		Instant heaterSwitchOff = START_INSTANT.plusSeconds(d - 60);*/
 
-		Instant hairDryerTurnOn1 = Instant.parse("2025-12-02T07:15:00.00Z");
+		/*Instant hairDryerTurnOn1 = Instant.parse("2025-12-02T07:15:00.00Z");
 		Instant hairDryerSetHigh1 = Instant.parse("2025-12-02T07:15:20.00Z");
 		Instant hairDryerSetLow1 = Instant.parse("2025-12-02T07:20:00.00Z");
 		Instant hairDryerTurnOff1 = Instant.parse("2025-12-02T07:25:00.00Z");
 		Instant hairDryerTurnOn2 = Instant.parse("2025-12-02T08:15:00.00Z");
 		Instant hairDryerSetHigh2 = Instant.parse("2025-12-02T08:15:20.00Z");
 		Instant hairDryerSetLow2 = Instant.parse("2025-12-02T08:20:00.00Z");
-		Instant hairDryerTurnOff2 = Instant.parse("2025-12-02T08:25:00.00Z");
+		Instant hairDryerTurnOff2 = Instant.parse("2025-12-02T08:25:00.00Z");*/
+
+		Instant washingMachineSwitchOn = START_INSTANT.plusSeconds(5);
+		Instant washingMachineSwitchOff = START_INSTANT.plusSeconds(d - 60);
 
 		return new TestScenarioWithSimulation(
 			CLOCK_URI,
@@ -718,7 +814,7 @@ extends		AbstractCVM
 			new Time(0.0, TimeUnit.HOURS),
 			(ts, simParams) -> { },
 			new TestStepI[] {
-				new TestStep(
+				/*new TestStep(
 					CLOCK_URI,
 					HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 					heaterSwitchOn,
@@ -728,9 +824,9 @@ extends		AbstractCVM
 						} catch (Exception e) {
 							throw new BCMRuntimeException(e) ;
 						}
-					}),
+					}),*/
 
-				new TestStep(
+				/*new TestStep(
 					CLOCK_URI,
 					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 					hairDryerTurnOn1,
@@ -817,9 +913,33 @@ extends		AbstractCVM
 						} catch (Exception e) {
 							throw new BCMRuntimeException(e) ;
 						}
+					}),*/
+
+				// WashingMachine test steps
+				new TestStep(
+					CLOCK_URI,
+					WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+					washingMachineSwitchOn,
+					owner ->  {
+						try {
+							((WashingMachineTesterCyPhy)owner).getWmop().switchOn();
+						} catch (Exception e) {
+							throw new BCMRuntimeException(e) ;
+						}
+					}),
+				new TestStep(
+					CLOCK_URI,
+					WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+					washingMachineSwitchOff,
+					owner ->  {
+						try {
+							((WashingMachineTesterCyPhy)owner).getWmop().switchOff();
+						} catch (Exception e) {
+							throw new BCMRuntimeException(e) ;
+						}
 					}),
 
-				new TestStep(
+				/*new TestStep(
 					CLOCK_URI,
 					HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 					heaterSwitchOff,
@@ -829,7 +949,7 @@ extends		AbstractCVM
 						} catch (Exception e) {
 							throw new BCMRuntimeException(e) ;
 						}
-					})
+					})*/
 			});
 	}
 }

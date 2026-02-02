@@ -18,10 +18,6 @@ import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections
 import fr.sorbonne_u.components.utils.tests.TestScenario;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
 
-/**
- * The class <code>WashingMachineTesterCyPhy</code> implements a component
- * performing tests for the class <code>WashingMachineCyPhy</code>.
- */
 @RequiredInterfaces(required = {
 		WashingMachineUserCI.class,
 		WashingMachineInternalControlCI.class,
@@ -56,9 +52,6 @@ extends AbstractCyPhyComponent
 	// Constructors
 	// -------------------------------------------------------------------------
 
-	/**
-	 * Create a washing machine tester for standard execution (no test scenario).
-	 */
 	protected WashingMachineTesterCyPhy(
 		String washingMachineUserInboundPortURI,
 		String washingMachineInternalControlInboundPortURI,
@@ -74,9 +67,6 @@ extends AbstractCyPhyComponent
 						washingMachineExternalControlInboundPortURI);
 	}
 
-	/**
-	 * Create a washing machine tester with a test scenario.
-	 */
 	protected WashingMachineTesterCyPhy(
 		String washingMachineUserInboundPortURI,
 		String washingMachineInternalControlInboundPortURI,
