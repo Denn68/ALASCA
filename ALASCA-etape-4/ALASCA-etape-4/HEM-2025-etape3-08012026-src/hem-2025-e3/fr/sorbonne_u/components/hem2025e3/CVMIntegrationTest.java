@@ -191,7 +191,7 @@ public class CVMIntegrationTest
 	 */
 	public static String CLOCK_URI = "integration-test-clock";
 	/** start instant in test scenarios, as a string to be parsed. */
-	public static Instant START_INSTANT = Instant.parse("2025-12-02T06:00:00.00Z");
+	public static Instant START_INSTANT = Instant.parse("2026-02-03T06:00:00.00Z");
 
 	// -------------------------------------------------------------------------
 	// Invariants
@@ -724,6 +724,7 @@ public class CVMIntegrationTest
 		// WashingMachine test instants
 		Instant washingMachineSwitchOn = START_INSTANT.plusSeconds(360);
 		Instant washingMachineStartWashing = START_INSTANT.plusSeconds(420);
+		Instant hemTestWashingMachine = START_INSTANT.plusSeconds(500); // After startWashing, before switchOff
 		Instant washingMachineSwitchOff = START_INSTANT.plusSeconds(540);
 
 		Instant hairDryerTurnOn = START_INSTANT.plusSeconds(600);
@@ -823,6 +824,18 @@ public class CVMIntegrationTest
 										((WashingMachineTesterCyPhy) owner).getWmop().startWashing(
 												60000L,
 												new Measure<Double>(40.0, MeasurementUnit.CELSIUS));
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// HEM test the washing machine (while machine is ON)
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hemTestWashingMachine,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testWashingMachine();
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}
@@ -948,34 +961,35 @@ public class CVMIntegrationTest
 
 		Instant heaterSwitchOn = START_INSTANT.plusSeconds(60);
 
-		Instant generatorStart = Instant.parse("2025-12-02T06:15:00.00Z");
+		Instant generatorStart = Instant.parse("2026-02-03T06:15:00.00Z");
 
-		Instant hairDryerTurnOn1 = Instant.parse("2025-12-02T07:15:00.00Z");
-		Instant hairDryerSetHigh1 = Instant.parse("2025-12-02T07:15:20.00Z");
+		Instant hairDryerTurnOn1 = Instant.parse("2026-02-03T07:15:00.00Z");
+		Instant hairDryerSetHigh1 = Instant.parse("2026-02-03T07:15:20.00Z");
 
-		Instant batteriesTest1 = Instant.parse("2025-12-02T07:17:30.00Z");
+		Instant batteriesTest1 = Instant.parse("2026-02-03T07:17:30.00Z");
 
-		Instant hairDryerSetLow1 = Instant.parse("2025-12-02T07:20:00.00Z");
-		Instant hairDryerTurnOff1 = Instant.parse("2025-12-02T07:25:00.00Z");
+		Instant hairDryerSetLow1 = Instant.parse("2026-02-03T07:20:00.00Z");
+		Instant hairDryerTurnOff1 = Instant.parse("2026-02-03T07:25:00.00Z");
 
-		Instant generatorStop = Instant.parse("2025-12-02T07:30:00.00Z");
+		Instant generatorStop = Instant.parse("2026-02-03T07:30:00.00Z");
 
-		Instant hairDryerTurnOn2 = Instant.parse("2025-12-02T08:15:00.00Z");
-		Instant hairDryerSetHigh2 = Instant.parse("2025-12-02T08:15:20.00Z");
-		Instant hairDryerSetLow2 = Instant.parse("2025-12-02T08:20:00.00Z");
-		Instant hairDryerTurnOff2 = Instant.parse("2025-12-02T08:25:00.00Z");
+		Instant hairDryerTurnOn2 = Instant.parse("2026-02-03T08:15:00.00Z");
+		Instant hairDryerSetHigh2 = Instant.parse("2026-02-03T08:15:20.00Z");
+		Instant hairDryerSetLow2 = Instant.parse("2026-02-03T08:20:00.00Z");
+		Instant hairDryerTurnOff2 = Instant.parse("2026-02-03T08:25:00.00Z");
 
-		Instant heaterSwitchOff = Instant.parse("2025-12-02T09:00:00.00Z");
+		Instant heaterSwitchOff = Instant.parse("2026-02-03T09:00:00.00Z");
 
-		Instant batteriesStartCharging = Instant.parse("2025-12-02T10:00:00.00Z");
-		Instant batteriesTest2 = Instant.parse("2025-12-02T10:30:00.00Z");
-		Instant batteriesStopCharging = Instant.parse("2025-12-02T11:00:00.00Z");
-		Instant batteriesTest3 = Instant.parse("2025-12-02T11:30:00.00Z");
+		Instant batteriesStartCharging = Instant.parse("2026-02-03T10:00:00.00Z");
+		Instant batteriesTest2 = Instant.parse("2026-02-03T10:30:00.00Z");
+		Instant batteriesStopCharging = Instant.parse("2026-02-03T11:00:00.00Z");
+		Instant batteriesTest3 = Instant.parse("2026-02-03T11:30:00.00Z");
 
 		// WashingMachine test instants
-		Instant washingMachineSwitchOn = Instant.parse("2025-12-02T06:06:00.00Z");
-		Instant washingMachineStartWashing = Instant.parse("2025-12-02T06:07:00.00Z");
-		Instant washingMachineSwitchOff = Instant.parse("2025-12-02T06:09:00.00Z");
+		Instant washingMachineSwitchOn = Instant.parse("2026-02-03T06:06:00.00Z");
+		Instant washingMachineStartWashing = Instant.parse("2026-02-03T06:07:00.00Z");
+		Instant hemTestWashingMachine = Instant.parse("2026-02-03T06:08:30.00Z");
+		Instant washingMachineSwitchOff = Instant.parse("2026-02-03T06:09:00.00Z");
 
 		return new TestScenarioWithSimulation(
 				CLOCK_URI,
@@ -1193,6 +1207,18 @@ public class CVMIntegrationTest
 										((WashingMachineTesterCyPhy) owner).getWmop().startWashing(
 												60000L,
 												new Measure<Double>(40.0, MeasurementUnit.CELSIUS));
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// HEM test the washing machine (before switchOff)
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hemTestWashingMachine,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testWashingMachine();
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}

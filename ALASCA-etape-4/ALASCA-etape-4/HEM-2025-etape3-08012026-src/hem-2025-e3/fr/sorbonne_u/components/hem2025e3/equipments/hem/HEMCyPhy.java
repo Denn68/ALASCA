@@ -50,6 +50,7 @@ import fr.sorbonne_u.components.hem2025e1.equipments.generator.connections.Gener
 import fr.sorbonne_u.components.hem2025e1.equipments.heater.Heater;
 import fr.sorbonne_u.components.hem2025e1.equipments.hem.AdjustableOutboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.hem.HeaterConnector;
+import fr.sorbonne_u.components.hem2025e1.equipments.hem.WashingMachineConnector;
 import fr.sorbonne_u.components.hem2025e1.equipments.meter.ElectricMeterCI;
 import fr.sorbonne_u.components.hem2025e1.equipments.meter.ElectricMeterUnitTester;
 import fr.sorbonne_u.components.hem2025e1.equipments.meter.connections.ElectricMeterConnector;
@@ -63,6 +64,7 @@ import fr.sorbonne_u.components.hem2025e3.equipments.generator.GeneratorCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.meter.ElectricMeterCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.SolarPanelCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.SolarPanelUnitTesterCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMachineCyPhy;
 import fr.sorbonne_u.components.utils.tests.TestScenario;
 import fr.sorbonne_u.components.utils.tests.TestsStatistics;
 import fr.sorbonne_u.exceptions.ImplementationInvariantException;
@@ -76,7 +78,9 @@ import fr.sorbonne_u.utils.aclocks.ClocksServer;
  * The class <code>HEM</code> implements the basis for a household energy
  * management component.
  *
- * <p><strong>Description</strong></p>
+ * <p>
+ * <strong>Description</strong>
+ * </p>
  * 
  * <p>
  * As is, this component is only a very limited starting point for the actual
@@ -86,76 +90,94 @@ import fr.sorbonne_u.utils.aclocks.ClocksServer;
  * is given.
  * </p>
  * 
- * <p><strong>Implementation Invariants</strong></p>
+ * <p>
+ * <strong>Implementation Invariants</strong>
+ * </p>
  * 
  * <pre>
- * invariant	{@code true}	// no more invariant
+ * invariant	{@code
+ * true
+ * }	// no more invariant
  * </pre>
  * 
- * <p><strong>Invariants</strong></p>
+ * <p>
+ * <strong>Invariants</strong>
+ * </p>
  * 
  * <pre>
- * invariant	{@code X_RELATIVE_POSITION >= 0}
- * invariant	{@code Y_RELATIVE_POSITION >= 0}
+ * invariant	{@code
+ * X_RELATIVE_POSITION >= 0
+ * }
+ * invariant	{@code
+ * Y_RELATIVE_POSITION >= 0
+ * }
  * </pre>
  * 
- * <p>Created on : 2021-09-09</p>
+ * <p>
+ * Created on : 2021-09-09
+ * </p>
  * 
- * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-@RequiredInterfaces(required = {AdjustableCI.class,
-								ElectricMeterCI.class,
-								BatteriesCI.class,
-								SolarPanelCI.class,
-								GeneratorCI.class})
-public class			HEMCyPhy
-extends		AbstractComponent
-{
+@RequiredInterfaces(required = { AdjustableCI.class,
+		ElectricMeterCI.class,
+		BatteriesCI.class,
+		SolarPanelCI.class,
+		GeneratorCI.class })
+public class HEMCyPhy
+		extends AbstractComponent {
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
 
-	/** when true, methods trace their actions.								*/
-	public static boolean					VERBOSE = false;
-	/** when true, methods trace their actions.								*/
-	public static boolean					DEBUG = false;
-	/** when tracing, x coordinate of the window relative position.			*/
-	public static int						X_RELATIVE_POSITION = 0;
-	/** when tracing, y coordinate of the window relative position.			*/
-	public static int						Y_RELATIVE_POSITION = 0;
-	/** standard reflection, inbound port URI for the {@code HEMCyPhy}
-	 *  component.															*/
-	public static final String				REFLECTION_INBOUND_PORT_URI =
-																"hem-RIP-URI";
+	/** when true, methods trace their actions. */
+	public static boolean VERBOSE = false;
+	/** when true, methods trace their actions. */
+	public static boolean DEBUG = false;
+	/** when tracing, x coordinate of the window relative position. */
+	public static int X_RELATIVE_POSITION = 0;
+	/** when tracing, y coordinate of the window relative position. */
+	public static int Y_RELATIVE_POSITION = 0;
+	/**
+	 * standard reflection, inbound port URI for the {@code HEMCyPhy}
+	 * component.
+	 */
+	public static final String REFLECTION_INBOUND_PORT_URI = "hem-RIP-URI";
 
-	/** port to connect to the electric meter.								*/
-	protected ElectricMeterOutboundPort		meterop;
+	/** port to connect to the electric meter. */
+	protected ElectricMeterOutboundPort meterop;
 
-	/** port to connect to the batteries.									*/
-	protected BatteriesOutboundPort			batteriesop;
-	/** port to connect to the solar panel.									*/
-	protected SolarPanelOutboundPort		solarPanelop;
-	/** port to connect to the generator.									*/
-	protected GeneratorOutboundPort			generatorop;
+	/** port to connect to the batteries. */
+	protected BatteriesOutboundPort batteriesop;
+	/** port to connect to the solar panel. */
+	protected SolarPanelOutboundPort solarPanelop;
+	/** port to connect to the generator. */
+	protected GeneratorOutboundPort generatorop;
 
-	/** when true, manage the heater in a customised way, otherwise let
-	 *  it register itself as an adjustable appliance.						*/
-	protected boolean						isPreFirstStep;
-	/** port to connect to the heater when managed in a customised way.		*/
-	protected AdjustableOutboundPort		heaterop;
+	/**
+	 * when true, manage the heater in a customised way, otherwise let
+	 * it register itself as an adjustable appliance.
+	 */
+	protected boolean isPreFirstStep;
+	/** port to connect to the heater when managed in a customised way. */
+	protected AdjustableOutboundPort heaterop;
+	/** port to connect to the washing machine for energy management. */
+	protected AdjustableOutboundPort washingMachineop;
 
 	// Execution/Simulation
 
-	/** one thread for the method execute.									*/
-	protected static int					NUMBER_OF_STANDARD_THREADS = 1;
-	/** one thread to schedule this component test actions.					*/
-	protected static int					NUMBER_OF_SCHEDULABLE_THREADS = 1;
+	/** one thread for the method execute. */
+	protected static int NUMBER_OF_STANDARD_THREADS = 1;
+	/** one thread to schedule this component test actions. */
+	protected static int NUMBER_OF_SCHEDULABLE_THREADS = 1;
 
-	/** current mode of execution of cyber-physical components in the
-	 *  application.														*/
-	protected ExecutionMode					executionMode;
-	/** test scenario under execution, if any.								*/
-	protected TestScenario					testScenario;
+	/**
+	 * current mode of execution of cyber-physical components in the
+	 * application.
+	 */
+	protected ExecutionMode executionMode;
+	/** test scenario under execution, if any. */
+	protected TestScenario testScenario;
 
 	// -------------------------------------------------------------------------
 	// Invariants
@@ -165,16 +187,19 @@ extends		AbstractComponent
 	 * return true if the static implementation invariants are observed, false
 	 * otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * post	{@code true}	// no postcondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @return	true if the static invariants are observed, false otherwise.
+	 * @return true if the static invariants are observed, false otherwise.
 	 */
-	public static boolean	staticImplementationInvariants()
-	{
+	public static boolean staticImplementationInvariants() {
 		boolean ret = true;
 		ret &= AssertionChecking.checkStaticImplementationInvariant(
 				NUMBER_OF_STANDARD_THREADS >= 0,
@@ -190,19 +215,24 @@ extends		AbstractComponent
 	/**
 	 * return true if the implementation invariants are observed, false otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code hem != null}
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * hem != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param hem	instance to be tested.
-	 * @return		true if the implementation invariants are observed, false otherwise.
+	 * @param hem instance to be tested.
+	 * @return true if the implementation invariants are observed, false otherwise.
 	 */
-	protected static boolean	implementationInvariants(HEMCyPhy hem)
-	{
-		assert	hem != null : new PreconditionException("hem != null");
+	protected static boolean implementationInvariants(HEMCyPhy hem) {
+		assert hem != null : new PreconditionException("hem != null");
 
 		boolean ret = true;
 		ret &= staticImplementationInvariants();
@@ -212,16 +242,19 @@ extends		AbstractComponent
 	/**
 	 * return true if the static invariants are observed, false otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * post	{@code true}	// no postcondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @return	true if the static invariants are observed, false otherwise.
+	 * @return true if the static invariants are observed, false otherwise.
 	 */
-	public static boolean	staticInvariants()
-	{
+	public static boolean staticInvariants() {
 		boolean ret = true;
 		ret &= AssertionChecking.checkStaticInvariant(
 				X_RELATIVE_POSITION >= 0,
@@ -237,19 +270,24 @@ extends		AbstractComponent
 	/**
 	 * return true if the invariants are observed, false otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code hem != null}
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * hem != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param hem	instance to be tested.
-	 * @return		true if the invariants are observed, false otherwise.
+	 * @param hem instance to be tested.
+	 * @return true if the invariants are observed, false otherwise.
 	 */
-	protected static boolean	invariants(HEMCyPhy hem)
-	{
-		assert	hem != null : new PreconditionException("hem != null");
+	protected static boolean invariants(HEMCyPhy hem) {
+		assert hem != null : new PreconditionException("hem != null");
 
 		boolean ret = true;
 		ret &= staticInvariants();
@@ -265,16 +303,21 @@ extends		AbstractComponent
 	/**
 	 * create a household energy manager component.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code !(this instanceof ComponentInterface)}
-	 * post	{@code getCurrentExecutionMode().isStandard()}
+	 * pre	{@code
+	 * !(this instanceof ComponentInterface)
+	 * }
+	 * post	{@code
+	 * getCurrentExecutionMode().isStandard()
+	 * }
 	 * </pre>
 	 *
 	 */
-	protected 			HEMCyPhy()
-	{
+	protected HEMCyPhy() {
 		// 1 standard thread to execute the method execute and 1 schedulable
 		// thread that is used to perform the tests
 		super(NUMBER_OF_STANDARD_THREADS, NUMBER_OF_SCHEDULABLE_THREADS);
@@ -286,52 +329,56 @@ extends		AbstractComponent
 		this.executionMode = ExecutionMode.STANDARD;
 		this.testScenario = null;
 
-		assert	HEMCyPhy.implementationInvariants(this) :
-				new ImplementationInvariantException(
-						"HEMCyPhy.implementationInvariants(this)");
-		assert	HEMCyPhy.invariants(this) :
-				new InvariantException("HEMCyPhy.invariants(this)");
+		assert HEMCyPhy.implementationInvariants(this) : new ImplementationInvariantException(
+				"HEMCyPhy.implementationInvariants(this)");
+		assert HEMCyPhy.invariants(this) : new InvariantException("HEMCyPhy.invariants(this)");
 	}
 
-	// Test execution with test scenario 
+	// Test execution with test scenario
 
 	/**
 	 * create a household energy manager component.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code !(this instanceof ComponentInterface)}
-	 * pre	{@code executionMode != null && (executionMode.isIntegrationTest() || executionMode.isSILIntegrationTest())}
-	 * pre	{@code testScenario != null}
-	 * post	{@code getCurrentExecutionMode().equals(executionMode)}
+	 * pre	{@code
+	 * !(this instanceof ComponentInterface)
+	 * }
+	 * pre	{@code
+	 * executionMode != null && (executionMode.isIntegrationTest() || executionMode.isSILIntegrationTest())
+	 * }
+	 * pre	{@code
+	 * testScenario != null
+	 * }
+	 * post	{@code
+	 * getCurrentExecutionMode().equals(executionMode)
+	 * }
 	 * </pre>
 	 *
-	 * @param executionMode	execution mode for the next run.
-	 * @param testScenario	test scenario to be executed.
-	 * @throws Exception	<i>to do</i>.
+	 * @param executionMode execution mode for the next run.
+	 * @param testScenario  test scenario to be executed.
+	 * @throws Exception <i>to do</i>.
 	 */
-	protected 			HEMCyPhy(
-		ExecutionMode executionMode,
-		TestScenario testScenario
-		) throws Exception
-	{
+	protected HEMCyPhy(
+			ExecutionMode executionMode,
+			TestScenario testScenario) throws Exception {
 		// 1 standard thread to execute the method execute and 1 schedulable
 		// thread that is used to perform the tests
 		super(REFLECTION_INBOUND_PORT_URI,
-			  NUMBER_OF_STANDARD_THREADS,
-			  NUMBER_OF_SCHEDULABLE_THREADS
-			  );
+				NUMBER_OF_STANDARD_THREADS,
+				NUMBER_OF_SCHEDULABLE_THREADS);
 
-		assert	executionMode != null &&
-					(executionMode.isIntegrationTest() ||
-										executionMode.isSILIntegrationTest()) :
-				new PreconditionException(
+		assert executionMode != null &&
+				(executionMode.isIntegrationTest() ||
+						executionMode.isSILIntegrationTest())
+				: new PreconditionException(
 						"executionMode != null && (executionMode."
-						+ "isIntegrationTest() || "
-						+ "executionMode.isSILIntegrationTest())");
-		assert	testScenario != null :
-				new PreconditionException("testScenario != null");
+								+ "isIntegrationTest() || "
+								+ "executionMode.isSILIntegrationTest())");
+		assert testScenario != null : new PreconditionException("testScenario != null");
 
 		this.executionMode = executionMode;
 		this.testScenario = testScenario;
@@ -343,15 +390,13 @@ extends		AbstractComponent
 		if (VERBOSE) {
 			this.tracer.get().setTitle("Home Energy Manager component");
 			this.tracer.get().setRelativePosition(X_RELATIVE_POSITION,
-												  Y_RELATIVE_POSITION);
+					Y_RELATIVE_POSITION);
 			this.toggleTracing();
 		}
 
-		assert	HEMCyPhy.implementationInvariants(this) :
-				new ImplementationInvariantException(
-						"HEMCyPhy.implementationInvariants(this)");
-		assert	HEMCyPhy.invariants(this) :
-				new InvariantException("HEMCyPhy.invariants(this)");
+		assert HEMCyPhy.implementationInvariants(this) : new ImplementationInvariantException(
+				"HEMCyPhy.implementationInvariants(this)");
+		assert HEMCyPhy.invariants(this) : new InvariantException("HEMCyPhy.invariants(this)");
 	}
 
 	// -------------------------------------------------------------------------
@@ -362,8 +407,7 @@ extends		AbstractComponent
 	 * @see fr.sorbonne_u.components.AbstractComponent#start()
 	 */
 	@Override
-	public synchronized void	start() throws ComponentStartException
-	{
+	public synchronized void start() throws ComponentStartException {
 		super.start();
 
 		try {
@@ -403,8 +447,16 @@ extends		AbstractComponent
 						Heater.EXTERNAL_CONTROL_INBOUND_PORT_URI,
 						HeaterConnector.class.getCanonicalName());
 			}
+
+			// Connect to WashingMachine for energy management (Étape 4)
+			this.washingMachineop = new AdjustableOutboundPort(this);
+			this.washingMachineop.publishPort();
+			this.doPortConnection(
+					this.washingMachineop.getPortURI(),
+					WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+					WashingMachineConnector.class.getCanonicalName());
 		} catch (Throwable e) {
-			throw new ComponentStartException(e) ;
+			throw new ComponentStartException(e);
 		}
 	}
 
@@ -412,59 +464,57 @@ extends		AbstractComponent
 	 * @see fr.sorbonne_u.components.AbstractComponent#execute()
 	 */
 	@Override
-	public synchronized void	execute() throws Exception
-	{
+	public synchronized void execute() throws Exception {
 		this.traceMessage("HEM begins execution.\n");
 
 		switch (this.executionMode) {
-		case STANDARD:
-		case UNIT_TEST:
-		case UNIT_TEST_WITH_SIL_SIMULATION:
-			throw new BCMException("No unit test for HEM!");
-		case INTEGRATION_TEST:
-			this.initialiseClock(
-					ClocksServer.STANDARD_INBOUNDPORT_URI,
-					this.testScenario.getClockURI());
-			this.executeTestScenario(this.testScenario);
-			break;
-		case INTEGRATION_TEST_WITH_SIL_SIMULATION:
-			this.initialiseClock(
-					ClocksServerWithSimulation.STANDARD_INBOUNDPORT_URI,
-					this.testScenario.getClockURI());
-			this.executeTestScenario(this.testScenario);
-			break;
-		case UNIT_TEST_WITH_HIL_SIMULATION:
-		case INTEGRATION_TEST_WITH_HIL_SIMULATION:
-			throw new BCMException("HIL simulation not implemented yet!");
-		default:
+			case STANDARD:
+			case UNIT_TEST:
+			case UNIT_TEST_WITH_SIL_SIMULATION:
+				throw new BCMException("No unit test for HEM!");
+			case INTEGRATION_TEST:
+				this.initialiseClock(
+						ClocksServer.STANDARD_INBOUNDPORT_URI,
+						this.testScenario.getClockURI());
+				this.executeTestScenario(this.testScenario);
+				break;
+			case INTEGRATION_TEST_WITH_SIL_SIMULATION:
+				this.initialiseClock(
+						ClocksServerWithSimulation.STANDARD_INBOUNDPORT_URI,
+						this.testScenario.getClockURI());
+				this.executeTestScenario(this.testScenario);
+				break;
+			case UNIT_TEST_WITH_HIL_SIMULATION:
+			case INTEGRATION_TEST_WITH_HIL_SIMULATION:
+				throw new BCMException("HIL simulation not implemented yet!");
+			default:
 		}
 		this.traceMessage("HEM ends execution.\n");
 
-//		if (this.performTest) {
-//			this.logMessage("Electric meter tests start.");
-//			this.testMeter();
-//			this.logMessage("Electric meter tests end.");
-//			this.logMessage("Batteries tests start.");
-//			this.testBatteries();
-//			this.logMessage("Batteries tests end.");
-//			this.logMessage("Solar Panel tests start.");
-//			this.testSolarPanel();
-//			this.logMessage("Solar Panel tests end.");
-//			this.logMessage("Generator tests start.");
-//			this.testGenerator();
-//			this.logMessage("Generator tests end.");
-//			if (this.isPreFirstStep) {
-//				this.scheduleTestHeater();
-//			}
-//		}
+		// if (this.performTest) {
+		// this.logMessage("Electric meter tests start.");
+		// this.testMeter();
+		// this.logMessage("Electric meter tests end.");
+		// this.logMessage("Batteries tests start.");
+		// this.testBatteries();
+		// this.logMessage("Batteries tests end.");
+		// this.logMessage("Solar Panel tests start.");
+		// this.testSolarPanel();
+		// this.logMessage("Solar Panel tests end.");
+		// this.logMessage("Generator tests start.");
+		// this.testGenerator();
+		// this.logMessage("Generator tests end.");
+		// if (this.isPreFirstStep) {
+		// this.scheduleTestHeater();
+		// }
+		// }
 	}
 
 	/**
 	 * @see fr.sorbonne_u.components.AbstractComponent#finalise()
 	 */
 	@Override
-	public synchronized void	finalise() throws Exception
-	{
+	public synchronized void finalise() throws Exception {
 		this.doPortDisconnection(this.meterop.getPortURI());
 		this.doPortDisconnection(this.batteriesop.getPortURI());
 		this.doPortDisconnection(this.solarPanelop.getPortURI());
@@ -472,6 +522,8 @@ extends		AbstractComponent
 		if (this.isPreFirstStep) {
 			this.doPortDisconnection(this.heaterop.getPortURI());
 		}
+		// Disconnect WashingMachine (Étape 4)
+		this.doPortDisconnection(this.washingMachineop.getPortURI());
 		super.finalise();
 	}
 
@@ -479,8 +531,7 @@ extends		AbstractComponent
 	 * @see fr.sorbonne_u.components.AbstractComponent#shutdown()
 	 */
 	@Override
-	public synchronized void	shutdown() throws ComponentShutdownException
-	{
+	public synchronized void shutdown() throws ComponentShutdownException {
 		try {
 			this.meterop.unpublishPort();
 			this.batteriesop.unpublishPort();
@@ -489,8 +540,10 @@ extends		AbstractComponent
 			if (this.isPreFirstStep) {
 				this.heaterop.unpublishPort();
 			}
+			// Unpublish WashingMachine port (Étape 4)
+			this.washingMachineop.unpublishPort();
 		} catch (Throwable e) {
-			throw new ComponentShutdownException(e) ;
+			throw new ComponentShutdownException(e);
 		}
 		super.shutdown();
 	}
@@ -502,76 +555,99 @@ extends		AbstractComponent
 	/**
 	 * test the {@code ElectricMeter} component.
 	 * 
-	 * <p><strong>Description</strong></p>
+	 * <p>
+	 * <strong>Description</strong>
+	 * </p>
 	 * 
 	 * <p>
 	 * Calls the test methods defined in {@code ElectricMeterUnitTester}.
 	 * </p>
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @throws Exception	<i>to do</i>.
+	 * @throws Exception <i>to do</i>.
 	 */
-	public void			testMeter() throws Exception
-	{
+	public void testMeter() throws Exception {
 		ElectricMeterUnitTester.runAllTests(this, this.meterop,
-											new TestsStatistics());
+				new TestsStatistics());
 	}
 
 	/**
 	 * test the {@code Batteries} component.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
-	 * @throws Exception	<i>to do</i>.
+	 * 
+	 * @throws Exception <i>to do</i>.
 	 *
 	 */
-	public void			testBatteries() throws Exception
-	{
+	public void testBatteries() throws Exception {
 		BatteriesCyPhyUnitTester.runAllTests(this, this.batteriesop,
-											 new TestsStatistics());
+				new TestsStatistics());
 	}
 
 	/**
 	 * start charging the batteries.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @throws Exception	<i>to do</i>.
+	 * @throws Exception <i>to do</i>.
 	 */
-	public void			startChargingBatteries() throws Exception
-	{
+	public void startChargingBatteries() throws Exception {
 		this.batteriesop.startCharging();
 	}
 
 	/**
 	 * test the state of the batteries.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @throws Exception	<i>to do</i>.
+	 * @throws Exception <i>to do</i>.
 	 */
-	public void			testBatteriesState() throws Exception
-	{
+	public void testBatteriesState() throws Exception {
 		this.logMessage("areCharging = " + this.batteriesop.areCharging());
 		this.logMessage("areDischarging = " + this.batteriesop.areDischarging());
 		this.logMessage("chargeLevel = " + this.batteriesop.chargeLevel());
@@ -581,17 +657,22 @@ extends		AbstractComponent
 	/**
 	 * stop charging the batteries.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @throws Exception	<i>to do</i>.
+	 * @throws Exception <i>to do</i>.
 	 */
-	public void			stopChargingBatteries() throws Exception
-	{
+	public void stopChargingBatteries() throws Exception {
 		this.batteriesop.stopCharging();
 	}
 
@@ -599,60 +680,79 @@ extends		AbstractComponent
 	 * return the outbound port connected to the generator component; used in
 	 * test scenario.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @return	the outbound port connected to the generator component.
+	 * @return the outbound port connected to the generator component.
 	 */
-	public GeneratorOutboundPort	getGeneratorPort()
-	{
+	public GeneratorOutboundPort getGeneratorPort() {
 		return this.generatorop;
 	}
 
 	/**
 	 * test the {@code SolarPanel} component.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
-	 * @throws Exception	<i>to do</i>.
+	 * 
+	 * @throws Exception <i>to do</i>.
 	 *
 	 */
-	public void			testSolarPanel() throws Exception
-	{
+	public void testSolarPanel() throws Exception {
 		SolarPanelUnitTesterCyPhy.runAllTests(this, this.solarPanelop,
-											  new TestsStatistics());
+				new TestsStatistics());
 	}
 
 	/**
 	 * test the {@code Generator} component.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
-	 * @throws Exception	<i>to do</i>.
+	 * 
+	 * @throws Exception <i>to do</i>.
 	 *
 	 */
-	public void			testGenerator() throws Exception
-	{
+	public void testGenerator() throws Exception {
 		GeneratorUnitTester.runAllTests(this, this.generatorop,
-										 new TestsStatistics());
+				new TestsStatistics());
 	}
 
 	/**
 	 * test the heater.
 	 * 
-	 * <p><strong>Gherkin specification</strong></p>
+	 * <p>
+	 * <strong>Gherkin specification</strong>
+	 * </p>
 	 * 
 	 * <pre>
 	 * Feature: adjustable appliance mode management
@@ -732,17 +832,22 @@ extends		AbstractComponent
 	 *     And the heater is not suspended
 	 * </pre>
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @throws Exception	<i>to do</i>.
+	 * @throws Exception <i>to do</i>.
 	 */
-	public void		testHeater() throws Exception
-	{
+	public void testHeater() throws Exception {
 		this.logMessage("Heater tests start.");
 		TestsStatistics statistics = new TestsStatistics();
 		try {
@@ -868,7 +973,8 @@ extends		AbstractComponent
 			bResult = heaterop.suspended();
 			if (bResult) {
 				this.logMessage("      but it was!");
-				statistics.failedCondition();;
+				statistics.failedCondition();
+				;
 			}
 			this.logMessage("    When I call suspend()");
 			bResult = heaterop.suspend();
@@ -892,7 +998,8 @@ extends		AbstractComponent
 			bResult = heaterop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
-				statistics.failedCondition();;
+				statistics.failedCondition();
+				;
 			}
 			this.logMessage("    When I call downMode()");
 			this.logMessage("    Then a precondition exception is thrown");
@@ -915,7 +1022,8 @@ extends		AbstractComponent
 			bResult = heaterop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
-				statistics.failedCondition();;
+				statistics.failedCondition();
+				;
 			}
 			this.logMessage("    When I call upMode()");
 			this.logMessage("    Then a precondition exception is thrown");
@@ -938,7 +1046,8 @@ extends		AbstractComponent
 			bResult = heaterop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
-				statistics.failedCondition();;
+				statistics.failedCondition();
+				;
 			}
 			this.logMessage("    And the mode index 1 is legitimate");
 			if (index > maxMode) {
@@ -966,7 +1075,8 @@ extends		AbstractComponent
 			bResult = heaterop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
-				statistics.failedCondition();;
+				statistics.failedCondition();
+				;
 			}
 			this.logMessage("    When I get the current mode");
 			this.logMessage("    Then a precondition exception is thrown");
@@ -989,7 +1099,8 @@ extends		AbstractComponent
 			bResult = heaterop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
-				statistics.failedCondition();;
+				statistics.failedCondition();
+				;
 			}
 			this.logMessage("    When I call emergency()");
 			dResult = heaterop.emergency();
@@ -1007,7 +1118,8 @@ extends		AbstractComponent
 			bResult = heaterop.suspended();
 			if (!bResult) {
 				this.logMessage("      but it was not!");
-				statistics.failedCondition();;
+				statistics.failedCondition();
+				;
 			}
 			this.logMessage("    When I call resume()");
 			bResult = heaterop.resume();
@@ -1036,36 +1148,179 @@ extends		AbstractComponent
 	 * test the {@code Heater} component, in cooperation with the
 	 * {@code HeaterTester} component.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
 	 */
-//	protected void		scheduleTestHeater()
-//	{
-//		// Test for the heater
-//		Instant heaterTestStart =
-//				this.ac.getStartInstant().plusSeconds(
-//							(HeaterUnitTester.SWITCH_ON_DELAY +
-//											HeaterUnitTester.SWITCH_OFF_DELAY)/2);
-//		this.traceMessage("HEM schedules the heater test.\n");
-//		long delay = this.ac.nanoDelayUntilInstant(heaterTestStart);
-//
-//		// schedule the switch on heater in one second
-//		this.scheduleTaskOnComponent(
-//				new AbstractComponent.AbstractTask() {
-//					@Override
-//					public void run() {
-//						try {
-//							testHeater();
-//						} catch (Throwable e) {
-//							throw new BCMRuntimeException(e) ;
-//						}
-//					}
-//				}, delay, TimeUnit.NANOSECONDS);
-//	}
+	// protected void scheduleTestHeater()
+	// {
+	// // Test for the heater
+	// Instant heaterTestStart =
+	// this.ac.getStartInstant().plusSeconds(
+	// (HeaterUnitTester.SWITCH_ON_DELAY +
+	// HeaterUnitTester.SWITCH_OFF_DELAY)/2);
+	// this.traceMessage("HEM schedules the heater test.\n");
+	// long delay = this.ac.nanoDelayUntilInstant(heaterTestStart);
+	//
+	// // schedule the switch on heater in one second
+	// this.scheduleTaskOnComponent(
+	// new AbstractComponent.AbstractTask() {
+	// @Override
+	// public void run() {
+	// try {
+	// testHeater();
+	// } catch (Throwable e) {
+	// throw new BCMRuntimeException(e) ;
+	// }
+	// }
+	// }, delay, TimeUnit.NANOSECONDS);
+	// }
+
+	// -------------------------------------------------------------------------
+	// WashingMachine control methods (Étape 4)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test the WashingMachine AdjustableCI interface via HEM.
+	 * 
+	 * @throws Exception if an error occurs
+	 */
+	public void testWashingMachine() throws Exception {
+		this.logMessage("WashingMachine HEM tests start.");
+		TestsStatistics statistics = new TestsStatistics();
+		try {
+			this.logMessage("Feature: adjustable appliance mode management for WashingMachine");
+
+			this.logMessage("  Scenario: getting the max mode index");
+			final int maxMode = washingMachineop.maxMode();
+			this.logMessage("    Max mode: " + maxMode);
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: checking if suspended when not");
+			boolean isSuspended = washingMachineop.suspended();
+			if (isSuspended) {
+				this.logMessage("    ERROR: should not be suspended initially");
+				statistics.incorrectResult();
+			} else {
+				this.logMessage("    OK: not suspended initially");
+			}
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: suspending the washing machine");
+			boolean suspendResult = washingMachineop.suspend();
+			if (suspendResult) {
+				this.logMessage("    OK: suspend() returned true");
+			} else {
+				this.logMessage("    ERROR: suspend() returned false");
+				statistics.incorrectResult();
+			}
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: checking if suspended after suspend");
+			isSuspended = washingMachineop.suspended();
+			if (isSuspended) {
+				this.logMessage("    OK: is suspended after suspend()");
+			} else {
+				this.logMessage("    ERROR: should be suspended");
+				statistics.incorrectResult();
+			}
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: getting emergency level when suspended");
+			double emergency = washingMachineop.emergency();
+			this.logMessage("    Emergency level: " + emergency);
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: resuming the washing machine");
+			boolean resumeResult = washingMachineop.resume();
+			if (resumeResult) {
+				this.logMessage("    OK: resume() returned true");
+			} else {
+				this.logMessage("    ERROR: resume() returned false");
+				statistics.incorrectResult();
+			}
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: checking if not suspended after resume");
+			isSuspended = washingMachineop.suspended();
+			if (!isSuspended) {
+				this.logMessage("    OK: not suspended after resume()");
+			} else {
+				this.logMessage("    ERROR: should not be suspended");
+				statistics.incorrectResult();
+			}
+			statistics.updateStatistics();
+
+		} catch (Exception e) {
+			this.logMessage("Exception during WashingMachine test: " + e.getMessage());
+			statistics.incorrectResult();
+		}
+		this.logMessage("WashingMachine HEM tests end. " + statistics);
+	}
+
+	/**
+	 * Energy management control loop - suspends WashingMachine when
+	 * production is lower than consumption.
+	 * 
+	 * @throws Exception if an error occurs
+	 */
+	public void manageEnergy() throws Exception {
+		this.logMessage("HEM Energy Management starts.");
+
+		// Get current power levels from meter
+		double totalConsumption = this.meterop.getCurrentConsumption().getMeasure().getData();
+		double totalProduction = this.meterop.getCurrentProduction().getMeasure().getData();
+
+		this.logMessage("  Current consumption: " + totalConsumption + " W");
+		this.logMessage("  Current production: " + totalProduction + " W");
+
+		if (totalConsumption > totalProduction) {
+			this.logMessage("  WARNING: Consumption > Production!");
+
+			// Try to suspend WashingMachine if not already suspended
+			if (!this.washingMachineop.suspended()) {
+				this.logMessage("  Attempting to suspend WashingMachine...");
+				boolean result = this.washingMachineop.suspend();
+				if (result) {
+					this.logMessage("  WashingMachine suspended successfully.");
+				} else {
+					this.logMessage("  Failed to suspend WashingMachine.");
+				}
+			} else {
+				this.logMessage("  WashingMachine already suspended.");
+			}
+		} else {
+			this.logMessage("  Production >= Consumption, OK.");
+
+			// Resume WashingMachine if suspended
+			if (this.washingMachineop.suspended()) {
+				double emergency = this.washingMachineop.emergency();
+				this.logMessage("  WashingMachine emergency level: " + emergency);
+
+				// Resume if there's enough margin or high emergency
+				if (totalProduction - totalConsumption > 500.0 || emergency > 0.5) {
+					this.logMessage("  Resuming WashingMachine...");
+					boolean result = this.washingMachineop.resume();
+					if (result) {
+						this.logMessage("  WashingMachine resumed successfully.");
+					} else {
+						this.logMessage("  Failed to resume WashingMachine.");
+					}
+				}
+			}
+		}
+
+		this.logMessage("HEM Energy Management ends.");
+	}
 }
 // -----------------------------------------------------------------------------
