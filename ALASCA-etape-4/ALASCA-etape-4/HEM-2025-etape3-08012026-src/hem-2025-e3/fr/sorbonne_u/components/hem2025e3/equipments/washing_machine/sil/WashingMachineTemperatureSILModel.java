@@ -10,11 +10,7 @@ import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.WashingMach
 import fr.sorbonne_u.components.hem2025e2.GlobalReportI;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.*;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
-import fr.sorbonne_u.devs_simulation.hioa.annotations.ImportedVariable;
-import fr.sorbonne_u.devs_simulation.hioa.annotations.InternalVariable;
-import fr.sorbonne_u.devs_simulation.hioa.annotations.ModelImportedVariable;
 import fr.sorbonne_u.devs_simulation.hioa.models.AtomicHIOA;
-import fr.sorbonne_u.devs_simulation.hioa.models.vars.DerivableValue;
 import fr.sorbonne_u.devs_simulation.hioa.models.vars.Value;
 import fr.sorbonne_u.devs_simulation.models.annotations.ModelExternalEvents;
 import fr.sorbonne_u.devs_simulation.models.events.Event;
@@ -124,8 +120,11 @@ public class WashingMachineTemperatureSILModel
 	// La méthode currentHeatTransferConstant() gère le cas null
 	protected Value<Double> currentHeatingPower;
 
-	@InternalVariable(type = Double.class)
-	protected final DerivableValue<Double> currentWaterTemperature = new DerivableValue<Double>(this);
+	// Utilisation de champs simples au lieu de DerivableValue pour éviter
+	// le problème d'initialisation "getTime() != null"
+	protected double currentWaterTemperatureValue = INITIAL_WATER_TEMPERATURE;
+	protected double currentWaterTemperatureDerivative = 0.0;
+	protected Time currentWaterTemperatureTime = null;
 
 	// -------------------------------------------------------------------------
 	// Constructors
@@ -194,8 +193,8 @@ public class WashingMachineTemperatureSILModel
 	 * @return the new temperature
 	 */
 	protected double computeNewTemperature(double deltaT) {
-		double oldTemp = this.currentWaterTemperature.getValue();
-		double derivative = this.currentWaterTemperature.getFirstDerivative();
+		double oldTemp = this.currentWaterTemperatureValue;
+		double derivative = this.currentWaterTemperatureDerivative;
 		double newTemp = oldTemp + derivative * deltaT;
 
 		this.temperatureAcc += ((oldTemp + newTemp) / 2.0) * deltaT;
@@ -229,28 +228,28 @@ public class WashingMachineTemperatureSILModel
 		this.washingDurationMinutes = 0.0;
 		this.washingEndTime = -1.0;
 
-		// Initialiser la variable interne AVANT super.initialiseState()
-		// pour éviter l'erreur "!allModelVariablesTimeInitialised()"
-		if (!this.currentWaterTemperature.isInitialised()) {
-			double derivative = this.computeDerivatives(INITIAL_WATER_TEMPERATURE);
-			this.currentWaterTemperature.initialise(INITIAL_WATER_TEMPERATURE, derivative);
-		}
+		// Initialiser les valeurs de température (sans le temps pour l'instant)
+		this.currentWaterTemperatureValue = INITIAL_WATER_TEMPERATURE;
+		this.currentWaterTemperatureDerivative = this.computeDerivatives(INITIAL_WATER_TEMPERATURE);
 
 		if (VERBOSE) {
 			this.logMessage("simulation begins.");
 		}
 
 		super.initialiseState(initialTime);
+
+		// Initialiser le temps APRÈS super.initialiseState()
+		this.currentWaterTemperatureTime = initialTime;
 	}
 
 	@Override
 	public boolean useFixpointInitialiseVariables() {
-		return false; // Plus besoin de fixpoint, on initialise dans initialiseState
+		return true; // Retourner true pour éviter l'erreur !allModelVariablesTimeInitialised()
 	}
 
 	@Override
 	public Pair<Integer, Integer> fixpointInitialiseVariables() {
-		// Plus utilisé - initialisation faite dans initialiseState()
+		// Retourner (0, 0) car on utilise des champs simples, pas de variables HIOA
 		return new Pair<>(0, 0);
 	}
 
@@ -298,10 +297,9 @@ public class WashingMachineTemperatureSILModel
 		double newTemp = this.computeNewTemperature(elapsedTime.getSimulatedDuration());
 		double newDerivative = this.computeDerivatives(newTemp);
 
-		this.currentWaterTemperature.setNewValue(
-				newTemp,
-				newDerivative,
-				new Time(currentTime, this.getSimulatedTimeUnit()));
+		this.currentWaterTemperatureValue = newTemp;
+		this.currentWaterTemperatureDerivative = newDerivative;
+		this.currentWaterTemperatureTime = new Time(currentTime, this.getSimulatedTimeUnit());
 
 		// Vérifier si le départ différé doit démarrer
 		if (this.delayedStartTime > 0 && currentTime >= this.delayedStartTime) {
@@ -376,12 +374,11 @@ public class WashingMachineTemperatureSILModel
 		if (elapsedTime.getSimulatedDuration() > 0.0001) {
 			double newTemp = this.computeNewTemperature(elapsedTime.getSimulatedDuration());
 			double newDerivative = this.computeDerivatives(newTemp);
-			this.currentWaterTemperature.setNewValue(
-					newTemp,
-					newDerivative,
-					new Time(this.getCurrentStateTime().getSimulatedTime()
-							+ elapsedTime.getSimulatedDuration(),
-							this.getSimulatedTimeUnit()));
+			this.currentWaterTemperatureValue = newTemp;
+			this.currentWaterTemperatureDerivative = newDerivative;
+			this.currentWaterTemperatureTime = new Time(
+					this.getCurrentStateTime().getSimulatedTime() + elapsedTime.getSimulatedDuration(),
+					this.getSimulatedTimeUnit());
 		}
 
 		// Execute event
@@ -423,8 +420,8 @@ public class WashingMachineTemperatureSILModel
 	 */
 	public VariableValue<Double> getCurrentTemperature() {
 		return new VariableValue<Double>(
-				this.currentWaterTemperature.getValue(),
-				this.currentWaterTemperature.getTime());
+				this.currentWaterTemperatureValue,
+				this.currentWaterTemperatureTime);
 	}
 
 	// -------------------------------------------------------------------------
@@ -459,8 +456,8 @@ public class WashingMachineTemperatureSILModel
 			}
 
 			// Check if already at target temperature
-			if (this.currentWaterTemperature.isInitialised() &&
-					this.currentWaterTemperature.getValue() >= targetTemp - TEMPERATURE_TOLERANCE) {
+			if (this.currentWaterTemperatureTime != null &&
+					this.currentWaterTemperatureValue >= targetTemp - TEMPERATURE_TOLERANCE) {
 				if (VERBOSE) {
 					this.logMessage("Already at target temperature, will emit HeatingFinished");
 				}
@@ -501,7 +498,7 @@ public class WashingMachineTemperatureSILModel
 	public void resumeWashing() {
 		if (this.currentState == WashingMachineState.ON) {
 			// Resume heating if not at target temperature
-			if (this.currentWaterTemperature.getValue() < this.targetTemperature - TEMPERATURE_TOLERANCE) {
+			if (this.currentWaterTemperatureValue < this.targetTemperature - TEMPERATURE_TOLERANCE) {
 				this.currentState = WashingMachineState.HEATINGWATER;
 			} else {
 				this.currentState = WashingMachineState.WASHING;

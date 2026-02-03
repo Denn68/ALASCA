@@ -86,6 +86,12 @@ import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SuspendWashing;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.ResumeWashing;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetPowerWashingMachine;
+import fr.sorbonne_u.components.hem2025e3.equipments.kettle.KettleCyPhy;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.KettleCoupledModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SwitchOnKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SwitchOffKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.HeatKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.DoNotHeatKettle;
 import fr.sorbonne_u.devs_simulation.models.architectures.AbstractAtomicModelDescriptor;
 import fr.sorbonne_u.devs_simulation.models.architectures.CoupledModelDescriptor;
 import fr.sorbonne_u.devs_simulation.models.events.EventI;
@@ -266,6 +272,20 @@ public abstract class ComponentSimulationArchitectures {
 						simulatedTimeUnit,
 						WashingMachineCyPhy.REFLECTION_INBOUND_PORT_URI));
 
+		// Kettle coupled model descriptor
+		atomicModelDescriptors.put(
+				KettleCoupledModel.URI,
+				RTComponentAtomicModelDescriptor.create(
+						KettleCoupledModel.URI,
+						(Class<? extends EventI>[]) new Class<?>[] {},
+						(Class<? extends EventI>[]) new Class<?>[] {
+								SwitchOnKettle.class,
+								SwitchOffKettle.class,
+								HeatKettle.class,
+								DoNotHeatKettle.class },
+						simulatedTimeUnit,
+						KettleCyPhy.REFLECTION_INBOUND_PORT_URI));
+
 		// The electric meter also has a SIL simulation model
 		atomicModelDescriptors.put(
 				ElectricMeterCoupledModel.URI,
@@ -295,7 +315,12 @@ public abstract class ComponentSimulationArchitectures {
 								SetDelayedStart.class,
 								SuspendWashing.class,
 								ResumeWashing.class,
-								SetPowerWashingMachine.class },
+								SetPowerWashingMachine.class,
+								// Kettle events
+								SwitchOnKettle.class,
+								SwitchOffKettle.class,
+								HeatKettle.class,
+								DoNotHeatKettle.class },
 						(Class<? extends EventI>[]) new Class<?>[] {
 								CurrentBatteriesLevel.class,
 								PowerProductionLevel.class,
@@ -320,6 +345,7 @@ public abstract class ComponentSimulationArchitectures {
 		submodels.add(SolarPanelCoupledModel.URI);
 		submodels.add(GeneratorStateSILModel.URI);
 		submodels.add(WashingMachineCoupledModel.URI);
+		submodels.add(KettleCoupledModel.URI);
 
 		// event exchanging connections between exporting and importing
 		// models
@@ -545,6 +571,36 @@ public abstract class ComponentSimulationArchitectures {
 				new EventSink[] {
 						new EventSink(ElectricMeterCoupledModel.URI,
 								SetPowerWashingMachine.class)
+				});
+
+		// events going from the kettle to the electric meter
+		connections.put(
+				new EventSource(KettleCoupledModel.URI,
+						SwitchOnKettle.class),
+				new EventSink[] {
+						new EventSink(ElectricMeterCoupledModel.URI,
+								SwitchOnKettle.class)
+				});
+		connections.put(
+				new EventSource(KettleCoupledModel.URI,
+						SwitchOffKettle.class),
+				new EventSink[] {
+						new EventSink(ElectricMeterCoupledModel.URI,
+								SwitchOffKettle.class)
+				});
+		connections.put(
+				new EventSource(KettleCoupledModel.URI,
+						HeatKettle.class),
+				new EventSink[] {
+						new EventSink(ElectricMeterCoupledModel.URI,
+								HeatKettle.class)
+				});
+		connections.put(
+				new EventSource(KettleCoupledModel.URI,
+						DoNotHeatKettle.class),
+				new EventSink[] {
+						new EventSink(ElectricMeterCoupledModel.URI,
+								DoNotHeatKettle.class)
 				});
 
 		// coupled model descriptor

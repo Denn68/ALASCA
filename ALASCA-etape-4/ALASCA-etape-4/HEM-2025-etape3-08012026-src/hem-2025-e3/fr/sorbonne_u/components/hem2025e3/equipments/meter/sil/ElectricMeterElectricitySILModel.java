@@ -157,6 +157,7 @@ import java.text.NumberFormat;
 @ModelImportedVariables({ @ModelImportedVariable(name = "currentHeaterIntensity", type = Double.class),
 		@ModelImportedVariable(name = "currentHairDryerIntensity", type = Double.class),
 		@ModelImportedVariable(name = "currentWashingMachineIntensity", type = Double.class),
+		@ModelImportedVariable(name = "currentKettleIntensity", type = Double.class),
 		@ModelImportedVariable(name = "solarPanelOutputPower", type = Double.class),
 		@ModelImportedVariable(name = "batteriesInputPower", type = Double.class),
 		@ModelImportedVariable(name = "batteriesOutputPower", type = Double.class),
@@ -249,6 +250,9 @@ public class ElectricMeterElectricitySILModel
 	/** current intensity of the washing machine in amperes. */
 	@ImportedVariable(type = Double.class)
 	protected Value<Double> currentWashingMachineIntensity;
+	/** current intensity of the kettle in amperes. */
+	@ImportedVariable(type = Double.class)
+	protected Value<Double> currentKettleIntensity;
 
 	/**
 	 * current total power production of the house in the power unit
@@ -551,6 +555,11 @@ public class ElectricMeterElectricitySILModel
 				this.currentWashingMachineIntensity.isInitialised()) {
 			total += this.currentWashingMachineIntensity.getValue();
 		}
+		// Add kettle if connected
+		if (this.currentKettleIntensity != null &&
+				this.currentKettleIntensity.isInitialised()) {
+			total += this.currentKettleIntensity.getValue();
+		}
 		return total;
 	}
 
@@ -806,6 +815,36 @@ public class ElectricMeterElectricitySILModel
 					this.currentIntensity.isInitialised()) {
 				StringBuffer message = new StringBuffer("current power balance: ");
 				message.append(nf.format(powerBalance));
+				message.append(" ");
+				message.append(ElectricMeterImplementationI.POWER_UNIT);
+
+				// Détail de la consommation par appareil
+				message.append(" | Consumption: ");
+				if (this.currentHairDryerIntensity != null && this.currentHairDryerIntensity.isInitialised()) {
+					message.append("HairDryer=");
+					message.append(nf.format(this.currentHairDryerIntensity.getValue()));
+					message.append("A ");
+				}
+				if (this.currentHeaterIntensity != null && this.currentHeaterIntensity.isInitialised()) {
+					message.append("Heater=");
+					message.append(nf.format(this.currentHeaterIntensity.getValue()));
+					message.append("A ");
+				}
+				if (this.currentWashingMachineIntensity != null
+						&& this.currentWashingMachineIntensity.isInitialised()) {
+					message.append("WashingMachine=");
+					message.append(nf.format(this.currentWashingMachineIntensity.getValue()));
+					message.append("A ");
+				}
+				if (this.currentKettleIntensity != null && this.currentKettleIntensity.isInitialised()) {
+					message.append("Kettle=");
+					message.append(nf.format(this.currentKettleIntensity.getValue()));
+					message.append("A ");
+				}
+				message.append("| Total=");
+				message.append(nf.format(this.currentIntensity.getValue()));
+				message.append("A");
+
 				if (DEBUG) {
 					message.append(", solar panel production: ");
 					message.append(nf.format(this.solarPanelOutputPower.getValue()));
@@ -817,15 +856,11 @@ public class ElectricMeterElectricitySILModel
 					message.append(nf.format(this.batteriesRequiredPower.getValue()));
 					message.append(", batteries production: ");
 					message.append(nf.format(this.batteriesOutputPower.getValue()));
-					message.append(", current total consumption: ");
-					message.append(nf.format(this.currentIntensity.getValue()));
-				} else if (VERBOSE) {
-					message.append(" ");
-					message.append(ElectricMeterImplementationI.POWER_UNIT);
 				}
 				message.append(" at ");
 				message.append(this.getCurrentStateTime());
-				this.logMessage(message.toString());
+				// Print to terminal (System.out) for visibility
+				System.out.println("[ElectricMeter] " + message.toString());
 			}
 		}
 

@@ -73,6 +73,11 @@ import fr.sorbonne_u.components.hem2025e3.equipments.heater.sil.events.SIL_SetPo
 import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.sil.SolarPanelPowerSILModel;
 import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.sil.events.PowerProductionLevel;
 import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.sil.WashingMachineElectricitySILModel;
+import fr.sorbonne_u.components.hem2025e3.equipments.kettle.sil.KettleElectricitySILModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SwitchOnKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SwitchOffKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.HeatKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.DoNotHeatKettle;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetDelayedStart;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetPowerWashingMachine;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.StartWashing;
@@ -252,6 +257,14 @@ public abstract class LocalSimulationArchitectures {
 						simulatedTimeUnit,
 						null,
 						accelerationFactor));
+		atomicModelDescriptors.put(
+				KettleElectricitySILModel.URI,
+				RTAtomicHIOA_Descriptor.create(
+						KettleElectricitySILModel.class,
+						KettleElectricitySILModel.URI,
+						simulatedTimeUnit,
+						null,
+						accelerationFactor));
 
 		// map that will contain the coupled model descriptors to construct
 		// the simulation architecture
@@ -268,6 +281,7 @@ public abstract class LocalSimulationArchitectures {
 		submodels.add(GeneratorFuelSILModel.URI);
 		submodels.add(GeneratorPowerSILModel.URI);
 		submodels.add(WashingMachineElectricitySILModel.URI);
+		submodels.add(KettleElectricitySILModel.URI);
 
 		// events imported by the coupled model and passed to submodels
 		Map<Class<? extends EventI>, EventSink[]> imported = new HashMap<>();
@@ -420,6 +434,32 @@ public abstract class LocalSimulationArchitectures {
 								SetPowerWashingMachine.class)
 				});
 
+		// Kettle events
+		imported.put(
+				SwitchOnKettle.class,
+				new EventSink[] {
+						new EventSink(KettleElectricitySILModel.URI,
+								SwitchOnKettle.class)
+				});
+		imported.put(
+				SwitchOffKettle.class,
+				new EventSink[] {
+						new EventSink(KettleElectricitySILModel.URI,
+								SwitchOffKettle.class)
+				});
+		imported.put(
+				HeatKettle.class,
+				new EventSink[] {
+						new EventSink(KettleElectricitySILModel.URI,
+								HeatKettle.class)
+				});
+		imported.put(
+				DoNotHeatKettle.class,
+				new EventSink[] {
+						new EventSink(KettleElectricitySILModel.URI,
+								DoNotHeatKettle.class)
+				});
+
 		// events emitted by submodels reexported by the coupled model
 		Map<Class<? extends EventI>, ReexportedEvent> reexported = new HashMap<>();
 
@@ -567,6 +607,15 @@ public abstract class LocalSimulationArchitectures {
 						WashingMachineElectricitySILModel.URI),
 				new VariableSink[] {
 						new VariableSink("currentWashingMachineIntensity",
+								Double.class,
+								ElectricMeterElectricitySILModel.URI)
+				});
+		bindings.put(
+				new VariableSource("currentIntensity",
+						Double.class,
+						KettleElectricitySILModel.URI),
+				new VariableSink[] {
+						new VariableSink("currentKettleIntensity",
 								Double.class,
 								ElectricMeterElectricitySILModel.URI)
 				});

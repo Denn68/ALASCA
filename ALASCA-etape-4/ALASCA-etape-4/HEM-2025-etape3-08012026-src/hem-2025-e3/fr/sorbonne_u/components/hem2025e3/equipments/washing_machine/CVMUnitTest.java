@@ -41,9 +41,9 @@ public class CVMUnitTest
 	/** Start time of the simulation. */
 	public static Time SIMULATION_START_TIME = new Time(0.0, SIMULATION_TIME_UNIT);
 	/**
-	 * Duration of the simulation (4h suffisent: cycle1 ~0.7h + cycle2 ~3h + marge).
+	 * Duration of the simulation (5h pour: cycle1 ~2h + cycle2 ~1h + marge).
 	 */
-	public static Duration SIMULATION_DURATION = new Duration(4.0, SIMULATION_TIME_UNIT);
+	public static Duration SIMULATION_DURATION = new Duration(5.0, SIMULATION_TIME_UNIT);
 	/** Acceleration factor. */
 	public static double ACCELERATION_FACTOR = 1200.0;
 	/** Duration of the execution. */
@@ -284,18 +284,18 @@ public class CVMUnitTest
 		// CYCLE 1 (startWashing direct):
 		// - switchOn à t=1min
 		// - startWashing à t=2min (30 min lavage, 40°C)
-		// - Chauffage ~10min, lavage 30min → fin vers t=42min
+		// - Chauffage ~1.4h, lavage 30min → fin vers t=2h
 		//
-		// CYCLE 2 (delayedStart):
-		// - delayedStart à t=60min (délai 10min, 20min lavage, 50°C)
-		// - Le lavage démarre à t=70min
-		// - Chauffage ~10min, lavage 20min → fin vers t=100min (~1.7h)
+		// CYCLE 2 (delayedStart) - APRÈS fin du cycle 1:
+		// - delayedStart à t=2.5h (délai 10min, 20min lavage, 50°C)
+		// - Le lavage démarre à t=2h40min
+		// - Chauffage ~15min, lavage 20min → fin vers t=3h15min
 		//
 		// - switchOff à t=d-1min (fin de simulation)
 
 		Instant switchOnInstant = startInstant.plusSeconds(60); // 1 min simulée
 		Instant startWashingInstant = startInstant.plusSeconds(120); // 2 min simulées
-		Instant delayedStartInstant = startInstant.plusSeconds(3600); // 1h simulée (après fin cycle 1)
+		Instant delayedStartInstant = startInstant.plusSeconds(9000); // 2.5h simulées (après fin cycle 1)
 		Instant switchOffInstant = startInstant.plusSeconds(d - 60); // 1 min avant fin
 
 		return new TestScenarioWithSimulation(

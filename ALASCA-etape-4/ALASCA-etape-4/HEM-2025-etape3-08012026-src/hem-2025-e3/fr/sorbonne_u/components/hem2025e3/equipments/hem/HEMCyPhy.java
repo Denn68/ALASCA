@@ -65,6 +65,8 @@ import fr.sorbonne_u.components.hem2025e3.equipments.meter.ElectricMeterCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.SolarPanelCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.SolarPanelUnitTesterCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMachineCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.kettle.KettleCyPhy;
+import fr.sorbonne_u.components.hem2025e1.equipments.hem.KettleConnector;
 import fr.sorbonne_u.components.utils.tests.TestScenario;
 import fr.sorbonne_u.components.utils.tests.TestsStatistics;
 import fr.sorbonne_u.exceptions.ImplementationInvariantException;
@@ -163,6 +165,8 @@ public class HEMCyPhy
 	protected AdjustableOutboundPort heaterop;
 	/** port to connect to the washing machine for energy management. */
 	protected AdjustableOutboundPort washingMachineop;
+	/** port to connect to the kettle for energy management. */
+	protected AdjustableOutboundPort kettleop;
 
 	// Execution/Simulation
 
@@ -455,6 +459,14 @@ public class HEMCyPhy
 					this.washingMachineop.getPortURI(),
 					WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
 					WashingMachineConnector.class.getCanonicalName());
+
+			// Connect to Kettle for energy management (Étape 4)
+			this.kettleop = new AdjustableOutboundPort(this);
+			this.kettleop.publishPort();
+			this.doPortConnection(
+					this.kettleop.getPortURI(),
+					KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+					KettleConnector.class.getCanonicalName());
 		} catch (Throwable e) {
 			throw new ComponentStartException(e);
 		}
@@ -524,6 +536,8 @@ public class HEMCyPhy
 		}
 		// Disconnect WashingMachine (Étape 4)
 		this.doPortDisconnection(this.washingMachineop.getPortURI());
+		// Disconnect Kettle (Étape 4)
+		this.doPortDisconnection(this.kettleop.getPortURI());
 		super.finalise();
 	}
 
@@ -542,6 +556,8 @@ public class HEMCyPhy
 			}
 			// Unpublish WashingMachine port (Étape 4)
 			this.washingMachineop.unpublishPort();
+			// Unpublish Kettle port (Étape 4)
+			this.kettleop.unpublishPort();
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
 		}
@@ -1266,6 +1282,88 @@ public class HEMCyPhy
 			statistics.incorrectResult();
 		}
 		this.logMessage("WashingMachine HEM tests end. " + statistics);
+	}
+
+	// -------------------------------------------------------------------------
+	// Kettle control methods (Étape 4)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test the Kettle AdjustableCI interface via HEM.
+	 * 
+	 * @throws Exception if an error occurs
+	 */
+	public void testKettle() throws Exception {
+		this.logMessage("Kettle HEM tests start.");
+		TestsStatistics statistics = new TestsStatistics();
+		try {
+			this.logMessage("Feature: adjustable appliance mode management for Kettle");
+
+			this.logMessage("  Scenario: getting the max mode index");
+			final int maxMode = kettleop.maxMode();
+			this.logMessage("    Max mode: " + maxMode);
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: checking if suspended when not");
+			boolean isSuspended = kettleop.suspended();
+			if (isSuspended) {
+				this.logMessage("    ERROR: should not be suspended initially");
+				statistics.incorrectResult();
+			} else {
+				this.logMessage("    OK: not suspended initially");
+			}
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: suspending the kettle");
+			boolean suspendResult = kettleop.suspend();
+			if (suspendResult) {
+				this.logMessage("    OK: suspend() returned true");
+			} else {
+				this.logMessage("    ERROR: suspend() returned false");
+				statistics.incorrectResult();
+			}
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: checking if suspended after suspend");
+			isSuspended = kettleop.suspended();
+			if (isSuspended) {
+				this.logMessage("    OK: is suspended after suspend()");
+			} else {
+				this.logMessage("    ERROR: should be suspended");
+				statistics.incorrectResult();
+			}
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: getting emergency level when suspended");
+			double emergency = kettleop.emergency();
+			this.logMessage("    Emergency level: " + emergency);
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: resuming the kettle");
+			boolean resumeResult = kettleop.resume();
+			if (resumeResult) {
+				this.logMessage("    OK: resume() returned true");
+			} else {
+				this.logMessage("    ERROR: resume() returned false");
+				statistics.incorrectResult();
+			}
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: checking if not suspended after resume");
+			isSuspended = kettleop.suspended();
+			if (!isSuspended) {
+				this.logMessage("    OK: not suspended after resume()");
+			} else {
+				this.logMessage("    ERROR: should not be suspended");
+				statistics.incorrectResult();
+			}
+			statistics.updateStatistics();
+
+		} catch (Exception e) {
+			this.logMessage("Exception during Kettle test: " + e.getMessage());
+			statistics.incorrectResult();
+		}
+		this.logMessage("Kettle HEM tests end. " + statistics);
 	}
 
 	/**

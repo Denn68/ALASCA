@@ -81,6 +81,11 @@ import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMach
 import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMachineController;
 import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.sil.WashingMachineElectricitySILModel;
 import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.sil.WashingMachineTemperatureSILModel;
+import fr.sorbonne_u.components.hem2025e3.equipments.kettle.KettleCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.kettle.KettleTesterCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.kettle.KettleController;
+import fr.sorbonne_u.components.hem2025e3.equipments.kettle.sil.KettleElectricitySILModel;
+import fr.sorbonne_u.components.hem2025e3.equipments.kettle.sil.KettleTemperatureSILModel;
 import fr.sorbonne_u.components.utils.tests.TestScenario;
 import fr.sorbonne_u.components.utils.tests.TestStep;
 import fr.sorbonne_u.components.utils.tests.TestStepI;
@@ -181,8 +186,8 @@ public class CVMIntegrationTest
 							SIMULATION_DURATION.getTimeUnit()));
 
 	public static ExecutionMode GLOBAL_EXECUTION_MODE =
-			// ExecutionMode.INTEGRATION_TEST;
-			ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION;
+			ExecutionMode.INTEGRATION_TEST;
+			// ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION;
 
 	/**
 	 * for unit tests and SIL simulation unit tests, a {@code Clock} is
@@ -337,6 +342,17 @@ public class CVMIntegrationTest
 		WashingMachineController.X_RELATIVE_POSITION = 2;
 		WashingMachineController.Y_RELATIVE_POSITION = 4;
 
+		// Kettle configuration
+		KettleTesterCyPhy.VERBOSE = true;
+		KettleTesterCyPhy.X_RELATIVE_POSITION = 3;
+		KettleTesterCyPhy.Y_RELATIVE_POSITION = 3;
+		KettleCyPhy.VERBOSE = true;
+		KettleCyPhy.X_RELATIVE_POSITION = 2;
+		KettleCyPhy.Y_RELATIVE_POSITION = 2;
+		KettleController.VERBOSE = true;
+		KettleController.X_RELATIVE_POSITION = 3;
+		KettleController.Y_RELATIVE_POSITION = 2;
+
 		BatteriesStateSILModel.VERBOSE = false;
 		BatteriesStateSILModel.DEBUG = false;
 		BatteriesPowerSILModel.VERBOSE = false;
@@ -359,8 +375,8 @@ public class CVMIntegrationTest
 		HeaterTemperatureSILModel.DEBUG = false;
 		ExternalTemperatureSILModel.VERBOSE = false;
 		ExternalTemperatureSILModel.DEBUG = false;
-		ElectricMeterElectricitySILModel.VERBOSE = false;
-		ElectricMeterElectricitySILModel.DEBUG = true;
+		ElectricMeterElectricitySILModel.VERBOSE = true;
+		ElectricMeterElectricitySILModel.DEBUG = false;
 		DeterministicSunRiseAndSetModel.VERBOSE = false;
 		DeterministicSunRiseAndSetModel.DEBUG = false;
 		DeterministicSunIntensityModel.VERBOSE = false;
@@ -372,6 +388,9 @@ public class CVMIntegrationTest
 		// WashingMachine SIL models
 		WashingMachineElectricitySILModel.VERBOSE = false;
 		WashingMachineTemperatureSILModel.VERBOSE = false;
+		// Kettle SIL models
+		KettleElectricitySILModel.VERBOSE = false;
+		KettleTemperatureSILModel.VERBOSE = false;
 
 		assert CVMIntegrationTest.implementationInvariants(this) : new InvariantException(
 				"CVMIntegrationTest.glassBoxInvariants(this)");
@@ -472,6 +491,32 @@ public class CVMIntegrationTest
 							WashingMachineCyPhy.USER_INBOUND_PORT_URI,
 							WashingMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
 							WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
+
+			// Kettle components
+			AbstractComponent.createComponent(
+					KettleCyPhy.class.getCanonicalName(),
+					new Object[] {
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario.getClockURI()
+					});
+			AbstractComponent.createComponent(
+					KettleController.class.getCanonicalName(),
+					new Object[] {
+							KettleCyPhy.SENSOR_INBOUND_PORT_URI,
+							KettleCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							KettleController.STANDARD_CONTROL_PERIOD,
+							KettleController.ControlMode.PULL,
+							false
+					});
+			AbstractComponent.createComponent(
+					KettleTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							KettleCyPhy.USER_INBOUND_PORT_URI,
+							KettleCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
 							ExecutionMode.INTEGRATION_TEST,
 							testScenario
 					});
@@ -656,6 +701,42 @@ public class CVMIntegrationTest
 							testScenario
 					});
 
+			// Kettle components
+			AbstractComponent.createComponent(
+					KettleCyPhy.class.getCanonicalName(),
+					new Object[] {
+							KettleCyPhy.REFLECTION_INBOUND_PORT_URI,
+							KettleCyPhy.USER_INBOUND_PORT_URI,
+							KettleCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							KettleCyPhy.SENSOR_INBOUND_PORT_URI,
+							KettleCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							KettleCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					KettleController.class.getCanonicalName(),
+					new Object[] {
+							KettleCyPhy.SENSOR_INBOUND_PORT_URI,
+							KettleCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							KettleController.STANDARD_CONTROL_PERIOD,
+							KettleController.ControlMode.PULL,
+							false,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					KettleTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							KettleCyPhy.USER_INBOUND_PORT_URI,
+							KettleCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
+
 		}
 
 		super.deploy();
@@ -726,6 +807,11 @@ public class CVMIntegrationTest
 		Instant washingMachineStartWashing = START_INSTANT.plusSeconds(420);
 		Instant hemTestWashingMachine = START_INSTANT.plusSeconds(500); // After startWashing, before switchOff
 		Instant washingMachineSwitchOff = START_INSTANT.plusSeconds(540);
+
+		// Kettle test instants
+		Instant kettleSwitchOn = START_INSTANT.plusSeconds(1800);
+		Instant hemTestKettle = START_INSTANT.plusSeconds(2000);
+		Instant kettleSwitchOff = START_INSTANT.plusSeconds(2400);
 
 		Instant hairDryerTurnOn = START_INSTANT.plusSeconds(600);
 		Instant hairDryerSetHigh = START_INSTANT.plusSeconds(660);
@@ -911,6 +997,42 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// Kettle test steps
+						new TestStep(
+								CLOCK_URI,
+								KettleTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								kettleSwitchOn,
+								owner -> {
+									try {
+										((KettleTesterCyPhy) owner).getKop().switchOn();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// HEM test the kettle (while kettle is ON)
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hemTestKettle,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testKettle();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								KettleTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								kettleSwitchOff,
+								owner -> {
+									try {
+										((KettleTesterCyPhy) owner).getKop().switchOff();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+
 						new TestStep(
 								CLOCK_URI,
 								HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -990,6 +1112,11 @@ public class CVMIntegrationTest
 		Instant washingMachineStartWashing = Instant.parse("2026-02-03T06:07:00.00Z");
 		Instant hemTestWashingMachine = Instant.parse("2026-02-03T06:08:30.00Z");
 		Instant washingMachineSwitchOff = Instant.parse("2026-02-03T06:09:00.00Z");
+
+		// Kettle test instants
+		Instant kettleSwitchOn = Instant.parse("2026-02-03T08:30:00.00Z");
+		Instant hemTestKettle = Instant.parse("2026-02-03T08:35:00.00Z");
+		Instant kettleSwitchOff = Instant.parse("2026-02-03T08:45:00.00Z");
 
 		return new TestScenarioWithSimulation(
 				CLOCK_URI,
@@ -1357,6 +1484,42 @@ public class CVMIntegrationTest
 								owner -> {
 									try {
 										((HairDryerTesterCyPhy) owner).turnOffHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+
+						// Kettle test steps
+						new TestStep(
+								CLOCK_URI,
+								KettleTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								kettleSwitchOn,
+								owner -> {
+									try {
+										((KettleTesterCyPhy) owner).getKop().switchOn();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// HEM test the kettle
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hemTestKettle,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testKettle();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								KettleTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								kettleSwitchOff,
+								owner -> {
+									try {
+										((KettleTesterCyPhy) owner).getKop().switchOff();
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}

@@ -15,6 +15,7 @@ import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.KettleEve
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.StartKeepingWarmKettle;
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.StopKeepingWarmKettle;
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SwitchOffKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SwitchOnKettle;
 import fr.sorbonne_u.components.hem2025e3.equipments.kettle.sil.events.SIL_SetPowerKettle;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
 import fr.sorbonne_u.devs_simulation.exceptions.NeoSim4JavaException;
@@ -37,7 +38,9 @@ import fr.sorbonne_u.devs_simulation.utils.AssertionChecking;
  * The class <code>KettleTemperatureSILModel</code> defines a simulation model
  * for the temperature of the water inside the kettle.
  *
- * <p><strong>Description</strong></p>
+ * <p>
+ * <strong>Description</strong>
+ * </p>
  *
  * <p>
  * The kettle water temperature model simulates:
@@ -46,63 +49,61 @@ import fr.sorbonne_u.devs_simulation.utils.AssertionChecking;
  * - Keep warm mode maintains temperature at a level lower than boiling
  * </p>
  *
- * @author	Team DeMoh
+ * @author Team DeMoh
  */
-@ModelExternalEvents(imported = {SwitchOffKettle.class,
-								 SIL_SetPowerKettle.class,
-								 HeatKettle.class,
-								 DoNotHeatKettle.class,
-								 StartKeepingWarmKettle.class,
-								 StopKeepingWarmKettle.class})
+@ModelExternalEvents(imported = { SwitchOnKettle.class,
+		SwitchOffKettle.class,
+		SIL_SetPowerKettle.class,
+		HeatKettle.class,
+		DoNotHeatKettle.class,
+		StartKeepingWarmKettle.class,
+		StopKeepingWarmKettle.class })
 // -----------------------------------------------------------------------------
-public class			KettleTemperatureSILModel
-extends		AtomicHIOA
-implements	SIL_KettleOperationI
-{
+public class KettleTemperatureSILModel
+		extends AtomicHIOA
+		implements SIL_KettleOperationI {
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
 
-	private static final long		serialVersionUID = 1L;
-	public static String			URI = KettleTemperatureSILModel.class.getSimpleName();
-	public static boolean			VERBOSE = true;
-	public static boolean			DEBUG = false;
+	private static final long serialVersionUID = 1L;
+	public static String URI = KettleTemperatureSILModel.class.getSimpleName();
+	public static boolean VERBOSE = true;
+	public static boolean DEBUG = false;
 
 	// Kettle-specific temperature constants
-	public static double			INITIAL_TEMPERATURE = 20.0;
-	public static double			EXTERNAL_TEMPERATURE = 20.0;
-	public static double			MAX_TEMPERATURE = 100.0;
-	public static double			KEEP_WARM_TEMPERATURE = 80.0;
+	public static double INITIAL_TEMPERATURE = 20.0;
+	public static double EXTERNAL_TEMPERATURE = 20.0;
+	public static double MAX_TEMPERATURE = 100.0;
+	public static double KEEP_WARM_TEMPERATURE = 80.0;
 
 	// Heating/cooling constants for kettle
-	protected static double			HEATING_CAPACITY = 0.86;  // degrees per watt per hour
-	protected static double			COOLING_CONSTANT = 15.0;  // time constant for cooling
+	protected static double HEATING_CAPACITY = 0.86; // degrees per watt per hour
+	protected static double COOLING_CONSTANT = 15.0; // time constant for cooling
 
-	protected static double			TEMPERATURE_UPDATE_TOLERANCE = 0.0001;
-	protected static double			STEP = 5.0/3600.0;  // 5 seconds
+	protected static double TEMPERATURE_UPDATE_TOLERANCE = 0.0001;
+	protected static double STEP = 5.0 / 3600.0; // 5 seconds
 
-	protected KettleState			currentState = KettleState.OFF;
-	protected double				currentHeatingPower;
+	protected KettleState currentState = KettleState.OFF;
+	protected double currentHeatingPower;
 
-	protected final Duration		integrationStep;
-	protected double				temperatureAcc;
-	protected Time					start;
-	protected double				meanTemperature;
+	protected final Duration integrationStep;
+	protected double temperatureAcc;
+	protected Time start;
+	protected double meanTemperature;
 
 	// -------------------------------------------------------------------------
 	// HIOA model variables
 	// -------------------------------------------------------------------------
 
 	@InternalVariable(type = Double.class)
-	protected final DerivableValue<Double>	currentTemperature =
-												new DerivableValue<Double>(this);
+	protected final DerivableValue<Double> currentTemperature = new DerivableValue<Double>(this);
 
 	// -------------------------------------------------------------------------
 	// Invariants
 	// -------------------------------------------------------------------------
 
-	protected static boolean	staticImplementationInvariants()
-	{
+	protected static boolean staticImplementationInvariants() {
 		boolean ret = true;
 		ret &= AssertionChecking.checkStaticImplementationInvariant(
 				TEMPERATURE_UPDATE_TOLERANCE >= 0.0,
@@ -115,9 +116,8 @@ implements	SIL_KettleOperationI
 		return ret;
 	}
 
-	protected static boolean	implementationInvariants(KettleTemperatureSILModel instance)
-	{
-		assert	instance != null : new NeoSim4JavaException("instance != null");
+	protected static boolean implementationInvariants(KettleTemperatureSILModel instance) {
+		assert instance != null : new NeoSim4JavaException("instance != null");
 
 		boolean ret = true;
 		ret &= staticImplementationInvariants();
@@ -134,8 +134,7 @@ implements	SIL_KettleOperationI
 		return ret;
 	}
 
-	public static boolean	staticInvariants()
-	{
+	public static boolean staticInvariants() {
 		boolean ret = true;
 		ret &= KettleSimulationConfigurationI.staticInvariants();
 		ret &= AssertionChecking.checkStaticInvariant(
@@ -144,9 +143,8 @@ implements	SIL_KettleOperationI
 		return ret;
 	}
 
-	protected static boolean	invariants(KettleTemperatureSILModel instance)
-	{
-		assert	instance != null : new NeoSim4JavaException("instance != null");
+	protected static boolean invariants(KettleTemperatureSILModel instance) {
+		assert instance != null : new NeoSim4JavaException("instance != null");
 		boolean ret = true;
 		ret &= staticInvariants();
 		return ret;
@@ -156,19 +154,17 @@ implements	SIL_KettleOperationI
 	// Constructors
 	// -------------------------------------------------------------------------
 
-	public				KettleTemperatureSILModel(
-		String uri,
-		TimeUnit simulatedTimeUnit,
-		AtomicSimulatorI simulationEngine
-		) throws Exception
-	{
+	public KettleTemperatureSILModel(
+			String uri,
+			TimeUnit simulatedTimeUnit,
+			AtomicSimulatorI simulationEngine) throws Exception {
 		super(uri, simulatedTimeUnit, simulationEngine);
 
 		this.integrationStep = new Duration(STEP, simulatedTimeUnit);
 		this.getSimulationEngine().setLogger(new StandardLogger());
 
-		assert	KettleTemperatureSILModel.implementationInvariants(this);
-		assert	KettleTemperatureSILModel.invariants(this);
+		assert KettleTemperatureSILModel.implementationInvariants(this);
+		assert KettleTemperatureSILModel.invariants(this);
 	}
 
 	// -------------------------------------------------------------------------
@@ -176,42 +172,37 @@ implements	SIL_KettleOperationI
 	// -------------------------------------------------------------------------
 
 	@Override
-	public void			setState(KettleState s)
-	{
+	public void setState(KettleState s) {
 		this.currentState = s;
 	}
 
 	@Override
-	public KettleState	getState()
-	{
+	public KettleState getState() {
 		return this.currentState;
 	}
 
-	public VariableValue<Double>	getCurrentTemperature()
-	{
+	public VariableValue<Double> getCurrentTemperature() {
 		return new VariableValue<Double>(
-							this.currentTemperature.getValue(),
-							this.currentTemperature.getTime());
+				this.currentTemperature.getValue(),
+				this.currentTemperature.getTime());
 	}
 
 	@Override
-	public void			setCurrentHeatingPower(double newPower, Time t)
-	{
-		assert	newPower >= 0.0 &&
-					newPower <= KettleExternalControlI.MAX_POWER_LEVEL.getData() :
-				new NeoSim4JavaException(
-					"newPower >= 0.0 && newPower <= MAX_POWER_LEVEL");
+	public void setCurrentHeatingPower(double newPower, Time t) {
+		assert newPower >= 0.0 &&
+				newPower <= KettleExternalControlI.MAX_POWER_LEVEL.getData()
+				: new NeoSim4JavaException(
+						"newPower >= 0.0 && newPower <= MAX_POWER_LEVEL");
 
 		this.currentHeatingPower = newPower;
 	}
 
-	protected double	computeDerivatives(Double current)
-	{
+	protected double computeDerivatives(Double current) {
 		double currentTempDerivative = 0.0;
 
 		// Heating contribution
 		if (this.currentState == KettleState.HEATING ||
-			this.currentState == KettleState.KEEP_WARM) {
+				this.currentState == KettleState.KEEP_WARM) {
 			if (this.currentHeatingPower > 0.0) {
 				if (current < MAX_TEMPERATURE) {
 					currentTempDerivative += this.currentHeatingPower * HEATING_CAPACITY;
@@ -227,15 +218,14 @@ implements	SIL_KettleOperationI
 		return currentTempDerivative;
 	}
 
-	protected double	computeNewTemperature(double deltaT)
-	{
+	protected double computeNewTemperature(double deltaT) {
 		Time t = this.currentTemperature.getTime();
 		double oldTemp = this.currentTemperature.evaluateAt(t);
 		double newTemp;
 
 		if (deltaT > TEMPERATURE_UPDATE_TOLERANCE) {
 			double derivative = this.currentTemperature.getFirstDerivative();
-			newTemp = oldTemp + derivative*deltaT;
+			newTemp = oldTemp + derivative * deltaT;
 		} else {
 			newTemp = oldTemp;
 		}
@@ -250,7 +240,7 @@ implements	SIL_KettleOperationI
 			newTemp = EXTERNAL_TEMPERATURE;
 		}
 
-		this.temperatureAcc += ((oldTemp + newTemp)/2.0) * deltaT;
+		this.temperatureAcc += ((oldTemp + newTemp) / 2.0) * deltaT;
 		return newTemp;
 	}
 
@@ -259,22 +249,19 @@ implements	SIL_KettleOperationI
 	// -------------------------------------------------------------------------
 
 	@Override
-	public void			setSimulationRunParameters(
-		Map<String, Object> simParams
-		) throws MissingRunParameterException
-	{
+	public void setSimulationRunParameters(
+			Map<String, Object> simParams) throws MissingRunParameterException {
 		super.setSimulationRunParameters(simParams);
 
 		if (simParams.containsKey(
-						AtomicSimulatorPlugin.OWNER_RUNTIME_PARAMETER_NAME)) {
+				AtomicSimulatorPlugin.OWNER_RUNTIME_PARAMETER_NAME)) {
 			this.getSimulationEngine().setLogger(
-						AtomicSimulatorPlugin.createComponentLogger(simParams));
+					AtomicSimulatorPlugin.createComponentLogger(simParams));
 		}
 	}
 
 	@Override
-	public void			initialiseState(Time initialTime)
-	{
+	public void initialiseState(Time initialTime) {
 		this.temperatureAcc = 0.0;
 		this.start = initialTime;
 		this.currentHeatingPower = KettleExternalControlI.MAX_POWER_LEVEL.getData();
@@ -287,14 +274,12 @@ implements	SIL_KettleOperationI
 	}
 
 	@Override
-	public boolean		useFixpointInitialiseVariables()
-	{
+	public boolean useFixpointInitialiseVariables() {
 		return true;
 	}
 
 	@Override
-	public Pair<Integer, Integer>	fixpointInitialiseVariables()
-	{
+	public Pair<Integer, Integer> fixpointInitialiseVariables() {
 		int justInitialised = 0;
 		int notInitialisedYet = 0;
 
@@ -308,34 +293,34 @@ implements	SIL_KettleOperationI
 	}
 
 	@Override
-	public ArrayList<EventI>	output()
-	{
+	public ArrayList<EventI> output() {
 		return null;
 	}
 
 	@Override
-	public Duration		timeAdvance()
-	{
+	public Duration timeAdvance() {
 		return this.integrationStep;
 	}
 
 	@Override
-	public void			userDefinedInternalTransition(Duration elapsedTime)
-	{
+	public void userDefinedInternalTransition(Duration elapsedTime) {
 		double newTemp = this.computeNewTemperature(elapsedTime.getSimulatedDuration());
 		double newDerivative = this.computeDerivatives(newTemp);
 
 		this.currentTemperature.setNewValue(
-						newTemp,
-						newDerivative,
-						new Time(this.getCurrentStateTime().getSimulatedTime(),
-								 this.getSimulatedTimeUnit()));
+				newTemp,
+				newDerivative,
+				new Time(this.getCurrentStateTime().getSimulatedTime(),
+						this.getSimulatedTimeUnit()));
 
 		if (VERBOSE) {
 			String mark = "";
-			if (this.currentState == KettleState.HEATING) mark = " (heating)";
-			else if (this.currentState == KettleState.KEEP_WARM) mark = " (warm)";
-			else mark = " (idle)";
+			if (this.currentState == KettleState.HEATING)
+				mark = " (heating)";
+			else if (this.currentState == KettleState.KEEP_WARM)
+				mark = " (warm)";
+			else
+				mark = " (idle)";
 
 			StringBuffer message = new StringBuffer();
 			message.append(this.currentTemperature.getTime().getSimulatedTime());
@@ -350,13 +335,12 @@ implements	SIL_KettleOperationI
 	}
 
 	@Override
-	public void			userDefinedExternalTransition(Duration elapsedTime)
-	{
+	public void userDefinedExternalTransition(Duration elapsedTime) {
 		ArrayList<EventI> currentEvents = this.getStoredEventAndReset();
-		assert	currentEvents != null && currentEvents.size() == 1;
+		assert currentEvents != null && currentEvents.size() == 1;
 
 		Event ce = (Event) currentEvents.get(0);
-		assert	ce instanceof KettleEventI;
+		assert ce instanceof KettleEventI;
 
 		if (VERBOSE) {
 			StringBuffer sb = new StringBuffer("executing the external event: ");
@@ -374,19 +358,17 @@ implements	SIL_KettleOperationI
 					newTemp,
 					newDerivative,
 					new Time(this.getCurrentStateTime().getSimulatedTime()
-										+ elapsedTime.getSimulatedDuration(),
-							 this.getSimulatedTimeUnit()));
+							+ elapsedTime.getSimulatedDuration(),
+							this.getSimulatedTimeUnit()));
 		}
 
 		super.userDefinedExternalTransition(elapsedTime);
 	}
 
 	@Override
-	public void			endSimulation(Time endTime)
-	{
-		this.meanTemperature =
-				this.temperatureAcc/
-						endTime.subtract(this.start).getSimulatedDuration();
+	public void endSimulation(Time endTime) {
+		this.meanTemperature = this.temperatureAcc /
+				endTime.subtract(this.start).getSimulatedDuration();
 
 		if (VERBOSE) {
 			this.logMessage("simulation ends.");
@@ -398,29 +380,25 @@ implements	SIL_KettleOperationI
 	// Report
 	// -------------------------------------------------------------------------
 
-	public static class		KettleTemperatureReport
-	implements	SimulationReportI, GlobalReportI
-	{
+	public static class KettleTemperatureReport
+			implements SimulationReportI, GlobalReportI {
 		private static final long serialVersionUID = 1L;
-		protected String	modelURI;
-		protected double	meanTemperature;
+		protected String modelURI;
+		protected double meanTemperature;
 
-		public			KettleTemperatureReport(String modelURI, double meanTemperature)
-		{
+		public KettleTemperatureReport(String modelURI, double meanTemperature) {
 			super();
 			this.modelURI = modelURI;
 			this.meanTemperature = meanTemperature;
 		}
 
 		@Override
-		public String	getModelURI()
-		{
+		public String getModelURI() {
 			return this.modelURI;
 		}
 
 		@Override
-		public String	printout(String indent)
-		{
+		public String printout(String indent) {
 			StringBuffer ret = new StringBuffer(indent);
 			ret.append("---\n");
 			ret.append(indent);
@@ -439,8 +417,7 @@ implements	SIL_KettleOperationI
 	}
 
 	@Override
-	public SimulationReportI	getFinalReport()
-	{
+	public SimulationReportI getFinalReport() {
 		return new KettleTemperatureReport(this.getURI(), this.meanTemperature);
 	}
 }
