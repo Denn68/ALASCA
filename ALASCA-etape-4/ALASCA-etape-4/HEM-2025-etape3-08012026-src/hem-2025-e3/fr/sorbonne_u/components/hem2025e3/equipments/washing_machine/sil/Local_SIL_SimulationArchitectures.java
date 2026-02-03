@@ -22,27 +22,19 @@ import fr.sorbonne_u.devs_simulation.models.events.EventSource;
 import fr.sorbonne_u.devs_simulation.models.events.ReexportedEvent;
 import fr.sorbonne_u.exceptions.PreconditionException;
 
-
-public abstract class Local_SIL_SimulationArchitectures
-{
+public abstract class Local_SIL_SimulationArchitectures {
 
 	public static RTArchitecture createWashingMachineSIL_Architecture4UnitTest(
-		String architectureURI,
-		String rootModelURI,
-		TimeUnit simulatedTimeUnit,
-		double accelerationFactor
-		) throws Exception
-	{
-		assert	architectureURI != null && !architectureURI.isEmpty() :
-				new PreconditionException(
-						"architectureURI != null && !architectureURI.isEmpty()");
-		assert	rootModelURI != null && !rootModelURI.isEmpty() :
-				new PreconditionException(
-						"rootModelURI != null && !rootModelURI.isEmpty()");
-		assert	simulatedTimeUnit != null :
-				new PreconditionException("simulatedTimeUnit != null");
-		assert	accelerationFactor > 0.0 :
-				new PreconditionException("accelerationFactor > 0.0");
+			String architectureURI,
+			String rootModelURI,
+			TimeUnit simulatedTimeUnit,
+			double accelerationFactor) throws Exception {
+		assert architectureURI != null && !architectureURI.isEmpty() : new PreconditionException(
+				"architectureURI != null && !architectureURI.isEmpty()");
+		assert rootModelURI != null && !rootModelURI.isEmpty() : new PreconditionException(
+				"rootModelURI != null && !rootModelURI.isEmpty()");
+		assert simulatedTimeUnit != null : new PreconditionException("simulatedTimeUnit != null");
+		assert accelerationFactor > 0.0 : new PreconditionException("accelerationFactor > 0.0");
 
 		Map<String, AbstractAtomicModelDescriptor> atomicModelDescriptors = new HashMap<>();
 
@@ -106,7 +98,8 @@ public abstract class Local_SIL_SimulationArchitectures
 		connections.put(
 				new EventSource(WashingMachineStateSILModel.URI, SetDelayedStart.class),
 				new EventSink[] {
-						new EventSink(WashingMachineElectricitySILModel.URI, SetDelayedStart.class)
+						new EventSink(WashingMachineElectricitySILModel.URI, SetDelayedStart.class),
+						new EventSink(WashingMachineTemperatureSILModel.URI, SetDelayedStart.class)
 				});
 
 		connections.put(
@@ -147,15 +140,9 @@ public abstract class Local_SIL_SimulationArchitectures
 						new EventSink(WashingMachineTemperatureSILModel.URI, StartWashing.class)
 				});
 
+		// Pas de binding de variable - currentHeatingPower n'est plus annotée
+		// avec @ImportedVariable donc pas besoin de binding
 		Map<VariableSource, VariableSink[]> bindings = new HashMap<>();
-
-		bindings.put(
-				new VariableSource("currentHeatingPower", Double.class,
-								   WashingMachineElectricitySILModel.URI),
-				new VariableSink[] {
-						new VariableSink("currentHeatingPower", Double.class,
-										 WashingMachineTemperatureSILModel.URI)
-				});
 
 		coupledModelDescriptors.put(
 				rootModelURI,
@@ -182,22 +169,16 @@ public abstract class Local_SIL_SimulationArchitectures
 	}
 
 	public static RTArchitecture createWashingMachineSIL_LocalArchitecture4IntegrationTest(
-		String architectureURI,
-		String rootModelURI,
-		TimeUnit simulatedTimeUnit,
-		double accelerationFactor
-		) throws Exception
-	{
-		assert	architectureURI != null && !architectureURI.isEmpty() :
-				new PreconditionException(
-						"architectureURI != null && !architectureURI.isEmpty()");
-		assert	rootModelURI != null && !rootModelURI.isEmpty() :
-				new PreconditionException(
-						"rootModelURI != null && !rootModelURI.isEmpty()");
-		assert	simulatedTimeUnit != null :
-				new PreconditionException("simulatedTimeUnit != null");
-		assert	accelerationFactor > 0.0 :
-				new PreconditionException("accelerationFactor > 0.0");
+			String architectureURI,
+			String rootModelURI,
+			TimeUnit simulatedTimeUnit,
+			double accelerationFactor) throws Exception {
+		assert architectureURI != null && !architectureURI.isEmpty() : new PreconditionException(
+				"architectureURI != null && !architectureURI.isEmpty()");
+		assert rootModelURI != null && !rootModelURI.isEmpty() : new PreconditionException(
+				"rootModelURI != null && !rootModelURI.isEmpty()");
+		assert simulatedTimeUnit != null : new PreconditionException("simulatedTimeUnit != null");
+		assert accelerationFactor > 0.0 : new PreconditionException("accelerationFactor > 0.0");
 
 		Map<String, AbstractAtomicModelDescriptor> atomicModelDescriptors = new HashMap<>();
 
@@ -230,35 +211,31 @@ public abstract class Local_SIL_SimulationArchitectures
 		reexported.put(
 				SwitchOnWashingMachine.class,
 				new ReexportedEvent(WashingMachineStateSILModel.URI,
-									SwitchOnWashingMachine.class));
+						SwitchOnWashingMachine.class));
 		reexported.put(
 				SwitchOffWashingMachine.class,
 				new ReexportedEvent(WashingMachineStateSILModel.URI,
-									SwitchOffWashingMachine.class));
+						SwitchOffWashingMachine.class));
 		reexported.put(
 				StartWashing.class,
 				new ReexportedEvent(WashingMachineStateSILModel.URI,
-									StartWashing.class));
+						StartWashing.class));
 		reexported.put(
 				SetDelayedStart.class,
 				new ReexportedEvent(WashingMachineStateSILModel.URI,
-									SetDelayedStart.class));
+						SetDelayedStart.class));
 		reexported.put(
 				SuspendWashing.class,
 				new ReexportedEvent(WashingMachineStateSILModel.URI,
-									SuspendWashing.class));
+						SuspendWashing.class));
 		reexported.put(
 				ResumeWashing.class,
 				new ReexportedEvent(WashingMachineStateSILModel.URI,
-									ResumeWashing.class));
+						ResumeWashing.class));
 		reexported.put(
 				SetPowerWashingMachine.class,
 				new ReexportedEvent(WashingMachineStateSILModel.URI,
-									SetPowerWashingMachine.class));
-		reexported.put(
-				HeatingFinished.class,
-				new ReexportedEvent(WashingMachineTemperatureSILModel.URI,
-									HeatingFinished.class));
+						SetPowerWashingMachine.class));
 
 		Map<EventSource, EventSink[]> connections = new HashMap<>();
 

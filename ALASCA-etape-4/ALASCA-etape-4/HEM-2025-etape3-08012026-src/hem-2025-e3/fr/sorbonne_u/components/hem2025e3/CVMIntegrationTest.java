@@ -32,6 +32,8 @@ package fr.sorbonne_u.components.hem2025e3;
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
+import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasurementUnit;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.cyphy.ExecutionMode;
 import fr.sorbonne_u.components.cyphy.utils.aclocks.ClocksServerWithSimulation;
@@ -74,6 +76,11 @@ import fr.sorbonne_u.components.hem2025e3.equipments.meter.sil.ElectricMeterElec
 import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.SolarPanelCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.sil.SolarPanelPowerSILModel;
 import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.sil.SolarPanelStateSILModel;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMachineCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMachineTesterCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMachineController;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.sil.WashingMachineElectricitySILModel;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.sil.WashingMachineTemperatureSILModel;
 import fr.sorbonne_u.components.utils.tests.TestScenario;
 import fr.sorbonne_u.components.utils.tests.TestStep;
 import fr.sorbonne_u.components.utils.tests.TestStepI;
@@ -95,73 +102,96 @@ import fr.sorbonne_u.components.AbstractComponent;
  * The class <code>CVMIntegrationTest</code> defines the integration test
  * for the household energy management example.
  *
- * <p><strong>Description</strong></p>
+ * <p>
+ * <strong>Description</strong>
+ * </p>
  * 
- * <p><strong>Implementation Invariants</strong></p>
- * 
- * <pre>
- * invariant	{@code true}	// no more invariant
- * </pre>
- * 
- * <p><strong>Invariants</strong></p>
+ * <p>
+ * <strong>Implementation Invariants</strong>
+ * </p>
  * 
  * <pre>
- * invariant	{@code CLOCK_URI != null && !CLOCK_URI.isEmpty()}
- * invariant	{@code DELAY_TO_START_IN_MILLIS >= 0}
- * invariant	{@code ACCELERATION_FACTOR > 0.0}
- * invariant	{@code START_INSTANT != null}
+ * invariant	{@code
+ * true
+ * }	// no more invariant
  * </pre>
  * 
- * <p>Created on : 2021-09-10</p>
+ * <p>
+ * <strong>Invariants</strong>
+ * </p>
  * 
- * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ * <pre>
+ * invariant	{@code
+ * CLOCK_URI != null && !CLOCK_URI.isEmpty()
+ * }
+ * invariant	{@code
+ * DELAY_TO_START_IN_MILLIS >= 0
+ * }
+ * invariant	{@code
+ * ACCELERATION_FACTOR > 0.0
+ * }
+ * invariant	{@code
+ * START_INSTANT != null
+ * }
+ * </pre>
+ * 
+ * <p>
+ * Created on : 2021-09-10
+ * </p>
+ * 
+ * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public class			CVMIntegrationTest
-extends		AbstractCVM
-{
-	/** delay before starting the test scenarios, leaving time to build
-	 *  and initialise the components and their simulators; this delay is
-	 *  estimated given the complexity of the initialisation (including the
-	 *  creation of the application simulator if simulation is used). It
-	 *  could need to be revised if the computer on which the application
-	 *  is run is less powerful.											*/
-	public static long			DELAY_TO_START = 5000L;
-	/** duration of the sleep at the end of the execution before exiting
-	 *  the JVM.															*/
-	public static long			END_SLEEP_DURATION = 10000000L;
+public class CVMIntegrationTest
+		extends AbstractCVM {
+	/**
+	 * delay before starting the test scenarios, leaving time to build
+	 * and initialise the components and their simulators; this delay is
+	 * estimated given the complexity of the initialisation (including the
+	 * creation of the application simulator if simulation is used). It
+	 * could need to be revised if the computer on which the application
+	 * is run is less powerful.
+	 */
+	public static long DELAY_TO_START = 5000L;
+	/**
+	 * duration of the sleep at the end of the execution before exiting
+	 * the JVM.
+	 */
+	public static long END_SLEEP_DURATION = 10000000L;
 
-	/** time unit in which {@code SIMULATION_DURATION} is expressed.		*/
-	public static TimeUnit		SIMULATION_TIME_UNIT = TimeUnit.HOURS;
-	/** start time of the simulation, in simulated logical time, if
-	 *  relevant.															*/
-	public static Time 			SIMULATION_START_TIME =
-										new Time(0.0, SIMULATION_TIME_UNIT);
-	/** duration  of the simulation, in simulated time.						*/
-	public static Duration		SIMULATION_DURATION =
-										new Duration(6.0, SIMULATION_TIME_UNIT);
-	/** for real time simulations, the acceleration factor applied to the
-	 *  the simulated time to get the execution time of the simulations. 	*/
-	public static double		ACCELERATION_FACTOR = 360.0;
-	/** duration of the execution.											*/
-	public static long			EXECUTION_DURATION =
-			DELAY_TO_START +
-				TimeUnit.NANOSECONDS.toMillis(
-						TimeUtils.toNanos(
-								SIMULATION_DURATION.getSimulatedDuration()/
-													ACCELERATION_FACTOR,
-								SIMULATION_DURATION.getTimeUnit()));
+	/** time unit in which {@code SIMULATION_DURATION} is expressed. */
+	public static TimeUnit SIMULATION_TIME_UNIT = TimeUnit.HOURS;
+	/**
+	 * start time of the simulation, in simulated logical time, if
+	 * relevant.
+	 */
+	public static Time SIMULATION_START_TIME = new Time(0.0, SIMULATION_TIME_UNIT);
+	/** duration of the simulation, in simulated time. */
+	public static Duration SIMULATION_DURATION = new Duration(6.0, SIMULATION_TIME_UNIT);
+	/**
+	 * for real time simulations, the acceleration factor applied to the
+	 * the simulated time to get the execution time of the simulations.
+	 */
+	public static double ACCELERATION_FACTOR = 360.0;
+	/** duration of the execution. */
+	public static long EXECUTION_DURATION = DELAY_TO_START +
+			TimeUnit.NANOSECONDS.toMillis(
+					TimeUtils.toNanos(
+							SIMULATION_DURATION.getSimulatedDuration() /
+									ACCELERATION_FACTOR,
+							SIMULATION_DURATION.getTimeUnit()));
 
-	public static ExecutionMode	GLOBAL_EXECUTION_MODE =
-//						ExecutionMode.INTEGRATION_TEST;
-						ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION;
+	public static ExecutionMode GLOBAL_EXECUTION_MODE =
+			// ExecutionMode.INTEGRATION_TEST;
+			ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION;
 
-	/** for unit tests and SIL simulation unit tests, a {@code Clock} is
-	 *  used to get a time-triggered synchronisation of the actions of
-	 *  the components in the test scenarios.								*/
-	public static String		CLOCK_URI = "integration-test-clock";
-	/** start instant in test scenarios, as a string to be parsed.			*/
-	public static Instant		START_INSTANT =
-									Instant.parse("2025-12-02T06:00:00.00Z");
+	/**
+	 * for unit tests and SIL simulation unit tests, a {@code Clock} is
+	 * used to get a time-triggered synchronisation of the actions of
+	 * the components in the test scenarios.
+	 */
+	public static String CLOCK_URI = "integration-test-clock";
+	/** start instant in test scenarios, as a string to be parsed. */
+	public static Instant START_INSTANT = Instant.parse("2025-12-02T06:00:00.00Z");
 
 	// -------------------------------------------------------------------------
 	// Invariants
@@ -170,19 +200,24 @@ extends		AbstractCVM
 	/**
 	 * return true if the implementation invariants are observed, false otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code cvm != null}
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * cvm != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param cvm	instance to be tested.
-	 * @return		true if the implementation invariants are observed, false otherwise.
+	 * @param cvm instance to be tested.
+	 * @return true if the implementation invariants are observed, false otherwise.
 	 */
-	protected static boolean	implementationInvariants(CVMIntegrationTest cvm)
-	{
-		assert	cvm != null : new PreconditionException("cvm != null");
+	protected static boolean implementationInvariants(CVMIntegrationTest cvm) {
+		assert cvm != null : new PreconditionException("cvm != null");
 
 		boolean ret = true;
 		return ret;
@@ -191,16 +226,19 @@ extends		AbstractCVM
 	/**
 	 * return true if the static invariants are observed, false otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * post	{@code true}	// no postcondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @return	true if the static invariants are observed, false otherwise.
+	 * @return true if the static invariants are observed, false otherwise.
 	 */
-	public static boolean	staticInvariants()
-	{
+	public static boolean staticInvariants() {
 		boolean ret = true;
 		ret &= AssertionChecking.checkStaticInvariant(
 				CLOCK_URI != null && !CLOCK_URI.isEmpty(),
@@ -224,19 +262,24 @@ extends		AbstractCVM
 	/**
 	 * return true if the invariants are observed, false otherwise.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code cvm != null}
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * cvm != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param cvm	instance to be tested.
-	 * @return	true if the invariants are observed, false otherwise.
+	 * @param cvm instance to be tested.
+	 * @return true if the invariants are observed, false otherwise.
 	 */
-	protected static boolean	invariants(CVMIntegrationTest cvm)
-	{
-		assert	cvm != null : new PreconditionException("cvm != null");
+	protected static boolean invariants(CVMIntegrationTest cvm) {
+		assert cvm != null : new PreconditionException("cvm != null");
 
 		boolean ret = true;
 		ret &= staticInvariants();
@@ -247,8 +290,7 @@ extends		AbstractCVM
 	// Constructors
 	// -------------------------------------------------------------------------
 
-	public				CVMIntegrationTest() throws Exception
-	{
+	public CVMIntegrationTest() throws Exception {
 		// Trace and trace window positions
 		ClocksServer.VERBOSE = true;
 		ClocksServer.X_RELATIVE_POSITION = 0;
@@ -284,275 +326,335 @@ extends		AbstractCVM
 		HeaterController.X_RELATIVE_POSITION = 2;
 		HeaterController.Y_RELATIVE_POSITION = 3;
 
-		BatteriesStateSILModel.VERBOSE = 			false;
-		BatteriesStateSILModel.DEBUG = 				false;
-		BatteriesPowerSILModel.VERBOSE = 			false;
-		BatteriesPowerSILModel.DEBUG = 				false;
-		GeneratorStateSILModel.VERBOSE = 			false;
-		GeneratorStateSILModel.DEBUG = 				false;
-		GeneratorFuelSILModel.VERBOSE = 			false;
-		GeneratorFuelSILModel.DEBUG = 				false;
-		GeneratorPowerSILModel.VERBOSE = 			false;
-		GeneratorPowerSILModel.DEBUG = 				false;
-		HairDryerElectricitySILModel.VERBOSE = 		false;
-		HairDryerElectricitySILModel.DEBUG = 		false;
-		HairDryerStateSILModel.VERBOSE = 			false;
-		HairDryerStateSILModel.DEBUG = 				false;
-		HeaterStateSILModel.VERBOSE = 				false;
-		HeaterStateSILModel.DEBUG = 				false;
-		HeaterElectricitySILModel.VERBOSE = 		false;
-		HeaterElectricitySILModel.DEBUG = 			false;
-		HeaterTemperatureSILModel.VERBOSE = 		false;
-		HeaterTemperatureSILModel.DEBUG = 			false;
-		ExternalTemperatureSILModel.VERBOSE = 		false;
-		ExternalTemperatureSILModel.DEBUG = 		false;
-		ElectricMeterElectricitySILModel.VERBOSE = 	false;
-		ElectricMeterElectricitySILModel.DEBUG = 			true;
-		DeterministicSunRiseAndSetModel.VERBOSE = 	false;
-		DeterministicSunRiseAndSetModel.DEBUG = 	false;
-		DeterministicSunIntensityModel.VERBOSE = 	false;
-		DeterministicSunIntensityModel.DEBUG = 		false;
-		SolarPanelStateSILModel.VERBOSE = 			false;
-		SolarPanelStateSILModel.DEBUG = 			false;
-		SolarPanelPowerSILModel.VERBOSE = 			false;
-		SolarPanelPowerSILModel.DEBUG = 			false;
+		// WashingMachine configuration
+		WashingMachineTesterCyPhy.VERBOSE = true;
+		WashingMachineTesterCyPhy.X_RELATIVE_POSITION = 0;
+		WashingMachineTesterCyPhy.Y_RELATIVE_POSITION = 4;
+		WashingMachineCyPhy.VERBOSE = true;
+		WashingMachineCyPhy.X_RELATIVE_POSITION = 1;
+		WashingMachineCyPhy.Y_RELATIVE_POSITION = 4;
+		WashingMachineController.VERBOSE = true;
+		WashingMachineController.X_RELATIVE_POSITION = 2;
+		WashingMachineController.Y_RELATIVE_POSITION = 4;
 
-		assert	CVMIntegrationTest.implementationInvariants(this) :
-				new InvariantException(
-						"CVMIntegrationTest.glassBoxInvariants(this)");
-		assert	CVMIntegrationTest.invariants(this) :
-				new InvariantException(
-						"CVMIntegrationTest.blackBoxInvariants(this)");
+		BatteriesStateSILModel.VERBOSE = false;
+		BatteriesStateSILModel.DEBUG = false;
+		BatteriesPowerSILModel.VERBOSE = false;
+		BatteriesPowerSILModel.DEBUG = false;
+		GeneratorStateSILModel.VERBOSE = false;
+		GeneratorStateSILModel.DEBUG = false;
+		GeneratorFuelSILModel.VERBOSE = false;
+		GeneratorFuelSILModel.DEBUG = false;
+		GeneratorPowerSILModel.VERBOSE = false;
+		GeneratorPowerSILModel.DEBUG = false;
+		HairDryerElectricitySILModel.VERBOSE = false;
+		HairDryerElectricitySILModel.DEBUG = false;
+		HairDryerStateSILModel.VERBOSE = false;
+		HairDryerStateSILModel.DEBUG = false;
+		HeaterStateSILModel.VERBOSE = false;
+		HeaterStateSILModel.DEBUG = false;
+		HeaterElectricitySILModel.VERBOSE = false;
+		HeaterElectricitySILModel.DEBUG = false;
+		HeaterTemperatureSILModel.VERBOSE = false;
+		HeaterTemperatureSILModel.DEBUG = false;
+		ExternalTemperatureSILModel.VERBOSE = false;
+		ExternalTemperatureSILModel.DEBUG = false;
+		ElectricMeterElectricitySILModel.VERBOSE = false;
+		ElectricMeterElectricitySILModel.DEBUG = true;
+		DeterministicSunRiseAndSetModel.VERBOSE = false;
+		DeterministicSunRiseAndSetModel.DEBUG = false;
+		DeterministicSunIntensityModel.VERBOSE = false;
+		DeterministicSunIntensityModel.DEBUG = false;
+		SolarPanelStateSILModel.VERBOSE = false;
+		SolarPanelStateSILModel.DEBUG = false;
+		SolarPanelPowerSILModel.VERBOSE = false;
+		SolarPanelPowerSILModel.DEBUG = false;
+		// WashingMachine SIL models
+		WashingMachineElectricitySILModel.VERBOSE = false;
+		WashingMachineTemperatureSILModel.VERBOSE = false;
+
+		assert CVMIntegrationTest.implementationInvariants(this) : new InvariantException(
+				"CVMIntegrationTest.glassBoxInvariants(this)");
+		assert CVMIntegrationTest.invariants(this) : new InvariantException(
+				"CVMIntegrationTest.blackBoxInvariants(this)");
 	}
 
 	/**
 	 * @see fr.sorbonne_u.components.cvm.AbstractCVM#deploy()
 	 */
 	@Override
-	public void			deploy() throws Exception
-	{
+	public void deploy() throws Exception {
 		TestScenario testScenario;
 
 		if (ExecutionMode.INTEGRATION_TEST.equals(GLOBAL_EXECUTION_MODE)) {
 
 			testScenario = integrationWithoutSimulation();
 			// start time in Unix epoch time in nanoseconds.
-			long unixEpochStartTimeInMillis = 
-								System.currentTimeMillis() + DELAY_TO_START;
+			long unixEpochStartTimeInMillis = System.currentTimeMillis() + DELAY_TO_START;
 
 			AbstractComponent.createComponent(
-				ClocksServer.class.getCanonicalName(),
-				new Object[]{
-					// URI of the clock to retrieve it
-					CLOCK_URI,
-					// start time in Unix epoch time
-					TimeUnit.MILLISECONDS.toNanos(unixEpochStartTimeInMillis),
-					START_INSTANT,
-					ACCELERATION_FACTOR});
+					ClocksServer.class.getCanonicalName(),
+					new Object[] {
+							// URI of the clock to retrieve it
+							CLOCK_URI,
+							// start time in Unix epoch time
+							TimeUnit.MILLISECONDS.toNanos(unixEpochStartTimeInMillis),
+							START_INSTANT,
+							ACCELERATION_FACTOR });
 
 			AbstractComponent.createComponent(
-				ElectricMeterCyPhy.class.getCanonicalName(),
-				new Object[]{
-					ExecutionMode.INTEGRATION_TEST,
-					CLOCK_URI
-				});
+					ElectricMeterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							ExecutionMode.INTEGRATION_TEST,
+							CLOCK_URI
+					});
 
 			AbstractComponent.createComponent(
-				BatteriesCyPhy.class.getCanonicalName(),
-				new Object[]{
-					BatteriesSimulationConfiguration.NUMBER_OF_PARALLEL_CELLS,
-					BatteriesSimulationConfiguration.
-											NUMBER_OF_CELL_GROUPS_IN_SERIES,
-					ExecutionMode.INTEGRATION_TEST,
-					CLOCK_URI
-				});
+					BatteriesCyPhy.class.getCanonicalName(),
+					new Object[] {
+							BatteriesSimulationConfiguration.NUMBER_OF_PARALLEL_CELLS,
+							BatteriesSimulationConfiguration.NUMBER_OF_CELL_GROUPS_IN_SERIES,
+							ExecutionMode.INTEGRATION_TEST,
+							CLOCK_URI
+					});
 
 			AbstractComponent.createComponent(
-				SolarPanelCyPhy.class.getCanonicalName(),
-				new Object[]{SolarPanelSimulationConfigurationI.NB_SQUARE_METERS});
+					SolarPanelCyPhy.class.getCanonicalName(),
+					new Object[] { SolarPanelSimulationConfigurationI.NB_SQUARE_METERS });
 
 			AbstractComponent.createComponent(
-				GeneratorCyPhy.class.getCanonicalName(),
-				new Object[]{
-					ExecutionMode.INTEGRATION_TEST,
-					CLOCK_URI
-				});
+					GeneratorCyPhy.class.getCanonicalName(),
+					new Object[] {
+							ExecutionMode.INTEGRATION_TEST,
+							CLOCK_URI
+					});
 
 			AbstractComponent.createComponent(
-				HairDryerCyPhy.class.getCanonicalName(),
-				new Object[]{ExecutionMode.INTEGRATION_TEST});
+					HairDryerCyPhy.class.getCanonicalName(),
+					new Object[] { ExecutionMode.INTEGRATION_TEST });
 			AbstractComponent.createComponent(
-				HairDryerTesterCyPhy.class.getCanonicalName(),
-				new Object[]{
-						HairDryerCyPhy.INBOUND_PORT_URI,
-						ExecutionMode.INTEGRATION_TEST,
-						testScenario
-				});
+					HairDryerTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							HairDryerCyPhy.INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
 
 			AbstractComponent.createComponent(
-				HeaterCyPhy.class.getCanonicalName(),
-				new Object[]{
-						ExecutionMode.INTEGRATION_TEST,
-						testScenario.getClockURI()
-				});
+					HeaterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario.getClockURI()
+					});
 			AbstractComponent.createComponent(
-				HeaterTesterCyPhy.class.getCanonicalName(),
-				new Object[]{
-						HeaterCyPhy.USER_INBOUND_PORT_URI,
-						HeaterCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
-						HeaterCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-						ExecutionMode.INTEGRATION_TEST,
-						testScenario
-				});
+					HeaterTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							HeaterCyPhy.USER_INBOUND_PORT_URI,
+							HeaterCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							HeaterCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
+
+			// WashingMachine components
+			AbstractComponent.createComponent(
+					WashingMachineCyPhy.class.getCanonicalName(),
+					new Object[] {});
+			AbstractComponent.createComponent(
+					WashingMachineController.class.getCanonicalName(),
+					new Object[] {
+							WashingMachineCyPhy.SENSOR_INBOUND_PORT_URI,
+							WashingMachineCyPhy.ACTUATOR_INBOUND_PORT_URI
+					});
+			AbstractComponent.createComponent(
+					WashingMachineTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							WashingMachineCyPhy.USER_INBOUND_PORT_URI,
+							WashingMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
 
 			AbstractComponent.createComponent(
-				HEMCyPhy.class.getCanonicalName(),
-				new Object[]{
-						ExecutionMode.INTEGRATION_TEST,
-						testScenario
-				});
+					HEMCyPhy.class.getCanonicalName(),
+					new Object[] {
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
 
 		} else if (ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION.equals(
-													GLOBAL_EXECUTION_MODE)) {
+				GLOBAL_EXECUTION_MODE)) {
 
 			testScenario = integrationWithSimulation();
 			// start time in Unix epoch time in nanoseconds.
-			long unixEpochStartTimeInMillis = 
-								System.currentTimeMillis() + DELAY_TO_START;
+			long unixEpochStartTimeInMillis = System.currentTimeMillis() + DELAY_TO_START;
 
 			AbstractComponent.createComponent(
-				ClocksServerWithSimulation.class.getCanonicalName(),
-				new Object[]{
-						// URI of the clock to retrieve it
-						CLOCK_URI,
-						// start time in Unix epoch time
-						TimeUnit.MILLISECONDS.toNanos(
-										 		unixEpochStartTimeInMillis),
-						START_INSTANT,
-						ACCELERATION_FACTOR,
-						DELAY_TO_START,
-						SIMULATION_START_TIME,
-						SIMULATION_DURATION});
+					ClocksServerWithSimulation.class.getCanonicalName(),
+					new Object[] {
+							// URI of the clock to retrieve it
+							CLOCK_URI,
+							// start time in Unix epoch time
+							TimeUnit.MILLISECONDS.toNanos(
+									unixEpochStartTimeInMillis),
+							START_INSTANT,
+							ACCELERATION_FACTOR,
+							DELAY_TO_START,
+							SIMULATION_START_TIME,
+							SIMULATION_DURATION });
 
 			AbstractComponent.createComponent(
-				GlobalSupervisor.class.getCanonicalName(),
-				new Object[]{
-						testScenario,
-						GlobalSupervisor.SIL_SIM_ARCHITECTURE_URI
-				});
+					GlobalSupervisor.class.getCanonicalName(),
+					new Object[] {
+							testScenario,
+							GlobalSupervisor.SIL_SIM_ARCHITECTURE_URI
+					});
 			AbstractComponent.createComponent(
 					CoordinatorComponent.class.getCanonicalName(),
-					new Object[]{});
-
-
-			AbstractComponent.createComponent(
-				HEMCyPhy.class.getCanonicalName(),
-				new Object[]{
-						ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-						testScenario
-				});
-			AbstractComponent.createComponent(
-				ElectricMeterCyPhy.class.getCanonicalName(),
-				new Object[]{
-						ElectricMeterCyPhy.REFLECTION_INBOUND_PORT_URI,
-						ElectricMeterCyPhy.ELECTRIC_METER_INBOUND_PORT_URI,
-						ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-						testScenario,
-						ElectricMeterCyPhy.LOCAL_ARCHITECTURE_URI,
-						ACCELERATION_FACTOR
-				});
+					new Object[] {});
 
 			AbstractComponent.createComponent(
-				BatteriesCyPhy.class.getCanonicalName(),
-				new Object[]{
-						BatteriesCyPhy.REFLECTION_INBOUND_PORT_URI,
-						BatteriesCyPhy.STANDARD_INBOUND_PORT_URI,
-						BatteriesSimulationConfiguration.
-												NUMBER_OF_PARALLEL_CELLS,
-						BatteriesSimulationConfiguration.
-												NUMBER_OF_CELL_GROUPS_IN_SERIES,
-						ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-						testScenario,
-						BatteriesCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
-						ACCELERATION_FACTOR});
+					HEMCyPhy.class.getCanonicalName(),
+					new Object[] {
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario
+					});
+			AbstractComponent.createComponent(
+					ElectricMeterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							ElectricMeterCyPhy.REFLECTION_INBOUND_PORT_URI,
+							ElectricMeterCyPhy.ELECTRIC_METER_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							ElectricMeterCyPhy.LOCAL_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
 
 			AbstractComponent.createComponent(
-				SolarPanelCyPhy.class.getCanonicalName(),
-				new Object[]{
-						SolarPanelCyPhy.REFLECTION_INBOUND_PORT_URI,
-						SolarPanelCyPhy.STANDARD_INBOUND_PORT_URI,
-						SolarPanelSimulationConfigurationI.NB_SQUARE_METERS,
-						ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-						testScenario,
-						BatteriesCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
-						ACCELERATION_FACTOR
-				});
+					BatteriesCyPhy.class.getCanonicalName(),
+					new Object[] {
+							BatteriesCyPhy.REFLECTION_INBOUND_PORT_URI,
+							BatteriesCyPhy.STANDARD_INBOUND_PORT_URI,
+							BatteriesSimulationConfiguration.NUMBER_OF_PARALLEL_CELLS,
+							BatteriesSimulationConfiguration.NUMBER_OF_CELL_GROUPS_IN_SERIES,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							BatteriesCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR });
 
 			AbstractComponent.createComponent(
-				GeneratorCyPhy.class.getCanonicalName(),
-				new Object[]{
-						GeneratorCyPhy.STANDARD_INBOUND_PORT_URI,
-						GeneratorCyPhy.MAX_POWER,
-						GeneratorCyPhy.TANK_CAPACITY,
-						GeneratorCyPhy.MIN_FUEL_CONSUMPTION,
-						GeneratorCyPhy.MAX_FUEL_CONSUMPTION,
-						ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-						testScenario,
-						GeneratorCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
-						ACCELERATION_FACTOR});
+					SolarPanelCyPhy.class.getCanonicalName(),
+					new Object[] {
+							SolarPanelCyPhy.REFLECTION_INBOUND_PORT_URI,
+							SolarPanelCyPhy.STANDARD_INBOUND_PORT_URI,
+							SolarPanelSimulationConfigurationI.NB_SQUARE_METERS,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							BatteriesCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
 
 			AbstractComponent.createComponent(
-				HairDryerCyPhy.class.getCanonicalName(),
-				new Object[]{
-						HairDryerCyPhy.REFLECTION_INBOUND_PORT_URI,
-						HairDryerCyPhy.INBOUND_PORT_URI,
-						ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-						testScenario,
-						HairDryerCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
-						ACCELERATION_FACTOR
-				});
-			AbstractComponent.createComponent(
-				HairDryerTesterCyPhy.class.getCanonicalName(),
-				new Object[]{
-						HairDryerCyPhy.INBOUND_PORT_URI,
-						ExecutionMode.INTEGRATION_TEST,
-						testScenario
-				});
+					GeneratorCyPhy.class.getCanonicalName(),
+					new Object[] {
+							GeneratorCyPhy.STANDARD_INBOUND_PORT_URI,
+							GeneratorCyPhy.MAX_POWER,
+							GeneratorCyPhy.TANK_CAPACITY,
+							GeneratorCyPhy.MIN_FUEL_CONSUMPTION,
+							GeneratorCyPhy.MAX_FUEL_CONSUMPTION,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							GeneratorCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR });
 
 			AbstractComponent.createComponent(
-				HeaterCyPhy.class.getCanonicalName(),
-				new Object[]{
-						HeaterCyPhy.REFLECTION_INBOUND_PORT_URI,
-						HeaterCyPhy.USER_INBOUND_PORT_URI,
-						HeaterCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
-						HeaterCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-						HeaterCyPhy.SENSOR_INBOUND_PORT_URI,
-						HeaterCyPhy.ACTUATOR_INBOUND_PORT_URI,
-						ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-						testScenario,
-						HeaterCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
-						ACCELERATION_FACTOR
-				});
+					HairDryerCyPhy.class.getCanonicalName(),
+					new Object[] {
+							HairDryerCyPhy.REFLECTION_INBOUND_PORT_URI,
+							HairDryerCyPhy.INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							HairDryerCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
 			AbstractComponent.createComponent(
-				HeaterController.class.getCanonicalName(),
-				new Object[]{
-						HeaterCyPhy.SENSOR_INBOUND_PORT_URI,
-						HeaterCyPhy.ACTUATOR_INBOUND_PORT_URI,
-						HeaterController.STANDARD_HYSTERESIS,
-						HeaterController.STANDARD_CONTROL_PERIOD,
-						ControlMode.PULL,
-						ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-						ACCELERATION_FACTOR
-				});
+					HairDryerTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							HairDryerCyPhy.INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
+
 			AbstractComponent.createComponent(
-				HeaterTesterCyPhy.class.getCanonicalName(),
-				new Object[]{
-						HeaterCyPhy.USER_INBOUND_PORT_URI,
-						HeaterCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
-						HeaterCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-						ExecutionMode.INTEGRATION_TEST,
-						testScenario
-				});
+					HeaterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							HeaterCyPhy.REFLECTION_INBOUND_PORT_URI,
+							HeaterCyPhy.USER_INBOUND_PORT_URI,
+							HeaterCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							HeaterCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							HeaterCyPhy.SENSOR_INBOUND_PORT_URI,
+							HeaterCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							HeaterCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					HeaterController.class.getCanonicalName(),
+					new Object[] {
+							HeaterCyPhy.SENSOR_INBOUND_PORT_URI,
+							HeaterCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							HeaterController.STANDARD_HYSTERESIS,
+							HeaterController.STANDARD_CONTROL_PERIOD,
+							ControlMode.PULL,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					HeaterTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							HeaterCyPhy.USER_INBOUND_PORT_URI,
+							HeaterCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							HeaterCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
+
+			// WashingMachine components
+			AbstractComponent.createComponent(
+					WashingMachineCyPhy.class.getCanonicalName(),
+					new Object[] {
+							WashingMachineCyPhy.REFLECTION_INBOUND_PORT_URI,
+							WashingMachineCyPhy.USER_INBOUND_PORT_URI,
+							WashingMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							WashingMachineCyPhy.SENSOR_INBOUND_PORT_URI,
+							WashingMachineCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							WashingMachineCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					WashingMachineController.class.getCanonicalName(),
+					new Object[] {
+							WashingMachineCyPhy.SENSOR_INBOUND_PORT_URI,
+							WashingMachineCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							WashingMachineController.STANDARD_CONTROL_PERIOD,
+							WashingMachineController.ControlMode.PULL,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					WashingMachineTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							WashingMachineCyPhy.USER_INBOUND_PORT_URI,
+							WashingMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
 
 		}
 
@@ -563,8 +665,7 @@ extends		AbstractCVM
 	// Executing
 	// -------------------------------------------------------------------------
 
-	public static void	main(String[] args)
-	{
+	public static void main(String[] args) {
 		VerboseException.VERBOSE = true;
 		VerboseException.PRINT_STACK_TRACE = true;
 		try {
@@ -585,27 +686,32 @@ extends		AbstractCVM
 	 * return a test scenario for the integration testing without simulation of
 	 * the HEM application.
 	 * 
-	 * <p><strong>Description</strong></p>
+	 * <p>
+	 * <strong>Description</strong>
+	 * </p>
 	 * 
 	 * <p>
 	 * 
 	 * </p>
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
 	 * post	{@code return != null}
 	 * </pre>
 	 *
-	 * @return				a test scenario for the integration testing of the HEM application.
-	 * @throws Exception	<i>to do</i>.
+	 * @return a test scenario for the integration testing of the HEM application.
+	 * @throws Exception <i>to do</i>.
 	 */
-	public static TestScenario	integrationWithoutSimulation()
-	throws Exception
-	{
+	public static TestScenario integrationWithoutSimulation()
+			throws Exception {
 		long d = TimeUnit.NANOSECONDS.toSeconds(
-							TimeUtils.toNanos(SIMULATION_DURATION));
+				TimeUtils.toNanos(SIMULATION_DURATION));
 		Instant endInstant = START_INSTANT.plusSeconds(d);
 
 		Instant heaterSwitchOn = START_INSTANT.plusSeconds(60);
@@ -614,6 +720,11 @@ extends		AbstractCVM
 		Instant hemTestBatteries = START_INSTANT.plusSeconds(180);
 		Instant hemTestSolarPanel = START_INSTANT.plusSeconds(240);
 		Instant hemTestGenerator = START_INSTANT.plusSeconds(300);
+
+		// WashingMachine test instants
+		Instant washingMachineSwitchOn = START_INSTANT.plusSeconds(360);
+		Instant washingMachineStartWashing = START_INSTANT.plusSeconds(420);
+		Instant washingMachineSwitchOff = START_INSTANT.plusSeconds(540);
 
 		Instant hairDryerTurnOn = START_INSTANT.plusSeconds(600);
 		Instant hairDryerSetHigh = START_INSTANT.plusSeconds(660);
@@ -625,590 +736,667 @@ extends		AbstractCVM
 		Instant heaterSwitchOff = START_INSTANT.plusSeconds(d - 60);
 
 		return new TestScenario(
-			CLOCK_URI,
-			START_INSTANT,
-			endInstant,
-			new TestStepI[] {
-				new TestStep(
-					CLOCK_URI,
-					HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					heaterSwitchOn,
-					owner ->  {
-						try {
-							((HeaterTesterCyPhy)owner).getHop().switchOn();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+				CLOCK_URI,
+				START_INSTANT,
+				endInstant,
+				new TestStepI[] {
+						new TestStep(
+								CLOCK_URI,
+								HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								heaterSwitchOn,
+								owner -> {
+									try {
+										((HeaterTesterCyPhy) owner).getHop().switchOn();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				// HEM test the meter
-				new TestStep(
-					CLOCK_URI,
-					HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hemTestMeter,
-					owner ->  {
-						try {
-							((HEMCyPhy)owner).testMeter();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
-				// HEM test the batteries
-				new TestStep(
-					CLOCK_URI,
-					HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hemTestBatteries,
-					owner ->  {
-						try {
-							((HEMCyPhy)owner).testBatteries();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
-				// HEM test the solar panel
-				new TestStep(
-					CLOCK_URI,
-					HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hemTestSolarPanel,
-					owner ->  {
-						try {
-							((HEMCyPhy)owner).testSolarPanel();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
-				// HEM test the generator
-				new TestStep(
-					CLOCK_URI,
-					HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hemTestGenerator,
-					owner ->  {
-						try {
-							((HEMCyPhy)owner).testGenerator();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						// HEM test the meter
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hemTestMeter,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testMeter();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// HEM test the batteries
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hemTestBatteries,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testBatteries();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// HEM test the solar panel
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hemTestSolarPanel,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testSolarPanel();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// HEM test the generator
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hemTestGenerator,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testGenerator();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				// Hair dryer test steps
-				new TestStep(
-					CLOCK_URI,
-					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hairDryerTurnOn,
-					owner ->  {
-						try {
-							((HairDryerTesterCyPhy)owner).turnOnHairDryer();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
-				new TestStep(
-					CLOCK_URI,
-					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hairDryerSetHigh,
-					owner ->  {
-						try {
-							((HairDryerTesterCyPhy)owner).setHighHairDryer();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
-				new TestStep(
-					CLOCK_URI,
-					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hairDryerSetLow,
-					owner ->  {
-						try {
-							((HairDryerTesterCyPhy)owner).setLowHairDryer();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
-				new TestStep(
-					CLOCK_URI,
-					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hairDryerTurnOff,
-					owner ->  {
-						try {
-							((HairDryerTesterCyPhy)owner).turnOffHairDryer();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						// WashingMachine test steps
+						new TestStep(
+								CLOCK_URI,
+								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								washingMachineSwitchOn,
+								owner -> {
+									try {
+										((WashingMachineTesterCyPhy) owner).getWmop().switchOn();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								washingMachineStartWashing,
+								owner -> {
+									try {
+										// Start washing for 60 seconds at 40°C
+										((WashingMachineTesterCyPhy) owner).getWmop().startWashing(
+												60000L,
+												new Measure<Double>(40.0, MeasurementUnit.CELSIUS));
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								washingMachineSwitchOff,
+								owner -> {
+									try {
+										((WashingMachineTesterCyPhy) owner).getWmop().switchOff();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				// HEM test the heater
-				new TestStep(
-					CLOCK_URI,
-					HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hemTestHeater,
-					owner ->  {
-						try {
-							((HEMCyPhy)owner).testHeater();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						// Hair dryer test steps
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerTurnOn,
+								owner -> {
+									try {
+										((HairDryerTesterCyPhy) owner).turnOnHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerSetHigh,
+								owner -> {
+									try {
+										((HairDryerTesterCyPhy) owner).setHighHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerSetLow,
+								owner -> {
+									try {
+										((HairDryerTesterCyPhy) owner).setLowHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerTurnOff,
+								owner -> {
+									try {
+										((HairDryerTesterCyPhy) owner).turnOffHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				new TestStep(
-					CLOCK_URI,
-					HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					heaterSwitchOff,
-					owner ->  {
-						try {
-							((HeaterTesterCyPhy)owner).getHop().switchOff();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					})
-			});
+						// HEM test the heater
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hemTestHeater,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testHeater();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+
+						new TestStep(
+								CLOCK_URI,
+								HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								heaterSwitchOff,
+								owner -> {
+									try {
+										((HeaterTesterCyPhy) owner).getHop().switchOff();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								})
+				});
 	}
 
 	/**
 	 * return a test scenario for the integration testing with simulation of the
 	 * HEM application.
 	 * 
-	 * <p><strong>Description</strong></p>
+	 * <p>
+	 * <strong>Description</strong>
+	 * </p>
 	 * 
 	 * <p>
 	 * 
 	 * </p>
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
 	 * post	{@code return != null}
 	 * </pre>
 	 *
-	 * @return				a test scenario for the integration testing with simulation of the HEM application.
-	 * @throws Exception	<i>to do</i>.
+	 * @return a test scenario for the integration testing with simulation of the
+	 *         HEM application.
+	 * @throws Exception <i>to do</i>.
 	 */
-	public static TestScenarioWithSimulation	integrationWithSimulation()
-	throws Exception
-	{
+	public static TestScenarioWithSimulation integrationWithSimulation()
+			throws Exception {
 		// START_INSTANT = "2025-12-02T06:00:00.00Z"
 		long d = TimeUnit.NANOSECONDS.toSeconds(
-									TimeUtils.toNanos(SIMULATION_DURATION));
+				TimeUtils.toNanos(SIMULATION_DURATION));
 		Instant endInstant = START_INSTANT.plusSeconds(d);
 
 		Instant heaterSwitchOn = START_INSTANT.plusSeconds(60);
 
-		Instant generatorStart =	Instant.parse("2025-12-02T06:15:00.00Z");
-		
-		Instant hairDryerTurnOn1 =	Instant.parse("2025-12-02T07:15:00.00Z");
-		Instant hairDryerSetHigh1 =	Instant.parse("2025-12-02T07:15:20.00Z");
+		Instant generatorStart = Instant.parse("2025-12-02T06:15:00.00Z");
 
-		Instant batteriesTest1 =	Instant.parse("2025-12-02T07:17:30.00Z");
+		Instant hairDryerTurnOn1 = Instant.parse("2025-12-02T07:15:00.00Z");
+		Instant hairDryerSetHigh1 = Instant.parse("2025-12-02T07:15:20.00Z");
 
-		Instant hairDryerSetLow1 =	Instant.parse("2025-12-02T07:20:00.00Z");
-		Instant hairDryerTurnOff1 =	Instant.parse("2025-12-02T07:25:00.00Z");
+		Instant batteriesTest1 = Instant.parse("2025-12-02T07:17:30.00Z");
 
-		Instant generatorStop =		Instant.parse("2025-12-02T07:30:00.00Z");
+		Instant hairDryerSetLow1 = Instant.parse("2025-12-02T07:20:00.00Z");
+		Instant hairDryerTurnOff1 = Instant.parse("2025-12-02T07:25:00.00Z");
 
-		Instant hairDryerTurnOn2 =	Instant.parse("2025-12-02T08:15:00.00Z");
-		Instant hairDryerSetHigh2 =	Instant.parse("2025-12-02T08:15:20.00Z");
-		Instant hairDryerSetLow2 =	Instant.parse("2025-12-02T08:20:00.00Z");
-		Instant hairDryerTurnOff2 =	Instant.parse("2025-12-02T08:25:00.00Z");
+		Instant generatorStop = Instant.parse("2025-12-02T07:30:00.00Z");
 
-		Instant heaterSwitchOff =	Instant.parse("2025-12-02T09:00:00.00Z");
+		Instant hairDryerTurnOn2 = Instant.parse("2025-12-02T08:15:00.00Z");
+		Instant hairDryerSetHigh2 = Instant.parse("2025-12-02T08:15:20.00Z");
+		Instant hairDryerSetLow2 = Instant.parse("2025-12-02T08:20:00.00Z");
+		Instant hairDryerTurnOff2 = Instant.parse("2025-12-02T08:25:00.00Z");
 
-		Instant batteriesStartCharging =
-									Instant.parse("2025-12-02T10:00:00.00Z");
-		Instant batteriesTest2 =	Instant.parse("2025-12-02T10:30:00.00Z");
-		Instant batteriesStopCharging =
-									Instant.parse("2025-12-02T11:00:00.00Z");
-		Instant batteriesTest3 =	Instant.parse("2025-12-02T11:30:00.00Z");
+		Instant heaterSwitchOff = Instant.parse("2025-12-02T09:00:00.00Z");
+
+		Instant batteriesStartCharging = Instant.parse("2025-12-02T10:00:00.00Z");
+		Instant batteriesTest2 = Instant.parse("2025-12-02T10:30:00.00Z");
+		Instant batteriesStopCharging = Instant.parse("2025-12-02T11:00:00.00Z");
+		Instant batteriesTest3 = Instant.parse("2025-12-02T11:30:00.00Z");
+
+		// WashingMachine test instants
+		Instant washingMachineSwitchOn = Instant.parse("2025-12-02T06:06:00.00Z");
+		Instant washingMachineStartWashing = Instant.parse("2025-12-02T06:07:00.00Z");
+		Instant washingMachineSwitchOff = Instant.parse("2025-12-02T06:09:00.00Z");
 
 		return new TestScenarioWithSimulation(
-			CLOCK_URI,
-			START_INSTANT,
-			endInstant,
-			GlobalSupervisor.SIL_SIM_ARCHITECTURE_URI,
-			new Time(0.0, TimeUnit.HOURS),
-			(ts, simParams) -> {
-				simParams.put(
-					ModelI.createRunParameterName(
-						BatteriesPowerSILModel.URI,
-						BatteriesPowerSILModel.CAPACITY_RP_NAME),
-					BatteriesSimulationConfiguration.NUMBER_OF_PARALLEL_CELLS
-						* BatteriesSimulationConfiguration.
-												NUMBER_OF_CELL_GROUPS_IN_SERIES
-							* Batteries.CAPACITY_PER_UNIT.getData());
-				simParams.put(
-					ModelI.createRunParameterName(
-						BatteriesPowerSILModel.URI,
-						BatteriesPowerSILModel.IN_POWER_RP_NAME),
-					BatteriesSimulationConfiguration.NUMBER_OF_PARALLEL_CELLS
-						* Batteries.IN_POWER_PER_CELL.getData());
-				simParams.put(
-					ModelI.createRunParameterName(
-						BatteriesPowerSILModel.URI,
-						BatteriesPowerSILModel.MAX_OUT_POWER_RP_NAME),
-					BatteriesSimulationConfiguration.NUMBER_OF_PARALLEL_CELLS
-						* Batteries.MAX_OUT_POWER_PER_CELL.getData());
-				simParams.put(
-					ModelI.createRunParameterName(
-						BatteriesPowerSILModel.URI,
-						BatteriesPowerSILModel.LEVEL_QUANTUM_RP_NAME),
-					BatteriesSimulationConfiguration.
-											STANDARD_LEVEL_INTEGRATION_QUANTUM);
-				simParams.put(
-					ModelI.createRunParameterName(
-						BatteriesPowerSILModel.URI,
-						BatteriesPowerSILModel.INITIAL_LEVEL_RATIO_RP_NAME),
-					BatteriesSimulationConfiguration.
-												INITIAL_BATTERIES_LEVEL_RATIO);
-				simParams.put(
-					ModelI.createRunParameterName(
-						BatteriesStateSILModel.URI,
-						BatteriesPowerSILModel.INITIAL_LEVEL_RATIO_RP_NAME),
-					BatteriesSimulationConfiguration.
-												INITIAL_BATTERIES_LEVEL_RATIO);
-				simParams.put(
-					ModelI.createRunParameterName(
-						BatteriesUnitTesterSILModel.URI,
-						BatteriesUnitTesterSILModel.TEST_SCENARIO_RP_NAME),
-					ts);
-				simParams.put(
-					ModelI.createRunParameterName(
-						DeterministicSunRiseAndSetModel.URI,
-						SunRiseAndSetModelI.LATITUDE_RP_NAME),
-					SolarPanelSimulationConfigurationI.LATITUDE);
-				simParams.put(
-					ModelI.createRunParameterName(
-						DeterministicSunRiseAndSetModel.URI,
-						SunRiseAndSetModelI.LONGITUDE_RP_NAME),
-					SolarPanelSimulationConfigurationI.LONGITUDE);
-				simParams.put(
-					ModelI.createRunParameterName(
-						DeterministicSunRiseAndSetModel.URI,
-						SunRiseAndSetModelI.START_INSTANT_RP_NAME),
-					START_INSTANT);
-				simParams.put(
-					ModelI.createRunParameterName(
-						DeterministicSunRiseAndSetModel.URI,
-						SunRiseAndSetModelI.ZONE_ID_RP_NAME),
-					SolarPanelSimulationConfigurationI.ZONE);
+				CLOCK_URI,
+				START_INSTANT,
+				endInstant,
+				GlobalSupervisor.SIL_SIM_ARCHITECTURE_URI,
+				new Time(0.0, TimeUnit.HOURS),
+				(ts, simParams) -> {
+					simParams.put(
+							ModelI.createRunParameterName(
+									BatteriesPowerSILModel.URI,
+									BatteriesPowerSILModel.CAPACITY_RP_NAME),
+							BatteriesSimulationConfiguration.NUMBER_OF_PARALLEL_CELLS
+									* BatteriesSimulationConfiguration.NUMBER_OF_CELL_GROUPS_IN_SERIES
+									* Batteries.CAPACITY_PER_UNIT.getData());
+					simParams.put(
+							ModelI.createRunParameterName(
+									BatteriesPowerSILModel.URI,
+									BatteriesPowerSILModel.IN_POWER_RP_NAME),
+							BatteriesSimulationConfiguration.NUMBER_OF_PARALLEL_CELLS
+									* Batteries.IN_POWER_PER_CELL.getData());
+					simParams.put(
+							ModelI.createRunParameterName(
+									BatteriesPowerSILModel.URI,
+									BatteriesPowerSILModel.MAX_OUT_POWER_RP_NAME),
+							BatteriesSimulationConfiguration.NUMBER_OF_PARALLEL_CELLS
+									* Batteries.MAX_OUT_POWER_PER_CELL.getData());
+					simParams.put(
+							ModelI.createRunParameterName(
+									BatteriesPowerSILModel.URI,
+									BatteriesPowerSILModel.LEVEL_QUANTUM_RP_NAME),
+							BatteriesSimulationConfiguration.STANDARD_LEVEL_INTEGRATION_QUANTUM);
+					simParams.put(
+							ModelI.createRunParameterName(
+									BatteriesPowerSILModel.URI,
+									BatteriesPowerSILModel.INITIAL_LEVEL_RATIO_RP_NAME),
+							BatteriesSimulationConfiguration.INITIAL_BATTERIES_LEVEL_RATIO);
+					simParams.put(
+							ModelI.createRunParameterName(
+									BatteriesStateSILModel.URI,
+									BatteriesPowerSILModel.INITIAL_LEVEL_RATIO_RP_NAME),
+							BatteriesSimulationConfiguration.INITIAL_BATTERIES_LEVEL_RATIO);
+					simParams.put(
+							ModelI.createRunParameterName(
+									BatteriesUnitTesterSILModel.URI,
+									BatteriesUnitTesterSILModel.TEST_SCENARIO_RP_NAME),
+							ts);
+					simParams.put(
+							ModelI.createRunParameterName(
+									DeterministicSunRiseAndSetModel.URI,
+									SunRiseAndSetModelI.LATITUDE_RP_NAME),
+							SolarPanelSimulationConfigurationI.LATITUDE);
+					simParams.put(
+							ModelI.createRunParameterName(
+									DeterministicSunRiseAndSetModel.URI,
+									SunRiseAndSetModelI.LONGITUDE_RP_NAME),
+							SolarPanelSimulationConfigurationI.LONGITUDE);
+					simParams.put(
+							ModelI.createRunParameterName(
+									DeterministicSunRiseAndSetModel.URI,
+									SunRiseAndSetModelI.START_INSTANT_RP_NAME),
+							START_INSTANT);
+					simParams.put(
+							ModelI.createRunParameterName(
+									DeterministicSunRiseAndSetModel.URI,
+									SunRiseAndSetModelI.ZONE_ID_RP_NAME),
+							SolarPanelSimulationConfigurationI.ZONE);
 
-				simParams.put(
-					ModelI.createRunParameterName(
-						DeterministicSunIntensityModel.URI,
-						SunIntensityModelI.LATITUDE_RP_NAME),
-					SolarPanelSimulationConfigurationI.LATITUDE);
-				simParams.put(
-					ModelI.createRunParameterName(
-						DeterministicSunIntensityModel.URI,
-						SunIntensityModelI.LONGITUDE_RP_NAME),
-					SolarPanelSimulationConfigurationI.LONGITUDE);
-				simParams.put(
-					ModelI.createRunParameterName(
-						DeterministicSunIntensityModel.URI,
-						SunIntensityModelI.START_INSTANT_RP_NAME),
-					START_INSTANT);
-				simParams.put(
-					ModelI.createRunParameterName(
-						DeterministicSunIntensityModel.URI,
-						SunIntensityModelI.ZONE_ID_RP_NAME),
-					SolarPanelSimulationConfigurationI.ZONE);
-				simParams.put(
-					ModelI.createRunParameterName(
-						DeterministicSunIntensityModel.URI,
-						SunIntensityModelI.SLOPE_RP_NAME),
-					SolarPanelSimulationConfigurationI.SLOPE);
-				simParams.put(
-					ModelI.createRunParameterName(
-						DeterministicSunIntensityModel.URI,
-						SunIntensityModelI.ORIENTATION_RP_NAME),
-					SolarPanelSimulationConfigurationI.ORIENTATION);
-				simParams.put(
-					ModelI.createRunParameterName(
-						DeterministicSunIntensityModel.URI,
-						SunIntensityModelI.COMPUTATION_STEP_RP_NAME),
-					0.25);
+					simParams.put(
+							ModelI.createRunParameterName(
+									DeterministicSunIntensityModel.URI,
+									SunIntensityModelI.LATITUDE_RP_NAME),
+							SolarPanelSimulationConfigurationI.LATITUDE);
+					simParams.put(
+							ModelI.createRunParameterName(
+									DeterministicSunIntensityModel.URI,
+									SunIntensityModelI.LONGITUDE_RP_NAME),
+							SolarPanelSimulationConfigurationI.LONGITUDE);
+					simParams.put(
+							ModelI.createRunParameterName(
+									DeterministicSunIntensityModel.URI,
+									SunIntensityModelI.START_INSTANT_RP_NAME),
+							START_INSTANT);
+					simParams.put(
+							ModelI.createRunParameterName(
+									DeterministicSunIntensityModel.URI,
+									SunIntensityModelI.ZONE_ID_RP_NAME),
+							SolarPanelSimulationConfigurationI.ZONE);
+					simParams.put(
+							ModelI.createRunParameterName(
+									DeterministicSunIntensityModel.URI,
+									SunIntensityModelI.SLOPE_RP_NAME),
+							SolarPanelSimulationConfigurationI.SLOPE);
+					simParams.put(
+							ModelI.createRunParameterName(
+									DeterministicSunIntensityModel.URI,
+									SunIntensityModelI.ORIENTATION_RP_NAME),
+							SolarPanelSimulationConfigurationI.ORIENTATION);
+					simParams.put(
+							ModelI.createRunParameterName(
+									DeterministicSunIntensityModel.URI,
+									SunIntensityModelI.COMPUTATION_STEP_RP_NAME),
+							0.25);
 
-				simParams.put(
-					ModelI.createRunParameterName(
-						SolarPanelPowerSILModel.URI,
-						SolarPanelPowerSILModel.LATITUDE_RP_NAME),
-					SolarPanelSimulationConfigurationI.LATITUDE);
-				simParams.put(
-					ModelI.createRunParameterName(
-						SolarPanelPowerSILModel.URI,
-						SolarPanelPowerSILModel.LONGITUDE_RP_NAME),
-					SolarPanelSimulationConfigurationI.LONGITUDE);
-				simParams.put(
-					ModelI.createRunParameterName(
-						SolarPanelPowerSILModel.URI,
-						SolarPanelPowerSILModel.START_INSTANT_RP_NAME),
-					START_INSTANT);
-				simParams.put(
-					ModelI.createRunParameterName(
-						SolarPanelPowerSILModel.URI,
-						SolarPanelPowerSILModel.ZONE_ID_RP_NAME),
-					SolarPanelSimulationConfigurationI.ZONE);
-				simParams.put(
-					ModelI.createRunParameterName(
-						SolarPanelPowerSILModel.URI,
-						SolarPanelPowerSILModel.MAX_POWER_RP_NAME),
-					SolarPanelSimulationConfigurationI.NB_SQUARE_METERS *
-								SolarPanel.CAPACITY_PER_SQUARE_METER.getData());
-				simParams.put(
-					ModelI.createRunParameterName(
-						SolarPanelPowerSILModel.URI,
-						SolarPanelPowerSILModel.COMPUTATION_STEP_RP_NAME),
-					0.10);
+					simParams.put(
+							ModelI.createRunParameterName(
+									SolarPanelPowerSILModel.URI,
+									SolarPanelPowerSILModel.LATITUDE_RP_NAME),
+							SolarPanelSimulationConfigurationI.LATITUDE);
+					simParams.put(
+							ModelI.createRunParameterName(
+									SolarPanelPowerSILModel.URI,
+									SolarPanelPowerSILModel.LONGITUDE_RP_NAME),
+							SolarPanelSimulationConfigurationI.LONGITUDE);
+					simParams.put(
+							ModelI.createRunParameterName(
+									SolarPanelPowerSILModel.URI,
+									SolarPanelPowerSILModel.START_INSTANT_RP_NAME),
+							START_INSTANT);
+					simParams.put(
+							ModelI.createRunParameterName(
+									SolarPanelPowerSILModel.URI,
+									SolarPanelPowerSILModel.ZONE_ID_RP_NAME),
+							SolarPanelSimulationConfigurationI.ZONE);
+					simParams.put(
+							ModelI.createRunParameterName(
+									SolarPanelPowerSILModel.URI,
+									SolarPanelPowerSILModel.MAX_POWER_RP_NAME),
+							SolarPanelSimulationConfigurationI.NB_SQUARE_METERS *
+									SolarPanel.CAPACITY_PER_SQUARE_METER.getData());
+					simParams.put(
+							ModelI.createRunParameterName(
+									SolarPanelPowerSILModel.URI,
+									SolarPanelPowerSILModel.COMPUTATION_STEP_RP_NAME),
+							0.10);
 
-				simParams.put(
-					ModelI.createRunParameterName(
-						GeneratorFuelSILModel.URI,
-						GeneratorFuelSILModel.CAPACITY_RP_NAME),
-					GeneratorSimulationConfiguration.TANK_CAPACITY);
-				simParams.put(
-					ModelI.createRunParameterName(
-						GeneratorFuelSILModel.URI,
-						GeneratorFuelSILModel.INITIAL_LEVEL_RP_NAME),
-					GeneratorSimulationConfiguration.INITIAL_TANK_LEVEL);
-				simParams.put(
-					ModelI.createRunParameterName(
-						GeneratorFuelSILModel.URI,
-						GeneratorFuelSILModel.MIN_FUEL_CONSUMPTION_RP_NAME),
-					Generator.MIN_FUEL_CONSUMPTION.getData());
-				simParams.put(
-					ModelI.createRunParameterName(
-						GeneratorFuelSILModel.URI,
-						GeneratorFuelSILModel.MAX_FUEL_CONSUMPTION_RP_NAME),
-					Generator.MAX_FUEL_CONSUMPTION.getData());
-				simParams.put(
-					ModelI.createRunParameterName(
-						GeneratorFuelSILModel.URI,
-						GeneratorFuelSILModel.LEVEL_QUANTUM_RP_NAME),
-					GeneratorSimulationConfiguration.
-											STANDARD_LEVEL_INTEGRATION_QUANTUM);
-				simParams.put(
-					ModelI.createRunParameterName(
-						GeneratorFuelSILModel.URI,
-						GeneratorFuelSILModel.MAX_OUT_POWER_RP_NAME),
-					Generator.MAX_POWER.getData());
-				simParams.put(
-					ModelI.createRunParameterName(
-						GeneratorPowerSILModel.URI,
-						GeneratorPowerSILModel.MAX_OUT_POWER_RP_NAME),
-					Generator.MAX_POWER.getData());
-				simParams.put(
-					ModelI.createRunParameterName(
-						GeneratorUnitTesterSILModel.URI,
-						GeneratorUnitTesterSILModel.TEST_SCENARIO_RP_NAME),
-					ts);
-				simParams.put(
-					ModelI.createRunParameterName(
-						GeneratorUnitTesterSILModel.URI,
-						GeneratorUnitTesterSILModel.INITIAL_LEVEL_RP_NAME),
-					GeneratorSimulationConfiguration.INITIAL_TANK_LEVEL);
-			},
-			new TestStepI[] {
-				new TestStep(
-					CLOCK_URI,
-					HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					heaterSwitchOn,
-					owner ->  {
-						try {
-							((HeaterTesterCyPhy)owner).getHop().switchOn();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+					simParams.put(
+							ModelI.createRunParameterName(
+									GeneratorFuelSILModel.URI,
+									GeneratorFuelSILModel.CAPACITY_RP_NAME),
+							GeneratorSimulationConfiguration.TANK_CAPACITY);
+					simParams.put(
+							ModelI.createRunParameterName(
+									GeneratorFuelSILModel.URI,
+									GeneratorFuelSILModel.INITIAL_LEVEL_RP_NAME),
+							GeneratorSimulationConfiguration.INITIAL_TANK_LEVEL);
+					simParams.put(
+							ModelI.createRunParameterName(
+									GeneratorFuelSILModel.URI,
+									GeneratorFuelSILModel.MIN_FUEL_CONSUMPTION_RP_NAME),
+							Generator.MIN_FUEL_CONSUMPTION.getData());
+					simParams.put(
+							ModelI.createRunParameterName(
+									GeneratorFuelSILModel.URI,
+									GeneratorFuelSILModel.MAX_FUEL_CONSUMPTION_RP_NAME),
+							Generator.MAX_FUEL_CONSUMPTION.getData());
+					simParams.put(
+							ModelI.createRunParameterName(
+									GeneratorFuelSILModel.URI,
+									GeneratorFuelSILModel.LEVEL_QUANTUM_RP_NAME),
+							GeneratorSimulationConfiguration.STANDARD_LEVEL_INTEGRATION_QUANTUM);
+					simParams.put(
+							ModelI.createRunParameterName(
+									GeneratorFuelSILModel.URI,
+									GeneratorFuelSILModel.MAX_OUT_POWER_RP_NAME),
+							Generator.MAX_POWER.getData());
+					simParams.put(
+							ModelI.createRunParameterName(
+									GeneratorPowerSILModel.URI,
+									GeneratorPowerSILModel.MAX_OUT_POWER_RP_NAME),
+							Generator.MAX_POWER.getData());
+					simParams.put(
+							ModelI.createRunParameterName(
+									GeneratorUnitTesterSILModel.URI,
+									GeneratorUnitTesterSILModel.TEST_SCENARIO_RP_NAME),
+							ts);
+					simParams.put(
+							ModelI.createRunParameterName(
+									GeneratorUnitTesterSILModel.URI,
+									GeneratorUnitTesterSILModel.INITIAL_LEVEL_RP_NAME),
+							GeneratorSimulationConfiguration.INITIAL_TANK_LEVEL);
+				},
+				new TestStepI[] {
+						new TestStep(
+								CLOCK_URI,
+								HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								heaterSwitchOn,
+								owner -> {
+									try {
+										((HeaterTesterCyPhy) owner).getHop().switchOn();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				new TestStep(
-					CLOCK_URI,
-					HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-					generatorStart,
-					owner ->  {
-						try {
-							((HEMCyPhy)owner).getGeneratorPort().
-															startGenerator();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						// WashingMachine test steps (06:06 - 06:09)
+						new TestStep(
+								CLOCK_URI,
+								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								washingMachineSwitchOn,
+								owner -> {
+									try {
+										((WashingMachineTesterCyPhy) owner).getWmop().switchOn();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								washingMachineStartWashing,
+								owner -> {
+									try {
+										// Start washing for 60 seconds at 40°C
+										((WashingMachineTesterCyPhy) owner).getWmop().startWashing(
+												60000L,
+												new Measure<Double>(40.0, MeasurementUnit.CELSIUS));
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								washingMachineSwitchOff,
+								owner -> {
+									try {
+										((WashingMachineTesterCyPhy) owner).getWmop().switchOff();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				new TestStep(
-					CLOCK_URI,
-					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hairDryerTurnOn1,
-					owner ->  {
-						try {
-							((HairDryerTesterCyPhy)owner).turnOnHairDryer();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
-				new TestStep(
-					CLOCK_URI,
-					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hairDryerSetHigh1,
-					owner ->  {
-						try {
-							((HairDryerTesterCyPhy)owner).setHighHairDryer();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								generatorStart,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).getGeneratorPort().startGenerator();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				new TestStep(
-					CLOCK_URI,
-					HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-					batteriesTest1,
-					owner ->  {
-						try {
-							((HEMCyPhy)owner).testBatteriesState();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerTurnOn1,
+								owner -> {
+									try {
+										((HairDryerTesterCyPhy) owner).turnOnHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerSetHigh1,
+								owner -> {
+									try {
+										((HairDryerTesterCyPhy) owner).setHighHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				new TestStep(
-					CLOCK_URI,
-					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hairDryerSetLow1,
-					owner ->  {
-						try {
-							((HairDryerTesterCyPhy)owner).setLowHairDryer();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
-				new TestStep(
-					CLOCK_URI,
-					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hairDryerTurnOff1,
-					owner ->  {
-						try {
-							((HairDryerTesterCyPhy)owner).turnOffHairDryer();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								batteriesTest1,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testBatteriesState();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerSetLow1,
+								owner -> {
+									try {
+										((HairDryerTesterCyPhy) owner).setLowHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerTurnOff1,
+								owner -> {
+									try {
+										((HairDryerTesterCyPhy) owner).turnOffHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				new TestStep(
-					CLOCK_URI,
-					HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-					generatorStop,
-					owner ->  {
-						try {
-							((HEMCyPhy)owner).getGeneratorPort().
-															stopGenerator();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								generatorStop,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).getGeneratorPort().stopGenerator();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				new TestStep(
-					CLOCK_URI,
-					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hairDryerTurnOn2,
-					owner ->  {
-						try {
-							((HairDryerTesterCyPhy)owner).turnOnHairDryer();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
-				new TestStep(
-					CLOCK_URI,
-					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hairDryerSetHigh2,
-					owner ->  {
-						try {
-							((HairDryerTesterCyPhy)owner).setHighHairDryer();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
-				new TestStep(
-					CLOCK_URI,
-					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hairDryerSetLow2,
-					owner ->  {
-						try {
-							((HairDryerTesterCyPhy)owner).setLowHairDryer();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
-				new TestStep(
-					CLOCK_URI,
-					HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					hairDryerTurnOff2,
-					owner ->  {
-						try {
-							((HairDryerTesterCyPhy)owner).turnOffHairDryer();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerTurnOn2,
+								owner -> {
+									try {
+										((HairDryerTesterCyPhy) owner).turnOnHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerSetHigh2,
+								owner -> {
+									try {
+										((HairDryerTesterCyPhy) owner).setHighHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerSetLow2,
+								owner -> {
+									try {
+										((HairDryerTesterCyPhy) owner).setLowHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerTurnOff2,
+								owner -> {
+									try {
+										((HairDryerTesterCyPhy) owner).turnOffHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				new TestStep(
-					CLOCK_URI,
-					HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-					heaterSwitchOff,
-					owner ->  {
-						try {
-							((HeaterTesterCyPhy)owner).getHop().switchOff();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						new TestStep(
+								CLOCK_URI,
+								HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								heaterSwitchOff,
+								owner -> {
+									try {
+										((HeaterTesterCyPhy) owner).getHop().switchOff();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				new TestStep(
-					CLOCK_URI,
-					HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-					batteriesStartCharging,
-					owner ->  {
-						try {
-							((HEMCyPhy)owner).startChargingBatteries();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								batteriesStartCharging,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).startChargingBatteries();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				new TestStep(
-					CLOCK_URI,
-					HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-					batteriesTest2,
-					owner ->  {
-						try {
-							((HEMCyPhy)owner).testBatteriesState();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								batteriesTest2,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testBatteriesState();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				new TestStep(
-					CLOCK_URI,
-					HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-					batteriesStopCharging,
-					owner ->  {
-						try {
-							((HEMCyPhy)owner).stopChargingBatteries();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								batteriesStopCharging,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).stopChargingBatteries();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-				new TestStep(
-					CLOCK_URI,
-					HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-					batteriesTest3,
-					owner ->  {
-						try {
-							((HEMCyPhy)owner).testBatteriesState();
-						} catch (Exception e) {
-							throw new BCMRuntimeException(e) ;
-						}
-					}),
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								batteriesTest3,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testBatteriesState();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
 
-			});
+				});
 	}
 }
 // -----------------------------------------------------------------------------

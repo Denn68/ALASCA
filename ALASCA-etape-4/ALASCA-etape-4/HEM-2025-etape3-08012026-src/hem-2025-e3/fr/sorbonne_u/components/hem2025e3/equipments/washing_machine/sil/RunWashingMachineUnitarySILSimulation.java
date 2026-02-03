@@ -32,8 +32,7 @@ import fr.sorbonne_u.devs_simulation.simulators.SimulationEngine;
 import fr.sorbonne_u.devs_simulation.simulators.interfaces.SimulatorI;
 import fr.sorbonne_u.exceptions.VerboseException;
 
-public class RunWashingMachineUnitarySILSimulation
-{
+public class RunWashingMachineUnitarySILSimulation {
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
@@ -48,8 +47,7 @@ public class RunWashingMachineUnitarySILSimulation
 	// Methods
 	// -------------------------------------------------------------------------
 
-	public static void main(String[] args)
-	{
+	public static void main(String[] args) {
 		Time.setPrintPrecision(4);
 		Duration.setPrintPrecision(4);
 
@@ -158,7 +156,8 @@ public class RunWashingMachineUnitarySILSimulation
 			connections.put(
 					new EventSource(WashingMachineStateSILModel.URI, SetDelayedStart.class),
 					new EventSink[] {
-							new EventSink(WashingMachineElectricitySILModel.URI, SetDelayedStart.class)
+							new EventSink(WashingMachineElectricitySILModel.URI, SetDelayedStart.class),
+							new EventSink(WashingMachineTemperatureSILModel.URI, SetDelayedStart.class)
 					});
 			connections.put(
 					new EventSource(WashingMachineStateSILModel.URI, SuspendWashing.class),
@@ -199,10 +198,10 @@ public class RunWashingMachineUnitarySILSimulation
 
 			bindings.put(
 					new VariableSource("currentHeatingPower", Double.class,
-									   WashingMachineElectricitySILModel.URI),
+							WashingMachineElectricitySILModel.URI),
 					new VariableSink[] {
 							new VariableSink("currentHeatingPower", Double.class,
-											 WashingMachineTemperatureSILModel.URI)
+									WashingMachineTemperatureSILModel.URI)
 					});
 
 			coupledModelDescriptors.put(
@@ -220,12 +219,11 @@ public class RunWashingMachineUnitarySILSimulation
 							bindings,
 							ACCELERATION_FACTOR));
 
-			ArchitectureI architecture =
-					new RTArchitecture(
-							WashingMachineCoupledModel.URI,
-							atomicModelDescriptors,
-							coupledModelDescriptors,
-							TIME_UNIT);
+			ArchitectureI architecture = new RTArchitecture(
+					WashingMachineCoupledModel.URI,
+					atomicModelDescriptors,
+					coupledModelDescriptors,
+					TIME_UNIT);
 
 			SimulatorI se = architecture.constructSimulator();
 			SimulationEngine.SIMULATION_STEP_SLEEP_TIME = 0L;
@@ -242,12 +240,11 @@ public class RunWashingMachineUnitarySILSimulation
 
 			long realTimeStart = System.currentTimeMillis() + 200;
 			se.startRTSimulation(realTimeStart,
-								 startTime.getSimulatedTime(),
-								 d.getSimulatedDuration());
+					startTime.getSimulatedTime(),
+					d.getSimulatedDuration());
 
-			long executionDuration =
-				new Double(TIME_UNIT.toMillis(1)
-							* (d.getSimulatedDuration() / ACCELERATION_FACTOR)).longValue();
+			long executionDuration = new Double(TIME_UNIT.toMillis(1)
+					* (d.getSimulatedDuration() / ACCELERATION_FACTOR)).longValue();
 
 			Thread.sleep(executionDuration + 2000L);
 			System.out.println(testScenario.endMessage());
@@ -274,60 +271,62 @@ public class RunWashingMachineUnitarySILSimulation
 	 * 2. StartWashing (30 min duration, 40C target) at 08:10
 	 * 3. SwitchOff at 09:50
 	 */
-	protected static TestScenarioWithSimulation createTestScenario() throws VerboseException
-	{
+	protected static TestScenarioWithSimulation createTestScenario() throws VerboseException {
 		return new TestScenarioWithSimulation(
-			"-----------------------------------------------------\n" +
-			"WashingMachine SIL Test\n\n" +
-			"  Scenario:\n" +
-			"    1. Switch on the washing machine\n" +
-			"    2. Start washing (2 min, 17C)\n" +
-			"    3. Wait for heating + washing cycle\n" +
-			"    4. Switch off\n" +
-			"-----------------------------------------------------\n",
-			"\n-----------------------------------------------------\n" +
-			"End WashingMachine SIL Test\n" +
-			"-----------------------------------------------------",
-			"fake-clock-URI",
-			START_INSTANT,
-			END_INSTANT,
-			WashingMachineCoupledModel.URI,
-			START_TIME,
-			(ts, simParams) -> {
-				simParams.put(
-					ModelI.createRunParameterName(
-						WashingMachineUnitTesterModel.URI,
-						WashingMachineUnitTesterModel.TEST_SCENARIO_RP_NAME),
-					ts);
-			},
-			new SimulationTestStep[]{
-				new SimulationTestStep(
-					WashingMachineUnitTesterModel.URI,
-					Instant.parse("2025-10-20T08:05:00.00Z"),
-					(m, t) -> {
-						ArrayList<EventI> ret = new ArrayList<>();
-						ret.add(new SwitchOnWashingMachine(t));
-						return ret;
-					},
-					(m, t) -> {}),
-				new SimulationTestStep(
-					WashingMachineUnitTesterModel.URI,
-					Instant.parse("2025-10-20T08:10:00.00Z"),
-					(m, t) -> {
-						ArrayList<EventI> ret = new ArrayList<>();
-						ret.add(new StartWashing(t, 2, 17.0));
-						return ret;
-					},
-					(m, t) -> {}),
-				new SimulationTestStep(
-					WashingMachineUnitTesterModel.URI,
-					Instant.parse("2025-10-20T12:50:00.00Z"),
-					(m, t) -> {
-						ArrayList<EventI> ret = new ArrayList<>();
-						ret.add(new SwitchOffWashingMachine(t));
-						return ret;
-					},
-					(m, t) -> {})
-			});
+				"-----------------------------------------------------\n" +
+						"WashingMachine SIL Test\n\n" +
+						"  Scenario:\n" +
+						"    1. Switch on the washing machine\n" +
+						"    2. Start washing (2 min, 17C)\n" +
+						"    3. Wait for heating + washing cycle\n" +
+						"    4. Switch off\n" +
+						"-----------------------------------------------------\n",
+				"\n-----------------------------------------------------\n" +
+						"End WashingMachine SIL Test\n" +
+						"-----------------------------------------------------",
+				"fake-clock-URI",
+				START_INSTANT,
+				END_INSTANT,
+				WashingMachineCoupledModel.URI,
+				START_TIME,
+				(ts, simParams) -> {
+					simParams.put(
+							ModelI.createRunParameterName(
+									WashingMachineUnitTesterModel.URI,
+									WashingMachineUnitTesterModel.TEST_SCENARIO_RP_NAME),
+							ts);
+				},
+				new SimulationTestStep[] {
+						new SimulationTestStep(
+								WashingMachineUnitTesterModel.URI,
+								Instant.parse("2025-10-20T08:05:00.00Z"),
+								(m, t) -> {
+									ArrayList<EventI> ret = new ArrayList<>();
+									ret.add(new SwitchOnWashingMachine(t));
+									return ret;
+								},
+								(m, t) -> {
+								}),
+						new SimulationTestStep(
+								WashingMachineUnitTesterModel.URI,
+								Instant.parse("2025-10-20T08:10:00.00Z"),
+								(m, t) -> {
+									ArrayList<EventI> ret = new ArrayList<>();
+									ret.add(new StartWashing(t, 2, 17.0));
+									return ret;
+								},
+								(m, t) -> {
+								}),
+						new SimulationTestStep(
+								WashingMachineUnitTesterModel.URI,
+								Instant.parse("2025-10-20T12:50:00.00Z"),
+								(m, t) -> {
+									ArrayList<EventI> ret = new ArrayList<>();
+									ret.add(new SwitchOffWashingMachine(t));
+									return ret;
+								},
+								(m, t) -> {
+								})
+				});
 	}
 }

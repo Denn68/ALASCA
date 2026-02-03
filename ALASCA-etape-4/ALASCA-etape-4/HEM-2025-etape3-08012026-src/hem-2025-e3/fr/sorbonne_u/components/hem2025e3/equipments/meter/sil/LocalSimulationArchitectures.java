@@ -72,6 +72,14 @@ import fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.events.Suns
 import fr.sorbonne_u.components.hem2025e3.equipments.heater.sil.events.SIL_SetPowerHeater;
 import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.sil.SolarPanelPowerSILModel;
 import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.sil.events.PowerProductionLevel;
+import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.sil.WashingMachineElectricitySILModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetDelayedStart;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetPowerWashingMachine;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.StartWashing;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SuspendWashing;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.ResumeWashing;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SwitchOffWashingMachine;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SwitchOnWashingMachine;
 import fr.sorbonne_u.devs_simulation.architectures.RTArchitecture;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.HIOA_Composer;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.RTAtomicHIOA_Descriptor;
@@ -88,69 +96,83 @@ import fr.sorbonne_u.exceptions.PreconditionException;
 
 // -----------------------------------------------------------------------------
 /**
- * The class <code>MILSimulationArchitectures</code>  defines the local MIL
+ * The class <code>MILSimulationArchitectures</code> defines the local MIL
  * simulation architecture pertaining to the electric meter component.
  *
- * <p><strong>Description</strong></p>
+ * <p>
+ * <strong>Description</strong>
+ * </p>
  * 
- * <p><strong>Implementation Invariants</strong></p>
- * 
- * <pre>
- * invariant	{@code true}	// no more invariant
- * </pre>
- * 
- * <p><strong>Invariants</strong></p>
+ * <p>
+ * <strong>Implementation Invariants</strong>
+ * </p>
  * 
  * <pre>
- * invariant	{@code true}	// no more invariant
+ * invariant	{@code
+ * true
+ * }	// no more invariant
  * </pre>
  * 
- * <p>Created on : 2023-11-16</p>
+ * <p>
+ * <strong>Invariants</strong>
+ * </p>
  * 
- * @author	<a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ * <pre>
+ * invariant	{@code
+ * true
+ * }	// no more invariant
+ * </pre>
+ * 
+ * <p>
+ * Created on : 2023-11-16
+ * </p>
+ * 
+ * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
-public abstract class	LocalSimulationArchitectures
-{
+public abstract class LocalSimulationArchitectures {
 	/**
 	 * create the local SIL real time simulation architecture for the
 	 * {@code ElectricMeter} component.
 	 * 
-	 * <p><strong>Contract</strong></p>
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
 	 * 
 	 * <pre>
-	 * pre	{@code true}	// no precondition.
-	 * post	{@code true}	// no postcondition.
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
 	 * </pre>
 	 *
-	 * @param architectureURI		URI to be given to the created simulation architecture.
-	 * @param rootModelURI			URI of the root model in the simulation architecture.
-	 * @param simulatedTimeUnit		simulated time unit used in the architecture.
-	 * @param accelerationFactor	acceleration factor used to execute in a logical time speeding up the real time.
-	 * @return						the local SIL real time simulation architecture for the {@code ElectricMeter} component.
-	 * @throws Exception			<i>to do</i>.
+	 * @param architectureURI    URI to be given to the created simulation
+	 *                           architecture.
+	 * @param rootModelURI       URI of the root model in the simulation
+	 *                           architecture.
+	 * @param simulatedTimeUnit  simulated time unit used in the architecture.
+	 * @param accelerationFactor acceleration factor used to execute in a logical
+	 *                           time speeding up the real time.
+	 * @return the local SIL real time simulation architecture for the
+	 *         {@code ElectricMeter} component.
+	 * @throws Exception <i>to do</i>.
 	 */
-	public static RTArchitecture	createElectricMeterSILArchitecture(
-		String architectureURI, 
-		String rootModelURI,
-		TimeUnit simulatedTimeUnit,
-		double accelerationFactor
-		) throws Exception
-	{
-		assert	architectureURI != null && !architectureURI.isEmpty() :
-				new PreconditionException(
-						"architectureURI != null && !architectureURI.isEmpty()");
-		assert	rootModelURI != null && !rootModelURI.isEmpty() :
-				new PreconditionException(
-						"rootModelURI != null && !rootModelURI.isEmpty()");
-		assert	simulatedTimeUnit != null :
-				new PreconditionException("simulatedTimeUnit != null");
-		assert	accelerationFactor > 0.0 :
-				new PreconditionException("accelerationFactor > 0.0");
+	public static RTArchitecture createElectricMeterSILArchitecture(
+			String architectureURI,
+			String rootModelURI,
+			TimeUnit simulatedTimeUnit,
+			double accelerationFactor) throws Exception {
+		assert architectureURI != null && !architectureURI.isEmpty() : new PreconditionException(
+				"architectureURI != null && !architectureURI.isEmpty()");
+		assert rootModelURI != null && !rootModelURI.isEmpty() : new PreconditionException(
+				"rootModelURI != null && !rootModelURI.isEmpty()");
+		assert simulatedTimeUnit != null : new PreconditionException("simulatedTimeUnit != null");
+		assert accelerationFactor > 0.0 : new PreconditionException("accelerationFactor > 0.0");
 
 		// map that will contain the atomic model descriptors to construct
 		// the simulation architecture
-		Map<String,AbstractAtomicModelDescriptor> atomicModelDescriptors =
-				new HashMap<>();
+		Map<String, AbstractAtomicModelDescriptor> atomicModelDescriptors = new HashMap<>();
 
 		// the electric meter electricity model accumulates the electric
 		// power consumption and production, an atomic HIOA model hence we use
@@ -222,11 +244,18 @@ public abstract class	LocalSimulationArchitectures
 						GeneratorSimulationConfiguration.TIME_UNIT,
 						null,
 						accelerationFactor));
+		atomicModelDescriptors.put(
+				WashingMachineElectricitySILModel.URI,
+				RTAtomicHIOA_Descriptor.create(
+						WashingMachineElectricitySILModel.class,
+						WashingMachineElectricitySILModel.URI,
+						simulatedTimeUnit,
+						null,
+						accelerationFactor));
 
 		// map that will contain the coupled model descriptors to construct
 		// the simulation architecture
-		Map<String,CoupledModelDescriptor> coupledModelDescriptors =
-				new HashMap<>();
+		Map<String, CoupledModelDescriptor> coupledModelDescriptors = new HashMap<>();
 
 		// the set of submodels of the coupled model, given by their URIs
 		Set<String> submodels = new HashSet<String>();
@@ -238,106 +267,107 @@ public abstract class	LocalSimulationArchitectures
 		submodels.add(SolarPanelPowerSILModel.URI);
 		submodels.add(GeneratorFuelSILModel.URI);
 		submodels.add(GeneratorPowerSILModel.URI);
+		submodels.add(WashingMachineElectricitySILModel.URI);
 
 		// events imported by the coupled model and passed to submodels
-		Map<Class<? extends EventI>,EventSink[]> imported = new HashMap<>();
+		Map<Class<? extends EventI>, EventSink[]> imported = new HashMap<>();
 		imported.put(
 				SwitchOnHairDryer.class,
 				new EventSink[] {
-					new EventSink(HairDryerElectricitySILModel.URI,
-								  SwitchOnHairDryer.class)
+						new EventSink(HairDryerElectricitySILModel.URI,
+								SwitchOnHairDryer.class)
 				});
 		imported.put(
 				SwitchOffHairDryer.class,
 				new EventSink[] {
-					new EventSink(HairDryerElectricitySILModel.URI,
-								  SwitchOffHairDryer.class)
+						new EventSink(HairDryerElectricitySILModel.URI,
+								SwitchOffHairDryer.class)
 				});
 		imported.put(
 				SetLowHairDryer.class,
 				new EventSink[] {
-					new EventSink(HairDryerElectricitySILModel.URI,
-								  SetLowHairDryer.class)
+						new EventSink(HairDryerElectricitySILModel.URI,
+								SetLowHairDryer.class)
 				});
 		imported.put(
 				SetHighHairDryer.class,
 				new EventSink[] {
-					new EventSink(HairDryerElectricitySILModel.URI,
-								  SetHighHairDryer.class)
+						new EventSink(HairDryerElectricitySILModel.URI,
+								SetHighHairDryer.class)
 				});
 
 		imported.put(
 				SIL_SetPowerHeater.class,
 				new EventSink[] {
 						new EventSink(HeaterElectricitySILModel.URI,
-									  SIL_SetPowerHeater.class)
+								SIL_SetPowerHeater.class)
 				});
 		imported.put(
 				SwitchOnHeater.class,
 				new EventSink[] {
 						new EventSink(HeaterElectricitySILModel.URI,
-									  SwitchOnHeater.class)
+								SwitchOnHeater.class)
 				});
 		imported.put(
 				SwitchOffHeater.class,
 				new EventSink[] {
 						new EventSink(HeaterElectricitySILModel.URI,
-									  SwitchOffHeater.class)
+								SwitchOffHeater.class)
 				});
 		imported.put(
 				Heat.class,
 				new EventSink[] {
 						new EventSink(HeaterElectricitySILModel.URI,
-									  Heat.class)
+								Heat.class)
 				});
 		imported.put(
 				DoNotHeat.class,
 				new EventSink[] {
 						new EventSink(HeaterElectricitySILModel.URI,
-									  DoNotHeat.class)
+								DoNotHeat.class)
 				});
 		imported.put(SIL_StartCharging.class,
 				new EventSink[] {
 						new EventSink(BatteriesPowerSILModel.URI,
-									  SIL_StartCharging.class)
+								SIL_StartCharging.class)
 				});
 		imported.put(SIL_StopCharging.class,
 				new EventSink[] {
 						new EventSink(BatteriesPowerSILModel.URI,
-									  SIL_StopCharging.class)
+								SIL_StopCharging.class)
 				});
 
 		imported.put(
 				SunriseEvent.class,
 				new EventSink[] {
 						new EventSink(DeterministicSunIntensityModel.URI,
-									  SunriseEvent.class),
+								SunriseEvent.class),
 						new EventSink(SolarPanelPowerSILModel.URI,
-									  SunriseEvent.class)
+								SunriseEvent.class)
 				});
 		imported.put(
 				SunsetEvent.class,
 				new EventSink[] {
 						new EventSink(DeterministicSunIntensityModel.URI,
-									  SunsetEvent.class),
+								SunsetEvent.class),
 						new EventSink(SolarPanelPowerSILModel.URI,
-									  SunsetEvent.class)
+								SunsetEvent.class)
 				});
 		imported.put(
 				Start.class,
 				new EventSink[] {
 						new EventSink(GeneratorFuelSILModel.URI,
-									  Start.class),
+								Start.class),
 						new EventSink(GeneratorPowerSILModel.URI,
-									  Start.class)
+								Start.class)
 				});
 		imported.put(
 				Stop.class,
 				new EventSink[] {
 						new EventSink(GeneratorFuelSILModel.URI,
-									  Stop.class),
+								Stop.class),
 						new EventSink(GeneratorPowerSILModel.URI,
-									  Stop.class)
+								Stop.class)
 				});
 		imported.put(
 				SIL_Refill.class,
@@ -346,44 +376,85 @@ public abstract class	LocalSimulationArchitectures
 								SIL_Refill.class)
 				});
 
+		// WashingMachine events
+		imported.put(
+				SwitchOnWashingMachine.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+								SwitchOnWashingMachine.class)
+				});
+		imported.put(
+				SwitchOffWashingMachine.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+								SwitchOffWashingMachine.class)
+				});
+		imported.put(
+				StartWashing.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+								StartWashing.class)
+				});
+		imported.put(
+				SetDelayedStart.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+								SetDelayedStart.class)
+				});
+		imported.put(
+				SuspendWashing.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+								SuspendWashing.class)
+				});
+		imported.put(
+				ResumeWashing.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+								ResumeWashing.class)
+				});
+		imported.put(
+				SetPowerWashingMachine.class,
+				new EventSink[] {
+						new EventSink(WashingMachineElectricitySILModel.URI,
+								SetPowerWashingMachine.class)
+				});
+
 		// events emitted by submodels reexported by the coupled model
-		Map<Class<? extends EventI>, ReexportedEvent> reexported =
-															new HashMap<>();
+		Map<Class<? extends EventI>, ReexportedEvent> reexported = new HashMap<>();
 
 		reexported.put(
 				CurrentBatteriesLevel.class,
 				new ReexportedEvent(BatteriesPowerSILModel.URI,
-									CurrentBatteriesLevel.class));
+						CurrentBatteriesLevel.class));
 		reexported.put(
 				PowerProductionLevel.class,
 				new ReexportedEvent(SolarPanelPowerSILModel.URI,
-									PowerProductionLevel.class));
+						PowerProductionLevel.class));
 		reexported.put(
 				TankEmpty.class,
 				new ReexportedEvent(GeneratorFuelSILModel.URI,
-									TankEmpty.class));
+						TankEmpty.class));
 		reexported.put(
 				TankNoLongerEmpty.class,
 				new ReexportedEvent(GeneratorFuelSILModel.URI,
-									TankNoLongerEmpty.class));
+						TankNoLongerEmpty.class));
 		reexported.put(
 				CurrentFuelLevel.class,
 				new ReexportedEvent(GeneratorFuelSILModel.URI,
-									CurrentFuelLevel.class));
+						CurrentFuelLevel.class));
 		reexported.put(
 				CurrentFuelConsumption.class,
 				new ReexportedEvent(GeneratorFuelSILModel.URI,
-									CurrentFuelConsumption.class));
+						CurrentFuelConsumption.class));
 		reexported.put(
 				CurrentPowerProduction.class,
 				new ReexportedEvent(GeneratorPowerSILModel.URI,
-									CurrentPowerProduction.class));
-
+						CurrentPowerProduction.class));
 
 		// event exchanging connections between exporting and importing
 		// models
-		Map<EventSource,EventSink[]> connections =
-									new HashMap<EventSource,EventSink[]>();
+		Map<EventSource, EventSink[]> connections = new HashMap<EventSource, EventSink[]>();
 
 		connections.put(
 				new EventSource(
@@ -391,7 +462,7 @@ public abstract class	LocalSimulationArchitectures
 						SIL_BatteriesRequiredPowerChanged.class),
 				new EventSink[] {
 						new EventSink(BatteriesPowerSILModel.URI,
-									  SIL_BatteriesRequiredPowerChanged.class)
+								SIL_BatteriesRequiredPowerChanged.class)
 				});
 		connections.put(
 				new EventSource(
@@ -399,97 +470,105 @@ public abstract class	LocalSimulationArchitectures
 						GeneratorRequiredPowerChanged.class),
 				new EventSink[] {
 						new EventSink(GeneratorPowerSILModel.URI,
-									  GeneratorRequiredPowerChanged.class)
+								GeneratorRequiredPowerChanged.class)
 				});
 
 		// variable bindings between exporting and importing models
-		Map<VariableSource,VariableSink[]> bindings =
-								new HashMap<VariableSource,VariableSink[]>();
+		Map<VariableSource, VariableSink[]> bindings = new HashMap<VariableSource, VariableSink[]>();
 		bindings.put(
 				new VariableSource("currentIntensity",
-								   Double.class,
-								   HairDryerElectricitySILModel.URI),
+						Double.class,
+						HairDryerElectricitySILModel.URI),
 				new VariableSink[] {
-					new VariableSink("currentHairDryerIntensity",
-									 Double.class,
-									 ElectricMeterElectricitySILModel.URI)
+						new VariableSink("currentHairDryerIntensity",
+								Double.class,
+								ElectricMeterElectricitySILModel.URI)
 				});
 		bindings.put(
 				new VariableSource("currentIntensity",
-								   Double.class,
-								   HeaterElectricitySILModel.URI),
+						Double.class,
+						HeaterElectricitySILModel.URI),
 				new VariableSink[] {
-					new VariableSink("currentHeaterIntensity",
-									 Double.class,
-									 ElectricMeterElectricitySILModel.URI)
+						new VariableSink("currentHeaterIntensity",
+								Double.class,
+								ElectricMeterElectricitySILModel.URI)
 				});
 		bindings.put(
 				new VariableSource("batteriesInputPower",
-								   Double.class,
-								   BatteriesPowerSILModel.URI),
+						Double.class,
+						BatteriesPowerSILModel.URI),
 				new VariableSink[] {
-					new VariableSink("batteriesInputPower",
-									 Double.class,
-									 ElectricMeterElectricitySILModel.URI)
+						new VariableSink("batteriesInputPower",
+								Double.class,
+								ElectricMeterElectricitySILModel.URI)
 				});
 		bindings.put(
 				new VariableSource("batteriesOutputPower",
-								   Double.class,
-								   BatteriesPowerSILModel.URI),
+						Double.class,
+						BatteriesPowerSILModel.URI),
 				new VariableSink[] {
-					new VariableSink("batteriesOutputPower",
-									 Double.class,
-									 ElectricMeterElectricitySILModel.URI)
+						new VariableSink("batteriesOutputPower",
+								Double.class,
+								ElectricMeterElectricitySILModel.URI)
 				});
 		bindings.put(
 				new VariableSource("batteriesRequiredPower",
-								   Double.class,
-								   ElectricMeterElectricitySILModel.URI),
+						Double.class,
+						ElectricMeterElectricitySILModel.URI),
 				new VariableSink[] {
-					new VariableSink("batteriesRequiredPower",
-									 Double.class,
-									 BatteriesPowerSILModel.URI)
+						new VariableSink("batteriesRequiredPower",
+								Double.class,
+								BatteriesPowerSILModel.URI)
 				});
 
 		bindings.put(
 				new VariableSource("sunIntensityCoef",
-						   Double.class,
-						   DeterministicSunIntensityModel.URI),
+						Double.class,
+						DeterministicSunIntensityModel.URI),
 				new VariableSink[] {
 						new VariableSink("sunIntensityCoef",
-										 Double.class,
-										 SolarPanelPowerSILModel.URI)
+								Double.class,
+								SolarPanelPowerSILModel.URI)
 				});
 		bindings.put(
 				new VariableSource("solarPanelOutputPower",
-						   Double.class,
-						   SolarPanelPowerSILModel.URI),
+						Double.class,
+						SolarPanelPowerSILModel.URI),
 				new VariableSink[] {
 						new VariableSink("solarPanelOutputPower",
-										 Double.class,
-										 ElectricMeterElectricitySILModel.URI)
+								Double.class,
+								ElectricMeterElectricitySILModel.URI)
 				});
 
 		bindings.put(
 				new VariableSource("generatorOutputPower",
-								   Double.class,
-								   GeneratorPowerSILModel.URI),
+						Double.class,
+						GeneratorPowerSILModel.URI),
 				new VariableSink[] {
-					new VariableSink("generatorOutputPower",
-									 Double.class,
-									 ElectricMeterElectricitySILModel.URI),
-					new VariableSink("generatorOutputPower",
-							 		 Double.class,
-							 		 GeneratorFuelSILModel.URI)
+						new VariableSink("generatorOutputPower",
+								Double.class,
+								ElectricMeterElectricitySILModel.URI),
+						new VariableSink("generatorOutputPower",
+								Double.class,
+								GeneratorFuelSILModel.URI)
 				});
 		bindings.put(
 				new VariableSource("generatorRequiredPower",
-								   Double.class,
-								   ElectricMeterElectricitySILModel.URI),
+						Double.class,
+						ElectricMeterElectricitySILModel.URI),
 				new VariableSink[] {
-					new VariableSink("generatorRequiredPower",
-									 Double.class,
-									 GeneratorPowerSILModel.URI)
+						new VariableSink("generatorRequiredPower",
+								Double.class,
+								GeneratorPowerSILModel.URI)
+				});
+		bindings.put(
+				new VariableSource("currentIntensity",
+						Double.class,
+						WashingMachineElectricitySILModel.URI),
+				new VariableSink[] {
+						new VariableSink("currentWashingMachineIntensity",
+								Double.class,
+								ElectricMeterElectricitySILModel.URI)
 				});
 
 		coupledModelDescriptors.put(
@@ -508,14 +587,13 @@ public abstract class	LocalSimulationArchitectures
 						new HIOA_Composer(),
 						accelerationFactor));
 
-		RTArchitecture architecture =
-				new RTArchitecture(
-						architectureURI,
-						rootModelURI,
-						atomicModelDescriptors,
-						coupledModelDescriptors,
-						simulatedTimeUnit,
-						accelerationFactor);
+		RTArchitecture architecture = new RTArchitecture(
+				architectureURI,
+				rootModelURI,
+				atomicModelDescriptors,
+				coupledModelDescriptors,
+				simulatedTimeUnit,
+				accelerationFactor);
 
 		return architecture;
 	}
