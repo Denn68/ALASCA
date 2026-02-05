@@ -22,8 +22,9 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
 		SetDelayedStart.class,
 		SuspendWashing.class,
 		ResumeWashing.class,
-		SetPowerWashingMachine.class
-	}, exported = {
+		SetPowerWashingMachine.class,
+		HeatingFinished.class
+}, exported = {
 		SwitchOnWashingMachine.class,
 		SwitchOffWashingMachine.class,
 		StartWashing.class,
@@ -31,31 +32,28 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
 		SuspendWashing.class,
 		ResumeWashing.class,
 		SetPowerWashingMachine.class
-	})
-public class			WashingMachineStateSILModel
-extends		AtomicModel
-implements	SIL_WashingMachineOperationI
-{
+})
+public class WashingMachineStateSILModel
+		extends AtomicModel
+		implements SIL_WashingMachineOperationI {
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
 
 	private static final long serialVersionUID = 1L;
-	public static final String	URI = "WashingMachineStateModel";
+	public static final String URI = "WashingMachineStateModel";
 
-	protected WashingMachineState	currentState;
-	protected EventI				toBeReemitted;
+	protected WashingMachineState currentState;
+	protected EventI toBeReemitted;
 
 	// -------------------------------------------------------------------------
 	// Constructors
 	// -------------------------------------------------------------------------
 
-	public				WashingMachineStateSILModel(
-		String uri,
-		TimeUnit simulatedTimeUnit,
-		AtomicSimulatorI simulationEngine
-		) throws Exception
-	{
+	public WashingMachineStateSILModel(
+			String uri,
+			TimeUnit simulatedTimeUnit,
+			AtomicSimulatorI simulationEngine) throws Exception {
 		super(uri, simulatedTimeUnit, simulationEngine);
 		this.getSimulationEngine().setLogger(new StandardLogger());
 	}
@@ -65,8 +63,7 @@ implements	SIL_WashingMachineOperationI
 	// -------------------------------------------------------------------------
 
 	@Override
-	public void			initialiseState(Time initialTime)
-	{
+	public void initialiseState(Time initialTime) {
 		super.initialiseState(initialTime);
 		this.currentState = WashingMachineState.OFF;
 		this.toBeReemitted = null;
@@ -75,38 +72,39 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public void			userDefinedExternalTransition(Duration elapsedTime)
-	{
+	public void userDefinedExternalTransition(Duration elapsedTime) {
 		ArrayList<EventI> currentEvents = this.getStoredEventAndReset();
-		assert	currentEvents != null && currentEvents.size() == 1;
+		assert currentEvents != null && currentEvents.size() == 1;
 
 		Event ce = (Event) currentEvents.get(0);
-		
+
 		// Exécution de l'événement sur ce modèle pour mettre à jour l'état
 		ce.executeOn(this);
-		
-		// On marque l'événement pour être ré-émis vers les modèles couplés (Elec, Temp)
-		this.toBeReemitted = ce;
 
-		this.logMessage("performing an external transition on " + ce.getClass().getSimpleName() 
-						+ " -> New State: " + this.currentState + "\n");
+		// HeatingFinished is an internal event - don't re-emit it
+		// Only re-emit events that come from the component
+		if (!(ce instanceof HeatingFinished)) {
+			this.toBeReemitted = ce;
+		}
+
+		this.logMessage("performing an external transition on " + ce.getClass().getSimpleName()
+				+ " -> New State: " + this.currentState + "\n");
 	}
 
 	@Override
-	public ArrayList<EventI>	output()
-	{
+	public ArrayList<EventI> output() {
 		ArrayList<EventI> ret = null;
 		if (this.toBeReemitted != null) {
 			ret = new ArrayList<EventI>();
 			ret.add(this.toBeReemitted);
+			this.logMessage("output sends " + ret + "\n");
 			this.toBeReemitted = null;
 		}
 		return ret;
 	}
 
 	@Override
-	public Duration		timeAdvance()
-	{
+	public Duration timeAdvance() {
 		if (this.toBeReemitted != null) {
 			return Duration.zero(this.getSimulatedTimeUnit());
 		} else {
@@ -119,28 +117,28 @@ implements	SIL_WashingMachineOperationI
 	// -------------------------------------------------------------------------
 
 	@Override
-	public void			switchOn() {
+	public void switchOn() {
 		if (this.currentState == WashingMachineState.OFF) {
 			this.currentState = WashingMachineState.ON;
 		}
 	}
 
 	@Override
-	public void			switchOff() {
+	public void switchOff() {
 		this.currentState = WashingMachineState.OFF;
 	}
 
 	@Override
-	public void			startWashing(long duration, double targetTemp) {
+	public void startWashing(long duration, double targetTemp) {
 		if (this.currentState == WashingMachineState.ON) {
 			// Simplification : on passe directement en HEATING ou WASHING selon logique
 			// Ici on simule que ça commence par chauffer
 			this.currentState = WashingMachineState.HEATINGWATER;
 		}
 	}
-	
+
 	@Override
-	public void			setDelayedStart(long delay, long duration, double targetTemp) {
+	public void setDelayedStart(long delay, long duration, double targetTemp) {
 		// Change juste des variables internes, ne change pas l'état visible (reste ON)
 	}
 
@@ -151,10 +149,10 @@ implements	SIL_WashingMachineOperationI
 
 	@Override
 	public void suspendWashing() {
-		if (this.currentState == WashingMachineState.WASHING || 
+		if (this.currentState == WashingMachineState.WASHING ||
 				this.currentState == WashingMachineState.HEATINGWATER) {
-				this.currentState = WashingMachineState.ON; // Retour en veille/pause
-			}
+			this.currentState = WashingMachineState.ON; // Retour en veille/pause
+		}
 	}
 
 	@Override
@@ -166,7 +164,23 @@ implements	SIL_WashingMachineOperationI
 
 	@Override
 	public void setCurrentPowerLevel(double power) {
-		// TODO Auto-generated method stub
-		
+		// Not used in state model
+	}
+
+	/**
+	 * Called when heating is finished and washing can begin.
+	 */
+	@Override
+	public void heatingFinished() {
+		if (this.currentState == WashingMachineState.HEATINGWATER) {
+			this.currentState = WashingMachineState.WASHING;
+			this.logMessage("HeatingFinished received -> New State: WASHING\n");
+		}
+	}
+
+	@Override
+	public void endSimulation(fr.sorbonne_u.devs_simulation.models.time.Time endTime) {
+		this.logMessage("simulation ends.\n");
+		super.endSimulation(endTime);
 	}
 }

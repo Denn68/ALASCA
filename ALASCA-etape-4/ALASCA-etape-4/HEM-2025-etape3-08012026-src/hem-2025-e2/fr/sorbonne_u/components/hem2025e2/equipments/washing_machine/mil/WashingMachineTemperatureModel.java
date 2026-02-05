@@ -269,6 +269,16 @@ public class WashingMachineTemperatureModel
         // Not used in temperature model
     }
 
+    @Override
+    public void heatingFinished() {
+        if (this.currentState == WashingMachineState.HEATINGWATER) {
+            this.currentState = WashingMachineState.WASHING;
+            if (VERBOSE) {
+                this.logMessage("HeatingFinished - switching to WASHING state");
+            }
+        }
+    }
+
     /**
      * Compute the current heat transfer constant based on heating power.
      *

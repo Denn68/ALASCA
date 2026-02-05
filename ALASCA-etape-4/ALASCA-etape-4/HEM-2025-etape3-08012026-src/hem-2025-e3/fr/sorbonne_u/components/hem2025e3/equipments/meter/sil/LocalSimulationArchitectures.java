@@ -78,6 +78,9 @@ import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SwitchOnK
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SwitchOffKettle;
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.HeatKettle;
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.DoNotHeatKettle;
+import fr.sorbonne_u.components.hem2025e3.equipments.kettle.sil.events.SIL_SetPowerKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.StartKeepingWarmKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.StopKeepingWarmKettle;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetDelayedStart;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetPowerWashingMachine;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.StartWashing;
@@ -85,6 +88,7 @@ import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.ResumeWashing;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SwitchOffWashingMachine;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SwitchOnWashingMachine;
+import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.HeatingFinished;
 import fr.sorbonne_u.devs_simulation.architectures.RTArchitecture;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.HIOA_Composer;
 import fr.sorbonne_u.devs_simulation.hioa.architectures.RTAtomicHIOA_Descriptor;
@@ -458,6 +462,24 @@ public abstract class LocalSimulationArchitectures {
 				new EventSink[] {
 						new EventSink(KettleElectricitySILModel.URI,
 								DoNotHeatKettle.class)
+				});
+		imported.put(
+				SIL_SetPowerKettle.class,
+				new EventSink[] {
+						new EventSink(KettleElectricitySILModel.URI,
+								SIL_SetPowerKettle.class)
+				});
+		imported.put(
+				StartKeepingWarmKettle.class,
+				new EventSink[] {
+						new EventSink(KettleElectricitySILModel.URI,
+								StartKeepingWarmKettle.class)
+				});
+		imported.put(
+				StopKeepingWarmKettle.class,
+				new EventSink[] {
+						new EventSink(KettleElectricitySILModel.URI,
+								StopKeepingWarmKettle.class)
 				});
 
 		// events emitted by submodels reexported by the coupled model

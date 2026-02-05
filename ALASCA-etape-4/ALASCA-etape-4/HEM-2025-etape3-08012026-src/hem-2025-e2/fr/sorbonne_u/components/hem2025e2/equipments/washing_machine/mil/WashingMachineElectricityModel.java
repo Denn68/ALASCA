@@ -172,6 +172,17 @@ public class WashingMachineElectricityModel
     }
 
     @Override
+    public void heatingFinished() {
+        if (this.currentState == WashingMachineState.HEATINGWATER) {
+            this.currentState = WashingMachineState.WASHING;
+            this.consumptionHasChanged = true;
+            if (VERBOSE) {
+                this.logMessage("HeatingFinished - switching to WASHING state");
+            }
+        }
+    }
+
+    @Override
     public WashingMachineState getState() {
         return this.currentState;
     }

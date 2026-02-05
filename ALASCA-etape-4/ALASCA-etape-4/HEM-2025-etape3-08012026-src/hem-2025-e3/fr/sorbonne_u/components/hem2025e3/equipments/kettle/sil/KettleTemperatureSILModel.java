@@ -82,7 +82,7 @@ public class KettleTemperatureSILModel
 	protected static double COOLING_CONSTANT = 15.0; // time constant for cooling
 
 	protected static double TEMPERATURE_UPDATE_TOLERANCE = 0.0001;
-	protected static double STEP = 5.0 / 3600.0; // 5 seconds
+	protected static double STEP = 600.0 / 3600.0; // 600 seconds = 10 minutes (matches controller cycle)
 
 	protected KettleState currentState = KettleState.OFF;
 	protected double currentHeatingPower;
@@ -354,12 +354,17 @@ public class KettleTemperatureSILModel
 		double newDerivative = this.computeDerivatives(newTemp);
 
 		if (elapsedTime.getSimulatedDuration() > TEMPERATURE_UPDATE_TOLERANCE) {
-			this.currentTemperature.setNewValue(
-					newTemp,
-					newDerivative,
-					new Time(this.getCurrentStateTime().getSimulatedTime()
-							+ elapsedTime.getSimulatedDuration(),
-							this.getSimulatedTimeUnit()));
+			Time newTime = new Time(this.getCurrentStateTime().getSimulatedTime()
+					+ elapsedTime.getSimulatedDuration(),
+					this.getSimulatedTimeUnit());
+			// Safety check: only update if new time is valid (>= current time)
+			if (this.currentTemperature.getTime() == null ||
+					newTime.greaterThanOrEqual(this.currentTemperature.getTime())) {
+				this.currentTemperature.setNewValue(
+						newTemp,
+						newDerivative,
+						newTime);
+			}
 		}
 
 		super.userDefinedExternalTransition(elapsedTime);

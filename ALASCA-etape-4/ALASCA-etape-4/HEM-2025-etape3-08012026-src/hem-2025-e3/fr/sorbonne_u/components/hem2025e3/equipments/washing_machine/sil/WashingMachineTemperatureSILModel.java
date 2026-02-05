@@ -10,8 +10,9 @@ import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.WashingMach
 import fr.sorbonne_u.components.hem2025e2.GlobalReportI;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.*;
 import fr.sorbonne_u.devs_simulation.exceptions.MissingRunParameterException;
+import fr.sorbonne_u.devs_simulation.hioa.annotations.InternalVariable;
 import fr.sorbonne_u.devs_simulation.hioa.models.AtomicHIOA;
-import fr.sorbonne_u.devs_simulation.hioa.models.vars.Value;
+import fr.sorbonne_u.devs_simulation.hioa.models.vars.DerivableValue;
 import fr.sorbonne_u.devs_simulation.models.annotations.ModelExternalEvents;
 import fr.sorbonne_u.devs_simulation.models.events.Event;
 import fr.sorbonne_u.devs_simulation.models.events.EventI;
@@ -28,13 +29,11 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
 		StartWashing.class,
 		SetDelayedStart.class,
 		SuspendWashing.class,
-		ResumeWashing.class,
-		WashingEnded.class
+		ResumeWashing.class
 }, exported = {
 		HeatingFinished.class
 })
-// @ModelImportedVariable removed - currentHeatingPower is optional for
-// integration test
+// HeatingFinished is emitted when water reaches target temperature
 public class WashingMachineTemperatureSILModel
 		extends AtomicHIOA
 		implements SIL_WashingMachineOperationI {
@@ -58,10 +57,9 @@ public class WashingMachineTemperatureSILModel
 	/**
 	 * Constante de transfert thermique pour le chauffage.
 	 * Note: Le SIL utilise HOURS, le MIL utilise MINUTES.
-	 * MIL: 5.0 minutes pour ~63% de la différence de température
-	 * SIL: 5.0/60 = 0.0833 heures (équivalent)
+	 * Réduit à 2 min pour chauffer de 15°C à 40°C en ~7 minutes de simulation
 	 */
-	protected static final double HEATING_TRANSFER_CONSTANT = 5.0 / 60.0; // En heures
+	protected static final double HEATING_TRANSFER_CONSTANT = 2.0 / 60.0; // 2 min en heures
 
 	/**
 	 * Constante de refroidissement quand la machine est OFF ou ON sans lavage.
@@ -115,16 +113,13 @@ public class WashingMachineTemperatureSILModel
 	// HIOA model variables
 	// -------------------------------------------------------------------------
 
-	// Variable optionnelle - PAS d'annotation @ImportedVariable pour éviter
-	// la vérification de binding (pas de binding dans IntegrationTest)
-	// La méthode currentHeatTransferConstant() gère le cas null
-	protected Value<Double> currentHeatingPower;
+	// Puissance de chauffage actuelle - simple double comme dans
+	// KettleTemperatureSILModel
+	protected double currentHeatingPower;
 
-	// Utilisation de champs simples au lieu de DerivableValue pour éviter
-	// le problème d'initialisation "getTime() != null"
-	protected double currentWaterTemperatureValue = INITIAL_WATER_TEMPERATURE;
-	protected double currentWaterTemperatureDerivative = 0.0;
-	protected Time currentWaterTemperatureTime = null;
+	/** current water temperature in Celsius - variable HIOA interne. */
+	@InternalVariable(type = Double.class)
+	protected final DerivableValue<Double> currentWaterTemperature = new DerivableValue<Double>(this);
 
 	// -------------------------------------------------------------------------
 	// Constructors
@@ -150,13 +145,19 @@ public class WashingMachineTemperatureSILModel
 	 * @return the current heat transfer constant.
 	 */
 	protected double currentHeatTransferConstant() {
-		if (this.currentHeatingPower == null ||
-				!this.currentHeatingPower.isInitialised() ||
-				this.currentHeatingPower.getValue() < POWER_HEAT_TRANSFER_TOLERANCE) {
+		// In HEATINGWATER state, assume full power heating regardless of variable
+		// binding
+		// This handles the case where ElectricitySILModel is not in the architecture
+		if (this.currentState == WashingMachineState.HEATINGWATER) {
+			// Fast heating: reach 40°C from 15°C in about 2-3 simulated minutes
+			return HEATING_TRANSFER_CONSTANT; // Use base constant for fast heating
+		}
+
+		if (this.currentHeatingPower < POWER_HEAT_TRANSFER_TOLERANCE) {
 			return HEATING_TRANSFER_CONSTANT * 10; // Very slow heating if no power
 		}
 		// Higher power = faster heating (lower constant)
-		double powerRatio = this.currentHeatingPower.getValue() / 2000.0; // Assuming 2000W max
+		double powerRatio = this.currentHeatingPower / 2000.0; // Assuming 2000W max
 		return HEATING_TRANSFER_CONSTANT / Math.max(0.1, powerRatio);
 	}
 
@@ -193,8 +194,8 @@ public class WashingMachineTemperatureSILModel
 	 * @return the new temperature
 	 */
 	protected double computeNewTemperature(double deltaT) {
-		double oldTemp = this.currentWaterTemperatureValue;
-		double derivative = this.currentWaterTemperatureDerivative;
+		double oldTemp = this.currentWaterTemperature.getValue();
+		double derivative = this.currentWaterTemperature.getFirstDerivative();
 		double newTemp = oldTemp + derivative * deltaT;
 
 		this.temperatureAcc += ((oldTemp + newTemp) / 2.0) * deltaT;
@@ -227,55 +228,52 @@ public class WashingMachineTemperatureSILModel
 		this.washingEnded = false;
 		this.washingDurationMinutes = 0.0;
 		this.washingEndTime = -1.0;
-
-		// Initialiser les valeurs de température (sans le temps pour l'instant)
-		this.currentWaterTemperatureValue = INITIAL_WATER_TEMPERATURE;
-		this.currentWaterTemperatureDerivative = this.computeDerivatives(INITIAL_WATER_TEMPERATURE);
+		this.currentHeatingPower = 2000.0;
 
 		if (VERBOSE) {
 			this.logMessage("simulation begins.");
 		}
 
 		super.initialiseState(initialTime);
-
-		// Initialiser le temps APRÈS super.initialiseState()
-		this.currentWaterTemperatureTime = initialTime;
 	}
 
 	@Override
 	public boolean useFixpointInitialiseVariables() {
-		return true; // Retourner true pour éviter l'erreur !allModelVariablesTimeInitialised()
+		return true;
 	}
 
 	@Override
 	public Pair<Integer, Integer> fixpointInitialiseVariables() {
-		// Retourner (0, 0) car on utilise des champs simples, pas de variables HIOA
-		return new Pair<>(0, 0);
+		int justInitialised = 0;
+		int notInitialisedYet = 0;
+
+		// Initialiser currentWaterTemperature - pas de dépendance externe
+		if (!this.currentWaterTemperature.isInitialised()) {
+			double derivative = this.computeDerivatives(INITIAL_WATER_TEMPERATURE);
+			this.currentWaterTemperature.initialise(INITIAL_WATER_TEMPERATURE, derivative);
+			justInitialised++;
+		}
+
+		return new Pair<>(justInitialised, notInitialisedYet);
 	}
 
 	@Override
 	public ArrayList<EventI> output() {
 		ArrayList<EventI> ret = null;
-		Time t = this.getCurrentStateTime().add(this.getNextTimeAdvance());
 
 		if (this.heatingFinished) {
 			ret = new ArrayList<>();
+			Time t = this.getCurrentStateTime().add(this.getNextTimeAdvance());
 			ret.add(new HeatingFinished(t));
-
 			if (VERBOSE) {
-				this.logMessage("Emitting HeatingFinished event.");
+				this.logMessage("Emitting HeatingFinished event - target temperature reached.");
 			}
 			this.heatingFinished = false;
 		}
 
 		if (this.washingEnded) {
-			if (ret == null) {
-				ret = new ArrayList<>();
-			}
-			ret.add(new WashingEnded(t));
-
 			if (VERBOSE) {
-				this.logMessage("Emitting WashingEnded event.");
+				this.logMessage("WashingEnded state reached.");
 			}
 			this.washingEnded = false;
 		}
@@ -285,9 +283,11 @@ public class WashingMachineTemperatureSILModel
 
 	@Override
 	public Duration timeAdvance() {
-		if (this.heatingFinished || this.washingEnded) {
+		// If heatingFinished, need to emit event immediately
+		if (this.heatingFinished) {
 			return Duration.zero(this.getSimulatedTimeUnit());
 		}
+		// Use integration step for continuous temperature simulation
 		return this.integrationStep;
 	}
 
@@ -297,9 +297,24 @@ public class WashingMachineTemperatureSILModel
 		double newTemp = this.computeNewTemperature(elapsedTime.getSimulatedDuration());
 		double newDerivative = this.computeDerivatives(newTemp);
 
-		this.currentWaterTemperatureValue = newTemp;
-		this.currentWaterTemperatureDerivative = newDerivative;
-		this.currentWaterTemperatureTime = new Time(currentTime, this.getSimulatedTimeUnit());
+		Time t = new Time(currentTime, this.getSimulatedTimeUnit());
+		this.currentWaterTemperature.setNewValue(newTemp, newDerivative, t);
+
+		// Log de la température comme Kettle
+		if (VERBOSE) {
+			String mark = "";
+			if (this.currentState == WashingMachineState.HEATINGWATER)
+				mark = " (heating)";
+			else if (this.currentState == WashingMachineState.WASHING)
+				mark = " (washing)";
+			else if (this.currentState == WashingMachineState.ON)
+				mark = " (idle)";
+			else
+				mark = " (off)";
+
+			this.logMessage(String.format("%.2f", currentTime) + mark + " : " +
+					String.format("%.2f", newTemp) + " °C");
+		}
 
 		// Vérifier si le départ différé doit démarrer
 		if (this.delayedStartTime > 0 && currentTime >= this.delayedStartTime) {
@@ -374,11 +389,10 @@ public class WashingMachineTemperatureSILModel
 		if (elapsedTime.getSimulatedDuration() > 0.0001) {
 			double newTemp = this.computeNewTemperature(elapsedTime.getSimulatedDuration());
 			double newDerivative = this.computeDerivatives(newTemp);
-			this.currentWaterTemperatureValue = newTemp;
-			this.currentWaterTemperatureDerivative = newDerivative;
-			this.currentWaterTemperatureTime = new Time(
+			Time t = new Time(
 					this.getCurrentStateTime().getSimulatedTime() + elapsedTime.getSimulatedDuration(),
 					this.getSimulatedTimeUnit());
+			this.currentWaterTemperature.setNewValue(newTemp, newDerivative, t);
 		}
 
 		// Execute event
@@ -420,8 +434,8 @@ public class WashingMachineTemperatureSILModel
 	 */
 	public VariableValue<Double> getCurrentTemperature() {
 		return new VariableValue<Double>(
-				this.currentWaterTemperatureValue,
-				this.currentWaterTemperatureTime);
+				this.currentWaterTemperature.getValue(),
+				this.currentWaterTemperature.getTime());
 	}
 
 	// -------------------------------------------------------------------------
@@ -456,8 +470,8 @@ public class WashingMachineTemperatureSILModel
 			}
 
 			// Check if already at target temperature
-			if (this.currentWaterTemperatureTime != null &&
-					this.currentWaterTemperatureValue >= targetTemp - TEMPERATURE_TOLERANCE) {
+			if (this.currentWaterTemperature.isInitialised() &&
+					this.currentWaterTemperature.getValue() >= targetTemp - TEMPERATURE_TOLERANCE) {
 				if (VERBOSE) {
 					this.logMessage("Already at target temperature, will emit HeatingFinished");
 				}
@@ -498,7 +512,7 @@ public class WashingMachineTemperatureSILModel
 	public void resumeWashing() {
 		if (this.currentState == WashingMachineState.ON) {
 			// Resume heating if not at target temperature
-			if (this.currentWaterTemperatureValue < this.targetTemperature - TEMPERATURE_TOLERANCE) {
+			if (this.currentWaterTemperature.getValue() < this.targetTemperature - TEMPERATURE_TOLERANCE) {
 				this.currentState = WashingMachineState.HEATINGWATER;
 			} else {
 				this.currentState = WashingMachineState.WASHING;
@@ -514,6 +528,16 @@ public class WashingMachineTemperatureSILModel
 	@Override
 	public WashingMachineState getState() {
 		return this.currentState;
+	}
+
+	@Override
+	public void heatingFinished() {
+		// This model generates HeatingFinished, doesn't receive it
+		// The state transition is handled in userDefinedInternalTransition
+		if (VERBOSE) {
+			this.logMessage("heatingFinished() called - state is now WASHING");
+		}
+		this.currentState = WashingMachineState.WASHING;
 	}
 
 	/**

@@ -75,6 +75,14 @@ import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PreconditionException;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
 
+// Import des flags de test
+import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_BATTERIES;
+import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_SOLARPANEL;
+import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_GENERATOR;
+import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_HEATER;
+import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_WASHINGMACHINE;
+import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_KETTLE;
+
 // -----------------------------------------------------------------------------
 /**
  * The class <code>HEM</code> implements the basis for a household energy
@@ -421,26 +429,32 @@ public class HEMCyPhy
 					this.meterop.getPortURI(),
 					ElectricMeterCyPhy.ELECTRIC_METER_INBOUND_PORT_URI,
 					ElectricMeterConnector.class.getCanonicalName());
-			this.batteriesop = new BatteriesOutboundPort(this);
-			this.batteriesop.publishPort();
-			this.doPortConnection(
-					batteriesop.getPortURI(),
-					BatteriesCyPhy.STANDARD_INBOUND_PORT_URI,
-					BatteriesConnector.class.getCanonicalName());
-			this.solarPanelop = new SolarPanelOutboundPort(this);
-			this.solarPanelop.publishPort();
-			this.doPortConnection(
-					this.solarPanelop.getPortURI(),
-					SolarPanelCyPhy.STANDARD_INBOUND_PORT_URI,
-					SolarPanelConnector.class.getCanonicalName());
-			this.generatorop = new GeneratorOutboundPort(this);
-			this.generatorop.publishPort();
-			this.doPortConnection(
-					this.generatorop.getPortURI(),
-					GeneratorCyPhy.STANDARD_INBOUND_PORT_URI,
-					GeneratorConnector.class.getCanonicalName());
+			if (ENABLE_BATTERIES) {
+				this.batteriesop = new BatteriesOutboundPort(this);
+				this.batteriesop.publishPort();
+				this.doPortConnection(
+						batteriesop.getPortURI(),
+						BatteriesCyPhy.STANDARD_INBOUND_PORT_URI,
+						BatteriesConnector.class.getCanonicalName());
+			}
+			if (ENABLE_SOLARPANEL) {
+				this.solarPanelop = new SolarPanelOutboundPort(this);
+				this.solarPanelop.publishPort();
+				this.doPortConnection(
+						this.solarPanelop.getPortURI(),
+						SolarPanelCyPhy.STANDARD_INBOUND_PORT_URI,
+						SolarPanelConnector.class.getCanonicalName());
+			}
+			if (ENABLE_GENERATOR) {
+				this.generatorop = new GeneratorOutboundPort(this);
+				this.generatorop.publishPort();
+				this.doPortConnection(
+						this.generatorop.getPortURI(),
+						GeneratorCyPhy.STANDARD_INBOUND_PORT_URI,
+						GeneratorConnector.class.getCanonicalName());
+			}
 
-			if (this.isPreFirstStep) {
+			if (this.isPreFirstStep && ENABLE_HEATER) {
 				// in this case, connect using the statically customised
 				// heater connector and keep a specific outbound port to
 				// call the heater.
@@ -453,20 +467,24 @@ public class HEMCyPhy
 			}
 
 			// Connect to WashingMachine for energy management (Étape 4)
-			this.washingMachineop = new AdjustableOutboundPort(this);
-			this.washingMachineop.publishPort();
-			this.doPortConnection(
-					this.washingMachineop.getPortURI(),
-					WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-					WashingMachineConnector.class.getCanonicalName());
+			if (ENABLE_WASHINGMACHINE) {
+				this.washingMachineop = new AdjustableOutboundPort(this);
+				this.washingMachineop.publishPort();
+				this.doPortConnection(
+						this.washingMachineop.getPortURI(),
+						WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+						WashingMachineConnector.class.getCanonicalName());
+			}
 
 			// Connect to Kettle for energy management (Étape 4)
-			this.kettleop = new AdjustableOutboundPort(this);
-			this.kettleop.publishPort();
-			this.doPortConnection(
-					this.kettleop.getPortURI(),
-					KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-					KettleConnector.class.getCanonicalName());
+			if (ENABLE_KETTLE) {
+				this.kettleop = new AdjustableOutboundPort(this);
+				this.kettleop.publishPort();
+				this.doPortConnection(
+						this.kettleop.getPortURI(),
+						KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+						KettleConnector.class.getCanonicalName());
+			}
 		} catch (Throwable e) {
 			throw new ComponentStartException(e);
 		}
@@ -528,16 +546,26 @@ public class HEMCyPhy
 	@Override
 	public synchronized void finalise() throws Exception {
 		this.doPortDisconnection(this.meterop.getPortURI());
-		this.doPortDisconnection(this.batteriesop.getPortURI());
-		this.doPortDisconnection(this.solarPanelop.getPortURI());
-		this.doPortDisconnection(this.generatorop.getPortURI());
-		if (this.isPreFirstStep) {
+		if (ENABLE_BATTERIES) {
+			this.doPortDisconnection(this.batteriesop.getPortURI());
+		}
+		if (ENABLE_SOLARPANEL) {
+			this.doPortDisconnection(this.solarPanelop.getPortURI());
+		}
+		if (ENABLE_GENERATOR) {
+			this.doPortDisconnection(this.generatorop.getPortURI());
+		}
+		if (this.isPreFirstStep && ENABLE_HEATER) {
 			this.doPortDisconnection(this.heaterop.getPortURI());
 		}
 		// Disconnect WashingMachine (Étape 4)
-		this.doPortDisconnection(this.washingMachineop.getPortURI());
+		if (ENABLE_WASHINGMACHINE) {
+			this.doPortDisconnection(this.washingMachineop.getPortURI());
+		}
 		// Disconnect Kettle (Étape 4)
-		this.doPortDisconnection(this.kettleop.getPortURI());
+		if (ENABLE_KETTLE) {
+			this.doPortDisconnection(this.kettleop.getPortURI());
+		}
 		super.finalise();
 	}
 
@@ -548,16 +576,26 @@ public class HEMCyPhy
 	public synchronized void shutdown() throws ComponentShutdownException {
 		try {
 			this.meterop.unpublishPort();
-			this.batteriesop.unpublishPort();
-			this.solarPanelop.unpublishPort();
-			this.generatorop.unpublishPort();
-			if (this.isPreFirstStep) {
+			if (ENABLE_BATTERIES) {
+				this.batteriesop.unpublishPort();
+			}
+			if (ENABLE_SOLARPANEL) {
+				this.solarPanelop.unpublishPort();
+			}
+			if (ENABLE_GENERATOR) {
+				this.generatorop.unpublishPort();
+			}
+			if (this.isPreFirstStep && ENABLE_HEATER) {
 				this.heaterop.unpublishPort();
 			}
 			// Unpublish WashingMachine port (Étape 4)
-			this.washingMachineop.unpublishPort();
+			if (ENABLE_WASHINGMACHINE) {
+				this.washingMachineop.unpublishPort();
+			}
 			// Unpublish Kettle port (Étape 4)
-			this.kettleop.unpublishPort();
+			if (ENABLE_KETTLE) {
+				this.kettleop.unpublishPort();
+			}
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
 		}

@@ -32,16 +32,13 @@ import fr.sorbonne_u.devs_simulation.utils.StandardLogger;
 		ResumeWashing.class,
 		SetPowerWashingMachine.class,
 		HeatingFinished.class
-	}, exported = {
-		WashingEnded.class,
-		StartWashing.class
-	})
+})
+// HeatingFinished triggers transition from HEATINGWATER to WASHING
 @ModelExportedVariable(name = "currentIntensity", type = Double.class)
 @ModelExportedVariable(name = "currentHeatingPower", type = Double.class)
 public class WashingMachineElectricitySILModel
-extends		AtomicHIOA
-implements	SIL_WashingMachineOperationI
-{
+		extends AtomicHIOA
+		implements SIL_WashingMachineOperationI {
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
@@ -84,11 +81,9 @@ implements	SIL_WashingMachineOperationI
 	// -------------------------------------------------------------------------
 
 	public WashingMachineElectricitySILModel(
-		String uri,
-		TimeUnit simulatedTimeUnit,
-		AtomicSimulatorI simulationEngine
-		) throws Exception
-	{
+			String uri,
+			TimeUnit simulatedTimeUnit,
+			AtomicSimulatorI simulationEngine) throws Exception {
 		super(uri, simulatedTimeUnit, simulationEngine);
 		this.getSimulationEngine().setLogger(new StandardLogger());
 	}
@@ -99,8 +94,7 @@ implements	SIL_WashingMachineOperationI
 
 	@Override
 	public void setSimulationRunParameters(Map<String, Object> simParams)
-			throws MissingRunParameterException
-	{
+			throws MissingRunParameterException {
 		super.setSimulationRunParameters(simParams);
 
 		if (simParams.containsKey(AtomicSimulatorPlugin.OWNER_RUNTIME_PARAMETER_NAME)) {
@@ -110,8 +104,7 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public void initialiseState(Time initialTime)
-	{
+	public void initialiseState(Time initialTime) {
 		super.initialiseState(initialTime);
 
 		this.currentState = WashingMachineState.OFF;
@@ -130,14 +123,12 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public boolean useFixpointInitialiseVariables()
-	{
+	public boolean useFixpointInitialiseVariables() {
 		return true;
 	}
 
 	@Override
-	public Pair<Integer, Integer> fixpointInitialiseVariables()
-	{
+	public Pair<Integer, Integer> fixpointInitialiseVariables() {
 		int initialised = 0;
 
 		if (!this.currentIntensity.isInitialised()) {
@@ -153,39 +144,14 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public ArrayList<EventI> output()
-	{
-		ArrayList<EventI> ret = null;
-
-		if (this.delayedStartTriggered) {
-			ret = new ArrayList<>();
-			Time t = this.getCurrentStateTime().add(this.getNextTimeAdvance());
-			ret.add(new StartWashing(t, this.programmedDuration, this.programmedTemperature));
-
-			if (VERBOSE) {
-				this.logMessage("Delay elapsed. Emitting StartWashing event.");
-			}
-			this.delayedStartTriggered = false;
-		}
-
-		if (this.washingEnded) {
-			if (ret == null) ret = new ArrayList<>();
-			Time t = this.getCurrentStateTime().add(this.getNextTimeAdvance());
-			ret.add(new WashingEnded(t));
-
-			if (VERBOSE) {
-				this.logMessage("Emitting WashingEnded event.");
-			}
-			this.washingEnded = false;
-		}
-
-		return ret;
+	public ArrayList<EventI> output() {
+		// No exported events - matches HeaterElectricitySILModel pattern
+		return null;
 	}
 
 	@Override
-	public Duration timeAdvance()
-	{
-		if (this.consumptionHasChanged || this.delayedStartTriggered || this.washingEnded) {
+	public Duration timeAdvance() {
+		if (this.consumptionHasChanged) {
 			return Duration.zero(this.getSimulatedTimeUnit());
 		}
 
@@ -197,8 +163,7 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public void userDefinedExternalTransition(Duration elapsedTime)
-	{
+	public void userDefinedExternalTransition(Duration elapsedTime) {
 		super.userDefinedExternalTransition(elapsedTime);
 
 		double durationInHours = elapsedTime.getSimulatedDuration();
@@ -206,9 +171,8 @@ implements	SIL_WashingMachineOperationI
 		this.totalConsumption += (power * durationInHours) / 1000.0;
 
 		if (this.remainingTimeInCurrentPhase != null &&
-			!this.remainingTimeInCurrentPhase.equals(Duration.INFINITY)) {
-			this.remainingTimeInCurrentPhase =
-					this.remainingTimeInCurrentPhase.subtract(elapsedTime);
+				!this.remainingTimeInCurrentPhase.equals(Duration.INFINITY)) {
+			this.remainingTimeInCurrentPhase = this.remainingTimeInCurrentPhase.subtract(elapsedTime);
 		}
 
 		ArrayList<EventI> currentEvents = this.getStoredEventAndReset();
@@ -238,8 +202,7 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public void userDefinedInternalTransition(Duration elapsedTime)
-	{
+	public void userDefinedInternalTransition(Duration elapsedTime) {
 		super.userDefinedInternalTransition(elapsedTime);
 
 		boolean timeElapsed = elapsedTime.getSimulatedDuration() > 0.000001;
@@ -257,8 +220,7 @@ implements	SIL_WashingMachineOperationI
 				this.washingDuration = new Duration((double) this.programmedDuration,
 						this.getSimulatedTimeUnit());
 				this.consumptionHasChanged = true;
-			}
-			else if (this.currentState == WashingMachineState.WASHING) {
+			} else if (this.currentState == WashingMachineState.WASHING) {
 				if (VERBOSE) {
 					this.logMessage("Washing finished. Returning to ON state.");
 				}
@@ -305,8 +267,7 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public void endSimulation(Time endTime)
-	{
+	public void endSimulation(Time endTime) {
 		Duration d = endTime.subtract(this.getCurrentStateTime());
 		double power = this.currentIntensity.getValue() * TENSION;
 		this.totalConsumption += (power * d.getSimulatedDuration()) / 1000.0;
@@ -319,8 +280,7 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public SimulationReportI getFinalReport()
-	{
+	public SimulationReportI getFinalReport() {
 		return new WashingMachineElectricityReport(URI, this.totalConsumption);
 	}
 
@@ -329,8 +289,7 @@ implements	SIL_WashingMachineOperationI
 	// -------------------------------------------------------------------------
 
 	@Override
-	public void switchOn()
-	{
+	public void switchOn() {
 		if (this.currentState == WashingMachineState.OFF) {
 			this.currentState = WashingMachineState.ON;
 			this.consumptionHasChanged = true;
@@ -338,8 +297,7 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public void switchOff()
-	{
+	public void switchOff() {
 		this.currentState = WashingMachineState.OFF;
 		this.remainingTimeInCurrentPhase = null;
 		this.washingDuration = null;
@@ -348,8 +306,7 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public void startWashing(long duration, double targetTemperature)
-	{
+	public void startWashing(long duration, double targetTemperature) {
 		if (this.currentState == WashingMachineState.ON) {
 			if (this.isDelayRunning) {
 				if (VERBOSE) {
@@ -369,8 +326,7 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public void setDelayedStart(long delay, long washingDuration, double targetTemperature)
-	{
+	public void setDelayedStart(long delay, long washingDuration, double targetTemperature) {
 		if (this.currentState == WashingMachineState.ON && !this.isDelayRunning) {
 			if (VERBOSE) {
 				this.logMessage("Delayed start programmed for " + delay + " minutes.");
@@ -386,10 +342,9 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public void suspendWashing()
-	{
+	public void suspendWashing() {
 		if (this.currentState == WashingMachineState.WASHING ||
-			this.currentState == WashingMachineState.HEATINGWATER) {
+				this.currentState == WashingMachineState.HEATINGWATER) {
 			this.stateBeforeSuspension = this.currentState;
 			this.currentState = WashingMachineState.ON;
 			this.consumptionHasChanged = true;
@@ -397,8 +352,7 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public void resumeWashing()
-	{
+	public void resumeWashing() {
 		if (this.currentState == WashingMachineState.ON && this.stateBeforeSuspension != null) {
 			this.currentState = this.stateBeforeSuspension;
 			this.stateBeforeSuspension = null;
@@ -407,41 +361,51 @@ implements	SIL_WashingMachineOperationI
 	}
 
 	@Override
-	public void setCurrentPowerLevel(double power)
-	{
+	public void setCurrentPowerLevel(double power) {
 		// Not used in this simple model
 	}
 
 	@Override
-	public WashingMachineState getState()
-	{
+	public WashingMachineState getState() {
 		return this.currentState;
+	}
+
+	@Override
+	public void heatingFinished() {
+		if (this.currentState == WashingMachineState.HEATINGWATER) {
+			if (VERBOSE) {
+				this.logMessage("heatingFinished() called. Switching to WASHING.");
+			}
+			this.currentState = WashingMachineState.WASHING;
+			this.remainingTimeInCurrentPhase = this.washingDuration;
+			this.washingDuration = null;
+			this.consumptionHasChanged = true;
+		}
 	}
 
 	// -------------------------------------------------------------------------
 	// Report Class
 	// -------------------------------------------------------------------------
 
-	public static class WashingMachineElectricityReport implements SimulationReportI, GlobalReportI
-	{
+	public static class WashingMachineElectricityReport implements SimulationReportI, GlobalReportI {
 		private static final long serialVersionUID = 1L;
 		protected String modelURI;
 		protected double totalConsumption;
 
-		public WashingMachineElectricityReport(String modelURI, double totalConsumption)
-		{
+		public WashingMachineElectricityReport(String modelURI, double totalConsumption) {
 			this.modelURI = modelURI;
 			this.totalConsumption = totalConsumption;
 		}
 
 		@Override
-		public String getModelURI() { return this.modelURI; }
+		public String getModelURI() {
+			return this.modelURI;
+		}
 
 		@Override
-		public String printout(String indent)
-		{
+		public String printout(String indent) {
 			return indent + "WashingMachine Electricity Report:\n" +
-				   indent + "  Total consumption: " + String.format("%.4f", this.totalConsumption) + " kWh\n";
+					indent + "  Total consumption: " + String.format("%.4f", this.totalConsumption) + " kWh\n";
 		}
 	}
 }

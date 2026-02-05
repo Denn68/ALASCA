@@ -122,22 +122,14 @@ public abstract class Local_SIL_SimulationArchitectures {
 						new EventSink(WashingMachineElectricitySILModel.URI, SetPowerWashingMachine.class)
 				});
 
+		// HeatingFinished: TemperatureModel -> ElectricitySILModel AND StateSILModel
+		// When water reaches target temperature, both models transition from
+		// HEATINGWATER to WASHING
 		connections.put(
 				new EventSource(WashingMachineTemperatureSILModel.URI, HeatingFinished.class),
 				new EventSink[] {
-						new EventSink(WashingMachineElectricitySILModel.URI, HeatingFinished.class)
-				});
-
-		connections.put(
-				new EventSource(WashingMachineElectricitySILModel.URI, WashingEnded.class),
-				new EventSink[] {
-						new EventSink(WashingMachineTemperatureSILModel.URI, WashingEnded.class)
-				});
-
-		connections.put(
-				new EventSource(WashingMachineElectricitySILModel.URI, StartWashing.class),
-				new EventSink[] {
-						new EventSink(WashingMachineTemperatureSILModel.URI, StartWashing.class)
+						new EventSink(WashingMachineElectricitySILModel.URI, HeatingFinished.class),
+						new EventSink(WashingMachineStateSILModel.URI, HeatingFinished.class)
 				});
 
 		// Pas de binding de variable - currentHeatingPower n'est plus annotée
@@ -182,6 +174,7 @@ public abstract class Local_SIL_SimulationArchitectures {
 
 		Map<String, AbstractAtomicModelDescriptor> atomicModelDescriptors = new HashMap<>();
 
+		// Le modèle d'état reçoit les événements du composant et les re-émet
 		atomicModelDescriptors.put(
 				WashingMachineStateSILModel.URI,
 				RTAtomicModelDescriptor.create(
@@ -191,6 +184,8 @@ public abstract class Local_SIL_SimulationArchitectures {
 						null,
 						accelerationFactor));
 
+		// Le modèle de température est nécessaire pour avoir au moins 2 sous-modèles
+		// dans le modèle couplé (contrainte du framework)
 		atomicModelDescriptors.put(
 				WashingMachineTemperatureSILModel.URI,
 				RTAtomicHIOA_Descriptor.create(
@@ -208,6 +203,7 @@ public abstract class Local_SIL_SimulationArchitectures {
 
 		Map<Class<? extends EventI>, ReexportedEvent> reexported = new HashMap<>();
 
+		// Re-export des événements du StateModel
 		reexported.put(
 				SwitchOnWashingMachine.class,
 				new ReexportedEvent(WashingMachineStateSILModel.URI,
@@ -236,7 +232,11 @@ public abstract class Local_SIL_SimulationArchitectures {
 				SetPowerWashingMachine.class,
 				new ReexportedEvent(WashingMachineStateSILModel.URI,
 						SetPowerWashingMachine.class));
+		// Note: HeatingFinished is NOT reexported here - it's only used internally
+		// for unit tests. In integration tests, it's emitted but not
+		// connected/reexported.
 
+		// Connexions internes : le StateModel envoie les événements au TemperatureModel
 		Map<EventSource, EventSink[]> connections = new HashMap<>();
 
 		connections.put(
@@ -244,29 +244,39 @@ public abstract class Local_SIL_SimulationArchitectures {
 				new EventSink[] {
 						new EventSink(WashingMachineTemperatureSILModel.URI, SwitchOnWashingMachine.class)
 				});
-
 		connections.put(
 				new EventSource(WashingMachineStateSILModel.URI, SwitchOffWashingMachine.class),
 				new EventSink[] {
 						new EventSink(WashingMachineTemperatureSILModel.URI, SwitchOffWashingMachine.class)
 				});
-
 		connections.put(
 				new EventSource(WashingMachineStateSILModel.URI, StartWashing.class),
 				new EventSink[] {
 						new EventSink(WashingMachineTemperatureSILModel.URI, StartWashing.class)
 				});
-
+		connections.put(
+				new EventSource(WashingMachineStateSILModel.URI, SetDelayedStart.class),
+				new EventSink[] {
+						new EventSink(WashingMachineTemperatureSILModel.URI, SetDelayedStart.class)
+				});
 		connections.put(
 				new EventSource(WashingMachineStateSILModel.URI, SuspendWashing.class),
 				new EventSink[] {
 						new EventSink(WashingMachineTemperatureSILModel.URI, SuspendWashing.class)
 				});
-
 		connections.put(
 				new EventSource(WashingMachineStateSILModel.URI, ResumeWashing.class),
 				new EventSink[] {
 						new EventSink(WashingMachineTemperatureSILModel.URI, ResumeWashing.class)
+				});
+
+		// HeatingFinished: TemperatureModel -> StateModel
+		// When water reaches target temperature, StateModel transitions from
+		// HEATINGWATER to WASHING
+		connections.put(
+				new EventSource(WashingMachineTemperatureSILModel.URI, HeatingFinished.class),
+				new EventSink[] {
+						new EventSink(WashingMachineStateSILModel.URI, HeatingFinished.class)
 				});
 
 		Map<VariableSource, VariableSink[]> bindings = new HashMap<>();

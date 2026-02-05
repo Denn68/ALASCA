@@ -209,13 +209,9 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 
 	@Override
 	public synchronized void execute() throws Exception {
-		System.out.println("WashingMachine: execute() started. Waiting for clock..."); // DEBUG
-
 		if (this.clock != null) {
 			this.clock.waitUntilStart();
 		}
-
-		System.out.println("WashingMachine: Clock started ! Simulation begins."); // DEBUG
 	}
 
 	@Override

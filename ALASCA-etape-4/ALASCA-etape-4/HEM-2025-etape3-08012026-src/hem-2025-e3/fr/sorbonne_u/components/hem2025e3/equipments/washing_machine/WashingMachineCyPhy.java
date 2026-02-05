@@ -216,6 +216,69 @@ public class WashingMachineCyPhy
 		assert WashingMachineCyPhy.invariants(this) : new InvariantException("WashingMachineCyPhy.invariants(this)");
 	}
 
+	/**
+	 * Create a new WashingMachine for test executions without simulation.
+	 * 
+	 * @param executionMode execution mode for the next run.
+	 * @param clockURI      URI of a clock used to synchronise components.
+	 * @throws Exception <i>to do</i>.
+	 */
+	protected WashingMachineCyPhy(
+			ExecutionMode executionMode,
+			String clockURI) throws Exception {
+		this(USER_INBOUND_PORT_URI, INTERNAL_CONTROL_INBOUND_PORT_URI,
+				EXTERNAL_CONTROL_INBOUND_PORT_URI, SENSOR_INBOUND_PORT_URI,
+				ACTUATOR_INBOUND_PORT_URI, executionMode, clockURI);
+	}
+
+	/**
+	 * Create a new WashingMachine for test executions without simulation with all
+	 * port URIs.
+	 * 
+	 * @param wmUserInboundPortURI            URI of the user inbound port.
+	 * @param wmInternalControlInboundPortURI URI of the internal control inbound
+	 *                                        port.
+	 * @param wmExternalControlInboundPortURI URI of the external control inbound
+	 *                                        port.
+	 * @param wmSensorInboundPortURI          URI of the sensor inbound port.
+	 * @param wmActuatorInboundPortURI        URI of the actuator inbound port.
+	 * @param executionMode                   execution mode for the next run.
+	 * @param clockURI                        URI of a clock used to synchronise
+	 *                                        components.
+	 * @throws Exception <i>to do</i>.
+	 */
+	protected WashingMachineCyPhy(
+			String wmUserInboundPortURI,
+			String wmInternalControlInboundPortURI,
+			String wmExternalControlInboundPortURI,
+			String wmSensorInboundPortURI,
+			String wmActuatorInboundPortURI,
+			ExecutionMode executionMode,
+			String clockURI) throws Exception {
+		super(AbstractPort.generatePortURI(CyPhyReflectionCI.class),
+				NUMBER_OF_STANDARD_THREADS,
+				NUMBER_OF_SCHEDULABLE_THREADS,
+				executionMode,
+				clockURI,
+				null);
+
+		assert executionMode != null && executionMode.isTestWithoutSimulation() : new PreconditionException(
+				"executionMode != null && executionMode.isTestWithoutSimulation()");
+
+		this.localArchitectureURI = null;
+		this.accelerationFactor = 0.0;
+
+		this.initialise(wmUserInboundPortURI,
+				wmInternalControlInboundPortURI,
+				wmExternalControlInboundPortURI,
+				wmSensorInboundPortURI,
+				wmActuatorInboundPortURI);
+
+		assert WashingMachineCyPhy.implementationInvariants(this) : new ImplementationInvariantException(
+				"WashingMachineCyPhy.implementationInvariants(this)");
+		assert WashingMachineCyPhy.invariants(this) : new InvariantException("WashingMachineCyPhy.invariants(this)");
+	}
+
 	protected WashingMachineCyPhy(
 			String reflectionInboundPortURI,
 			String wmUserInboundPortURI,
@@ -401,7 +464,7 @@ public class WashingMachineCyPhy
 						this.getClock().getStartInstant());
 				break;
 			case UNIT_TEST_WITH_SIL_SIMULATION:
-			case INTEGRATION_TEST_WITH_SIL_SIMULATION:
+				// En test unitaire, le composant gère lui-même sa simulation
 				this.initialiseClock4Simulation(
 						ClocksServerWithSimulation.STANDARD_INBOUNDPORT_URI,
 						this.clockURI);
@@ -429,6 +492,23 @@ public class WashingMachineCyPhy
 				Thread.sleep(200L);
 				this.logMessage(this.asp.getFinalReport().toString());
 				break;
+			case INTEGRATION_TEST_WITH_SIL_SIMULATION:
+				// En test d'intégration, le GlobalSupervisor gère la simulation globale
+				// NE PAS appeler initialiseSimulation/startRTSimulation ici !
+				this.initialiseClock4Simulation(
+						ClocksServerWithSimulation.STANDARD_INBOUNDPORT_URI,
+						this.clockURI);
+				this.currentPowerLevel = new TimedMeasure<Double>(
+						MAX_POWER_LEVEL.getData(),
+						MAX_POWER_LEVEL.getMeasurementUnit(),
+						this.getClock4Simulation(),
+						this.getClock4Simulation().getStartInstant());
+				this.targetTemperature = new TimedMeasure<Double>(
+						STANDARD_TARGET_TEMPERATURE.getData(),
+						STANDARD_TARGET_TEMPERATURE.getMeasurementUnit(),
+						this.getClock4Simulation(),
+						this.getClock4Simulation().getStartInstant());
+				break;
 			default:
 		}
 	}
@@ -454,7 +534,7 @@ public class WashingMachineCyPhy
 	@Override
 	public boolean on() throws Exception {
 		if (VERBOSE)
-			this.traceMessage("WashingMachine state: " + this.currentState + ".\n");
+			this.traceMessage("WashingMachine returns its state: " + this.currentState + ".\n");
 		return this.currentState != WashingMachineState.OFF;
 	}
 
@@ -538,6 +618,7 @@ public class WashingMachineCyPhy
 	public SignalData<Double> getCurrentTemperature() throws Exception {
 		if (VERBOSE) {
 			this.traceMessage("WashingMachine returns its current temperature.\n");
+			this.traceMessage("WashingMachine returns its state: " + this.currentState + ".\n");
 		}
 
 		assert this.on() : new PreconditionException("on()");
@@ -553,6 +634,10 @@ public class WashingMachineCyPhy
 							TEMPERATURE_UNIT,
 							this.getClock4Simulation(),
 							this.getClock4Simulation().instantOfSimulatedTime(v.getTime())));
+			if (VERBOSE) {
+				this.traceMessage("WashingMachine returns current temperature " +
+						String.format("%.2f", v.getValue()) + ".\n");
+			}
 		} else {
 			assert this.executionMode.isStandard() || this.executionMode.isTestWithoutSimulation();
 			currentTemperature = FAKE_CURRENT_TEMPERATURE;
@@ -570,6 +655,10 @@ public class WashingMachineCyPhy
 
 	@Override
 	public boolean isWashing() throws Exception {
+		if (VERBOSE) {
+			this.traceMessage("WashingMachine returns washing status: " +
+					(this.currentState == WashingMachineState.WASHING) + ".\n");
+		}
 		return this.currentState == WashingMachineState.WASHING;
 	}
 
@@ -650,16 +739,26 @@ public class WashingMachineCyPhy
 
 	@Override
 	public boolean heatWater() throws Exception {
+		if (VERBOSE) {
+			this.traceMessage("WashingMachine returns heating status: " +
+					(this.currentState == WashingMachineState.HEATINGWATER) + ".\n");
+		}
 		return this.currentState == WashingMachineState.HEATINGWATER;
 	}
 
 	@Override
 	public void startHeatingWater() throws Exception {
+		if (VERBOSE) {
+			this.traceMessage("WashingMachine starts heating water.\n");
+		}
 		this.currentState = WashingMachineState.HEATINGWATER;
 	}
 
 	@Override
 	public void stopHeatingWater() throws Exception {
+		if (VERBOSE) {
+			this.traceMessage("WashingMachine stops heating water.\n");
+		}
 		if (this.currentState == WashingMachineState.HEATINGWATER) {
 			this.currentState = WashingMachineState.WASHING;
 		}
@@ -667,6 +766,9 @@ public class WashingMachineCyPhy
 
 	@Override
 	public Measure<Double> getMaxPowerLevel() throws Exception {
+		if (VERBOSE) {
+			this.traceMessage("WashingMachine returns its max power level " + MAX_POWER_LEVEL + ".\n");
+		}
 		return MAX_POWER_LEVEL;
 	}
 
@@ -686,6 +788,9 @@ public class WashingMachineCyPhy
 
 	@Override
 	public SignalData<Double> getCurrentPowerLevel() throws Exception {
+		if (VERBOSE) {
+			this.traceMessage("WashingMachine returns its current power level " + this.currentPowerLevel + ".\n");
+		}
 		return new SignalData<Double>(this.currentPowerLevel);
 	}
 
