@@ -33,12 +33,17 @@ package fr.sorbonne_u.components.hem2025e1.equipments.hem;
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 import fr.sorbonne_u.components.AbstractComponent;
+import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.exceptions.BCMException;
 import fr.sorbonne_u.components.exceptions.BCMRuntimeException;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.components.hem2025.bases.AdjustableCI;
+import fr.sorbonne_u.components.hem2025.bases.RegistrationCI;
+import fr.sorbonne_u.components.hem2025.bases.connector_generator.AdapterDescriptor;
+import fr.sorbonne_u.components.hem2025.bases.connector_generator.DescriptorReader;
+import fr.sorbonne_u.components.hem2025.bases.connector_generator.DynamicConnectorFactory;
 import fr.sorbonne_u.components.hem2025e1.CVMIntegrationTest;
 import fr.sorbonne_u.components.hem2025e1.equipments.batteries.Batteries;
 import fr.sorbonne_u.components.hem2025e1.equipments.batteries.BatteriesCI;
@@ -80,6 +85,8 @@ import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
 import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
 import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 // -----------------------------------------------------------------------------
@@ -131,6 +138,7 @@ import java.util.concurrent.TimeUnit;
  * 
  * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
+@OfferedInterfaces(offered = { RegistrationCI.class })
 @RequiredInterfaces(required = { ClocksServerCI.class,
 		AdjustableCI.class,
 		ElectricMeterCI.class,
@@ -138,7 +146,8 @@ import java.util.concurrent.TimeUnit;
 		SolarPanelCI.class,
 		GeneratorCI.class })
 public class HEM
-		extends AbstractComponent {
+		extends AbstractComponent
+		implements RegistrationInboundPort.RegistrationImplementorI {
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
@@ -151,6 +160,15 @@ public class HEM
 	public static int X_RELATIVE_POSITION = 0;
 	/** when tracing, y coordinate of the window relative position. */
 	public static int Y_RELATIVE_POSITION = 0;
+
+	/** URI du port entrant pour l'enregistrement des équipements. */
+	public static final String REGISTRATION_INBOUND_PORT_URI = "HEM-REGISTRATION-INBOUND-PORT-URI";
+	/** port entrant pour recevoir les demandes d'enregistrement. */
+	protected RegistrationInboundPort registrationInboundPort;
+	/** équipements enregistrés : uid -> AdjustableOutboundPort. */
+	protected Map<String, AdjustableOutboundPort> registeredEquipments;
+	/** compteur pour générer des noms de classes uniques pour les connecteurs. */
+	protected int connectorCounter = 0;
 
 	/** port to connect to the electric meter. */
 	protected ElectricMeterOutboundPort meterop;
@@ -362,6 +380,16 @@ public class HEM
 		// and manage the heater in a customised way.
 		this.isPreFirstStep = true;
 
+		this.registeredEquipments = new HashMap<>();
+
+		try {
+			this.registrationInboundPort = new RegistrationInboundPort(
+					REGISTRATION_INBOUND_PORT_URI, this);
+			this.registrationInboundPort.publishPort();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
 		if (VERBOSE) {
 			this.tracer.get().setTitle("Home Energy Manager component");
 			this.tracer.get().setRelativePosition(X_RELATIVE_POSITION,
@@ -422,31 +450,29 @@ public class HEM
 						Heater.EXTERNAL_CONTROL_INBOUND_PORT_URI,
 						HeaterConnector.class.getCanonicalName());
 
-				// Étape 1 - Connexions aux équipements contrôlables
+				// // Fan - Modulable "simple"
+				// this.fanop = new AdjustableOutboundPort(this);
+				// this.fanop.publishPort();
+				// this.doPortConnection(
+				// this.fanop.getPortURI(),
+				// Fan.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+				// FanConnector.class.getCanonicalName());
 
-				// Fan - Modulable "simple"
-				this.fanop = new AdjustableOutboundPort(this);
-				this.fanop.publishPort();
-				this.doPortConnection(
-						this.fanop.getPortURI(),
-						Fan.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-						FanConnector.class.getCanonicalName());
+				// // Kettle - Modulable "non programmable"
+				// this.kettleop = new AdjustableOutboundPort(this);
+				// this.kettleop.publishPort();
+				// this.doPortConnection(
+				// this.kettleop.getPortURI(),
+				// Kettle.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+				// KettleConnector.class.getCanonicalName());
 
-				// Kettle - Modulable "non programmable"
-				this.kettleop = new AdjustableOutboundPort(this);
-				this.kettleop.publishPort();
-				this.doPortConnection(
-						this.kettleop.getPortURI(),
-						Kettle.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-						KettleConnector.class.getCanonicalName());
-
-				// WashingMachine - Modulable "programmable"
-				this.washingMachineop = new AdjustableOutboundPort(this);
-				this.washingMachineop.publishPort();
-				this.doPortConnection(
-						this.washingMachineop.getPortURI(),
-						WashingMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-						WashingMachineConnector.class.getCanonicalName());
+				// // WashingMachine - Modulable "programmable"
+				// this.washingMachineop = new AdjustableOutboundPort(this);
+				// this.washingMachineop.publishPort();
+				// this.doPortConnection(
+				// this.washingMachineop.getPortURI(),
+				// WashingMachine.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+				// WashingMachineConnector.class.getCanonicalName());
 			}
 		} catch (Throwable e) {
 			throw new ComponentStartException(e);
@@ -489,7 +515,6 @@ public class HEM
 			this.logMessage("Generator tests end.");
 			if (this.isPreFirstStep) {
 				this.scheduleTestHeater();
-				// Étape 1 - Tests des équipements contrôlables
 				this.scheduleTestFan();
 				this.scheduleTestKettle();
 				this.scheduleTestWashingMachine();
@@ -508,11 +533,18 @@ public class HEM
 		this.doPortDisconnection(this.generatorop.getPortURI());
 		if (this.isPreFirstStep) {
 			this.doPortDisconnection(this.heaterop.getPortURI());
-			// Étape 1 - Déconnexion des équipements contrôlables
-			this.doPortDisconnection(this.fanop.getPortURI());
-			this.doPortDisconnection(this.kettleop.getPortURI());
-			this.doPortDisconnection(this.washingMachineop.getPortURI());
+			// this.doPortDisconnection(this.fanop.getPortURI());
+			// this.doPortDisconnection(this.kettleop.getPortURI());
+			// this.doPortDisconnection(this.washingMachineop.getPortURI());
 		}
+
+		for (Map.Entry<String, AdjustableOutboundPort> entry : this.registeredEquipments.entrySet()) {
+			AdjustableOutboundPort port = entry.getValue();
+			if (port.connected()) {
+				this.doPortDisconnection(port.getPortURI());
+			}
+		}
+
 		super.finalise();
 	}
 
@@ -526,17 +558,118 @@ public class HEM
 			this.batteriesop.unpublishPort();
 			this.solarPanelop.unpublishPort();
 			this.generatorop.unpublishPort();
+			if (this.registrationInboundPort != null &&
+					this.registrationInboundPort.isPublished()) {
+				this.registrationInboundPort.unpublishPort();
+			}
 			if (this.isPreFirstStep) {
 				this.heaterop.unpublishPort();
-				// Étape 1 - Unpublish des ports des équipements contrôlables
-				this.fanop.unpublishPort();
-				this.kettleop.unpublishPort();
-				this.washingMachineop.unpublishPort();
+				// this.fanop.unpublishPort();
+				// this.kettleop.unpublishPort();
+				// this.washingMachineop.unpublishPort();
 			}
+
+			for (AdjustableOutboundPort port : this.registeredEquipments.values()) {
+				if (port.isPublished()) {
+					port.unpublishPort();
+				}
+			}
+			this.registeredEquipments.clear();
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
 		}
 		super.shutdown();
+	}
+
+	// -------------------------------------------------------------------------
+	// Registration methods (RegistrationImplementorI)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationInboundPort.RegistrationImplementorI#registered(String)
+	 */
+	@Override
+	public boolean registered(String uid) throws Exception {
+		if (uid == null || uid.isEmpty()) {
+			return false;
+		}
+		return this.registeredEquipments.containsKey(uid);
+	}
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationInboundPort.RegistrationImplementorI#register(String,
+	 *      String, String)
+	 */
+	@Override
+	public boolean register(
+			String uid,
+			String controlPortURI,
+			String xmlControlAdapter) throws Exception {
+		assert uid != null && !uid.isEmpty()
+				: new PreconditionException("uid != null && !uid.isEmpty()");
+		assert controlPortURI != null && !controlPortURI.isEmpty()
+				: new PreconditionException(
+						"controlPortURI != null && !controlPortURI.isEmpty()");
+
+		if (this.registeredEquipments.containsKey(uid)) {
+			this.traceMessage("HEM: equipment " + uid
+					+ " already registered, skipping.\n");
+			return false;
+		}
+
+		this.traceMessage("HEM: registering equipment " + uid + "...\n");
+
+		try {
+			// Lecture du descripteur XML et génération du connecteur
+			AdapterDescriptor descriptor = DescriptorReader.readFrom(xmlControlAdapter);
+			String generatedClassName = "fr.sorbonne_u.components.hem2025e1.generated."
+					+ "DynConnector_" + uid + "_" + (++this.connectorCounter);
+			Class<?> connectorClass = DynamicConnectorFactory.fabricate(
+					descriptor, generatedClassName);
+
+			// Création du port sortant et connexion dynamique
+			AdjustableOutboundPort aop = new AdjustableOutboundPort(this);
+			aop.publishPort();
+			this.doPortConnection(
+					aop.getPortURI(),
+					controlPortURI,
+					connectorClass.getName());
+
+			this.registeredEquipments.put(uid, aop);
+
+			this.traceMessage("HEM: equipment " + uid
+					+ " registered successfully via dynamic connector "
+					+ connectorClass.getSimpleName() + ".\n");
+			return true;
+		} catch (Exception e) {
+			this.traceMessage("HEM: registration failed for " + uid
+					+ " — " + e.getMessage() + "\n");
+			return false;
+		}
+	}
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationInboundPort.RegistrationImplementorI#unregister(String)
+	 */
+	@Override
+	public void unregister(String uid) throws Exception {
+		assert uid != null && !uid.isEmpty()
+				: new PreconditionException("uid != null && !uid.isEmpty()");
+
+		AdjustableOutboundPort port = this.registeredEquipments.remove(uid);
+		if (port != null) {
+			if (port.connected()) {
+				this.doPortDisconnection(port.getPortURI());
+			}
+			if (port.isPublished()) {
+				port.unpublishPort();
+			}
+			this.traceMessage("HEM: equipment " + uid
+					+ " unregistered successfully.\n");
+		} else {
+			this.traceMessage("HEM: equipment " + uid
+					+ " was not registered.\n");
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -1083,10 +1216,6 @@ public class HEM
 				}, delay, TimeUnit.NANOSECONDS);
 	}
 
-	// =========================================================================
-	// Étape 1 - Tests pour les équipements contrôlables
-	// =========================================================================
-
 	/**
 	 * Test the Fan component (modulable "simple").
 	 * 
@@ -1094,6 +1223,14 @@ public class HEM
 	 */
 	protected void testFan() throws Exception {
 		this.logMessage("Fan tests start.");
+
+		this.fanop = this.registeredEquipments.get("FN10000");
+		if (this.fanop == null) {
+			this.logMessage("Fan not registered yet, skipping tests.");
+			this.logMessage("Fan tests end.");
+			return;
+		}
+
 		TestsStatistics statistics = new TestsStatistics();
 		try {
 			this.logMessage("Feature: adjustable appliance mode management for Fan");
@@ -1176,6 +1313,14 @@ public class HEM
 	 */
 	protected void testKettle() throws Exception {
 		this.logMessage("Kettle tests start.");
+
+		this.kettleop = this.registeredEquipments.get("KT10000");
+		if (this.kettleop == null) {
+			this.logMessage("Kettle not registered yet, skipping tests.");
+			this.logMessage("Kettle tests end.");
+			return;
+		}
+
 		TestsStatistics statistics = new TestsStatistics();
 		try {
 			this.logMessage("Feature: adjustable appliance mode management for Kettle");
@@ -1258,6 +1403,14 @@ public class HEM
 	 */
 	protected void testWashingMachine() throws Exception {
 		this.logMessage("WashingMachine tests start.");
+
+		this.washingMachineop = this.registeredEquipments.get("WM10000");
+		if (this.washingMachineop == null) {
+			this.logMessage("WashingMachine not registered yet, skipping tests.");
+			this.logMessage("WashingMachine tests end.");
+			return;
+		}
+
 		TestsStatistics statistics = new TestsStatistics();
 		try {
 			this.logMessage("Feature: adjustable appliance mode management for WashingMachine");

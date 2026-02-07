@@ -196,26 +196,7 @@ public class CVMIntegrationTest
 	 */
 	public static String CLOCK_URI = "integration-test-clock";
 	/** start instant in test scenarios, as a string to be parsed. */
-	public static Instant START_INSTANT = Instant.parse("2026-02-03T06:00:00.00Z");
-
-	// =========================================================================
-	// FLAGS DE TEST - Activer/désactiver chaque appareil pour le debug
-	// =========================================================================
-	/** Activer le HairDryer dans la simulation */
-	public static boolean ENABLE_HAIRDRYER = true; // ACTIVÉ pour test
-	/** Activer le Heater dans la simulation */
-	public static boolean ENABLE_HEATER = true; // ACTIVÉ pour test
-	/** Activer les Batteries dans la simulation */
-	public static boolean ENABLE_BATTERIES = true; // ACTIVÉ pour test
-	/** Activer le SolarPanel dans la simulation */
-	public static boolean ENABLE_SOLARPANEL = true; // ACTIVÉ pour test
-	/** Activer le Generator dans la simulation */
-	public static boolean ENABLE_GENERATOR = true; // ACTIVÉ pour test
-	/** Activer la WashingMachine dans la simulation */
-	public static boolean ENABLE_WASHINGMACHINE = true; // ACTIVÉ pour test
-	/** Activer la Kettle dans la simulation */
-	public static boolean ENABLE_KETTLE = true; // ACTIVÉ pour test
-	// =========================================================================
+	public static Instant START_INSTANT = Instant.parse("2025-12-02T06:00:00.00Z");
 
 	// -------------------------------------------------------------------------
 	// Invariants
@@ -394,8 +375,8 @@ public class CVMIntegrationTest
 		HeaterTemperatureSILModel.DEBUG = false;
 		ExternalTemperatureSILModel.VERBOSE = false;
 		ExternalTemperatureSILModel.DEBUG = false;
-		ElectricMeterElectricitySILModel.VERBOSE = true;
-		ElectricMeterElectricitySILModel.DEBUG = false;
+		ElectricMeterElectricitySILModel.VERBOSE = false; // TODO
+		ElectricMeterElectricitySILModel.DEBUG = true;
 		DeterministicSunRiseAndSetModel.VERBOSE = false;
 		DeterministicSunRiseAndSetModel.DEBUG = false;
 		DeterministicSunIntensityModel.VERBOSE = false;
@@ -598,180 +579,166 @@ public class CVMIntegrationTest
 							ACCELERATION_FACTOR
 					});
 
-			if (ENABLE_BATTERIES) {
-				AbstractComponent.createComponent(
-						BatteriesCyPhy.class.getCanonicalName(),
-						new Object[] {
-								BatteriesCyPhy.REFLECTION_INBOUND_PORT_URI,
-								BatteriesCyPhy.STANDARD_INBOUND_PORT_URI,
-								BatteriesSimulationConfiguration.NUMBER_OF_PARALLEL_CELLS,
-								BatteriesSimulationConfiguration.NUMBER_OF_CELL_GROUPS_IN_SERIES,
-								ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-								testScenario,
-								BatteriesCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
-								ACCELERATION_FACTOR });
-			}
+			AbstractComponent.createComponent(
+					BatteriesCyPhy.class.getCanonicalName(),
+					new Object[] {
+							BatteriesCyPhy.REFLECTION_INBOUND_PORT_URI,
+							BatteriesCyPhy.STANDARD_INBOUND_PORT_URI,
+							BatteriesSimulationConfiguration.NUMBER_OF_PARALLEL_CELLS,
+							BatteriesSimulationConfiguration.NUMBER_OF_CELL_GROUPS_IN_SERIES,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							BatteriesCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR });
 
-			if (ENABLE_SOLARPANEL) {
-				AbstractComponent.createComponent(
-						SolarPanelCyPhy.class.getCanonicalName(),
-						new Object[] {
-								SolarPanelCyPhy.REFLECTION_INBOUND_PORT_URI,
-								SolarPanelCyPhy.STANDARD_INBOUND_PORT_URI,
-								SolarPanelSimulationConfigurationI.NB_SQUARE_METERS,
-								ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-								testScenario,
-								BatteriesCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
-								ACCELERATION_FACTOR
-						});
-			}
+			AbstractComponent.createComponent(
+					SolarPanelCyPhy.class.getCanonicalName(),
+					new Object[] {
+							SolarPanelCyPhy.REFLECTION_INBOUND_PORT_URI,
+							SolarPanelCyPhy.STANDARD_INBOUND_PORT_URI,
+							SolarPanelSimulationConfigurationI.NB_SQUARE_METERS,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							BatteriesCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
 
-			if (ENABLE_GENERATOR) {
-				AbstractComponent.createComponent(
-						GeneratorCyPhy.class.getCanonicalName(),
-						new Object[] {
-								GeneratorCyPhy.STANDARD_INBOUND_PORT_URI,
-								GeneratorCyPhy.MAX_POWER,
-								GeneratorCyPhy.TANK_CAPACITY,
-								GeneratorCyPhy.MIN_FUEL_CONSUMPTION,
-								GeneratorCyPhy.MAX_FUEL_CONSUMPTION,
-								ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-								testScenario,
-								GeneratorCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
-								ACCELERATION_FACTOR });
-			}
+			AbstractComponent.createComponent(
+					GeneratorCyPhy.class.getCanonicalName(),
+					new Object[] {
+							GeneratorCyPhy.STANDARD_INBOUND_PORT_URI,
+							GeneratorCyPhy.MAX_POWER,
+							GeneratorCyPhy.TANK_CAPACITY,
+							GeneratorCyPhy.MIN_FUEL_CONSUMPTION,
+							GeneratorCyPhy.MAX_FUEL_CONSUMPTION,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							GeneratorCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR });
 
-			if (ENABLE_HAIRDRYER) {
-				AbstractComponent.createComponent(
-						HairDryerCyPhy.class.getCanonicalName(),
-						new Object[] {
-								HairDryerCyPhy.REFLECTION_INBOUND_PORT_URI,
-								HairDryerCyPhy.INBOUND_PORT_URI,
-								ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-								testScenario,
-								HairDryerCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
-								ACCELERATION_FACTOR
-						});
-				AbstractComponent.createComponent(
-						HairDryerTesterCyPhy.class.getCanonicalName(),
-						new Object[] {
-								HairDryerCyPhy.INBOUND_PORT_URI,
-								ExecutionMode.INTEGRATION_TEST,
-								testScenario
-						});
-			}
+			AbstractComponent.createComponent(
+					HairDryerCyPhy.class.getCanonicalName(),
+					new Object[] {
+							HairDryerCyPhy.REFLECTION_INBOUND_PORT_URI,
+							HairDryerCyPhy.INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							HairDryerCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					HairDryerTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							HairDryerCyPhy.INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
 
-			if (ENABLE_HEATER) {
-				AbstractComponent.createComponent(
-						HeaterCyPhy.class.getCanonicalName(),
-						new Object[] {
-								HeaterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								HeaterCyPhy.USER_INBOUND_PORT_URI,
-								HeaterCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
-								HeaterCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-								HeaterCyPhy.SENSOR_INBOUND_PORT_URI,
-								HeaterCyPhy.ACTUATOR_INBOUND_PORT_URI,
-								ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-								testScenario,
-								HeaterCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
-								ACCELERATION_FACTOR
-						});
-				AbstractComponent.createComponent(
-						HeaterController.class.getCanonicalName(),
-						new Object[] {
-								HeaterCyPhy.SENSOR_INBOUND_PORT_URI,
-								HeaterCyPhy.ACTUATOR_INBOUND_PORT_URI,
-								HeaterController.STANDARD_HYSTERESIS,
-								HeaterController.STANDARD_CONTROL_PERIOD,
-								ControlMode.PULL,
-								ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-								ACCELERATION_FACTOR
-						});
-				AbstractComponent.createComponent(
-						HeaterTesterCyPhy.class.getCanonicalName(),
-						new Object[] {
-								HeaterCyPhy.USER_INBOUND_PORT_URI,
-								HeaterCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
-								HeaterCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-								ExecutionMode.INTEGRATION_TEST,
-								testScenario
-						});
-			}
+			AbstractComponent.createComponent(
+					HeaterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							HeaterCyPhy.REFLECTION_INBOUND_PORT_URI,
+							HeaterCyPhy.USER_INBOUND_PORT_URI,
+							HeaterCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							HeaterCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							HeaterCyPhy.SENSOR_INBOUND_PORT_URI,
+							HeaterCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							HeaterCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					HeaterController.class.getCanonicalName(),
+					new Object[] {
+							HeaterCyPhy.SENSOR_INBOUND_PORT_URI,
+							HeaterCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							HeaterController.STANDARD_HYSTERESIS,
+							HeaterController.STANDARD_CONTROL_PERIOD,
+							ControlMode.PULL,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					HeaterTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							HeaterCyPhy.USER_INBOUND_PORT_URI,
+							HeaterCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							HeaterCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
 
 			// WashingMachine components
-			if (ENABLE_WASHINGMACHINE) {
-				AbstractComponent.createComponent(
-						WashingMachineCyPhy.class.getCanonicalName(),
-						new Object[] {
-								WashingMachineCyPhy.REFLECTION_INBOUND_PORT_URI,
-								WashingMachineCyPhy.USER_INBOUND_PORT_URI,
-								WashingMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
-								WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-								WashingMachineCyPhy.SENSOR_INBOUND_PORT_URI,
-								WashingMachineCyPhy.ACTUATOR_INBOUND_PORT_URI,
-								ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-								testScenario,
-								WashingMachineCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
-								ACCELERATION_FACTOR
-						});
-				AbstractComponent.createComponent(
-						WashingMachineController.class.getCanonicalName(),
-						new Object[] {
-								WashingMachineCyPhy.SENSOR_INBOUND_PORT_URI,
-								WashingMachineCyPhy.ACTUATOR_INBOUND_PORT_URI,
-								WashingMachineController.STANDARD_CONTROL_PERIOD,
-								WashingMachineController.ControlMode.PULL,
-								ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-								ACCELERATION_FACTOR
-						});
-				AbstractComponent.createComponent(
-						WashingMachineTesterCyPhy.class.getCanonicalName(),
-						new Object[] {
-								WashingMachineCyPhy.USER_INBOUND_PORT_URI,
-								WashingMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
-								WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-								ExecutionMode.INTEGRATION_TEST,
-								testScenario
-						});
-			}
+			AbstractComponent.createComponent(
+					WashingMachineCyPhy.class.getCanonicalName(),
+					new Object[] {
+							WashingMachineCyPhy.REFLECTION_INBOUND_PORT_URI,
+							WashingMachineCyPhy.USER_INBOUND_PORT_URI,
+							WashingMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							WashingMachineCyPhy.SENSOR_INBOUND_PORT_URI,
+							WashingMachineCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							WashingMachineCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					WashingMachineController.class.getCanonicalName(),
+					new Object[] {
+							WashingMachineCyPhy.SENSOR_INBOUND_PORT_URI,
+							WashingMachineCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							WashingMachineController.STANDARD_CONTROL_PERIOD,
+							WashingMachineController.ControlMode.PULL,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					WashingMachineTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							WashingMachineCyPhy.USER_INBOUND_PORT_URI,
+							WashingMachineCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
 
 			// Kettle components
-			if (ENABLE_KETTLE) {
-				AbstractComponent.createComponent(
-						KettleCyPhy.class.getCanonicalName(),
-						new Object[] {
-								KettleCyPhy.REFLECTION_INBOUND_PORT_URI,
-								KettleCyPhy.USER_INBOUND_PORT_URI,
-								KettleCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
-								KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-								KettleCyPhy.SENSOR_INBOUND_PORT_URI,
-								KettleCyPhy.ACTUATOR_INBOUND_PORT_URI,
-								ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-								testScenario,
-								KettleCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
-								ACCELERATION_FACTOR
-						});
-				AbstractComponent.createComponent(
-						KettleController.class.getCanonicalName(),
-						new Object[] {
-								KettleCyPhy.SENSOR_INBOUND_PORT_URI,
-								KettleCyPhy.ACTUATOR_INBOUND_PORT_URI,
-								KettleController.STANDARD_CONTROL_PERIOD,
-								KettleController.ControlMode.PULL,
-								true, // keepWarmAfterBoiling - use StartKeepingWarm
-								ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
-								ACCELERATION_FACTOR
-						});
-				AbstractComponent.createComponent(
-						KettleTesterCyPhy.class.getCanonicalName(),
-						new Object[] {
-								KettleCyPhy.USER_INBOUND_PORT_URI,
-								KettleCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
-								KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-								ExecutionMode.INTEGRATION_TEST,
-								testScenario
-						});
-			}
+			AbstractComponent.createComponent(
+					KettleCyPhy.class.getCanonicalName(),
+					new Object[] {
+							KettleCyPhy.REFLECTION_INBOUND_PORT_URI,
+							KettleCyPhy.USER_INBOUND_PORT_URI,
+							KettleCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							KettleCyPhy.SENSOR_INBOUND_PORT_URI,
+							KettleCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							KettleCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					KettleController.class.getCanonicalName(),
+					new Object[] {
+							KettleCyPhy.SENSOR_INBOUND_PORT_URI,
+							KettleCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							KettleController.STANDARD_CONTROL_PERIOD,
+							KettleController.ControlMode.PULL,
+							true,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					KettleTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							KettleCyPhy.USER_INBOUND_PORT_URI,
+							KettleCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
 
 		}
 
@@ -1119,49 +1086,50 @@ public class CVMIntegrationTest
 
 		Instant heaterSwitchOn = START_INSTANT.plusSeconds(60);
 
-		Instant generatorStart = Instant.parse("2026-02-03T06:15:00.00Z");
+		Instant generatorStart = Instant.parse("2025-12-02T06:15:00.00Z");
 
-		Instant hairDryerTurnOn1 = Instant.parse("2026-02-03T07:15:00.00Z");
-		Instant hairDryerSetHigh1 = Instant.parse("2026-02-03T07:15:20.00Z");
+		Instant hairDryerTurnOn1 = Instant.parse("2025-12-02T07:15:00.00Z");
+		Instant hairDryerSetHigh1 = Instant.parse("2025-12-02T07:15:20.00Z");
 
-		Instant batteriesTest1 = Instant.parse("2026-02-03T07:17:30.00Z");
+		Instant batteriesTest1 = Instant.parse("2025-12-02T07:17:30.00Z");
 
-		Instant hairDryerSetLow1 = Instant.parse("2026-02-03T07:20:00.00Z");
-		Instant hairDryerTurnOff1 = Instant.parse("2026-02-03T07:25:00.00Z");
+		Instant hairDryerSetLow1 = Instant.parse("2025-12-02T07:20:00.00Z");
+		Instant hairDryerTurnOff1 = Instant.parse("2025-12-02T07:25:00.00Z");
 
-		Instant generatorStop = Instant.parse("2026-02-03T07:30:00.00Z");
+		Instant generatorStop = Instant.parse("2025-12-02T07:30:00.00Z");
 
-		Instant hairDryerTurnOn2 = Instant.parse("2026-02-03T08:15:00.00Z");
-		Instant hairDryerSetHigh2 = Instant.parse("2026-02-03T08:15:20.00Z");
-		Instant hairDryerSetLow2 = Instant.parse("2026-02-03T08:20:00.00Z");
-		Instant hairDryerTurnOff2 = Instant.parse("2026-02-03T08:25:00.00Z");
+		Instant hairDryerTurnOn2 = Instant.parse("2025-12-02T08:15:00.00Z");
+		Instant hairDryerSetHigh2 = Instant.parse("2025-12-02T08:15:20.00Z");
+		Instant hairDryerSetLow2 = Instant.parse("2025-12-02T08:20:00.00Z");
+		Instant hairDryerTurnOff2 = Instant.parse("2025-12-02T08:25:00.00Z");
 
-		Instant heaterSwitchOff = Instant.parse("2026-02-03T09:00:00.00Z");
+		Instant heaterSwitchOff = Instant.parse("2025-12-02T09:00:00.00Z");
 
-		Instant batteriesStartCharging = Instant.parse("2026-02-03T10:00:00.00Z");
-		Instant batteriesTest2 = Instant.parse("2026-02-03T10:30:00.00Z");
-		Instant batteriesStopCharging = Instant.parse("2026-02-03T11:00:00.00Z");
-		Instant batteriesTest3 = Instant.parse("2026-02-03T11:30:00.00Z");
+		Instant batteriesStartCharging = Instant.parse("2025-12-02T10:00:00.00Z");
+		Instant batteriesTest2 = Instant.parse("2025-12-02T10:30:00.00Z");
+		Instant batteriesStopCharging = Instant.parse("2025-12-02T11:00:00.00Z");
+		Instant batteriesTest3 = Instant.parse("2025-12-02T11:30:00.00Z");
 
 		// WashingMachine test instants
-		// Must be BEFORE generatorStart (06:15:00) to respect TestStep order
-		Instant washingMachineSwitchOn = Instant.parse("2026-02-03T06:06:00.00Z");
-		Instant washingMachineStartWashing = Instant.parse("2026-02-03T06:07:00.00Z");
-		Instant hemTestWashingMachine = Instant.parse("2026-02-03T06:12:00.00Z");
-		// Cycle: chauffage ~4min (06:11) + lavage 10min = fin ~06:21, switchOff à 06:25
-		Instant washingMachineSwitchOff = Instant.parse("2026-02-03T06:25:00.00Z");
+		Instant washingMachineSwitchOn = Instant.parse("2025-12-02T06:06:00.00Z");
+		Instant washingMachineStartWashing = Instant.parse("2025-12-02T06:07:00.00Z");
+		Instant hemTestWashingMachine = Instant.parse("2025-12-02T06:12:00.00Z");
+		// Cycle: chauffage eniron 4min (06:11) + lavage 10min = fin environ 06:21,
+		// switchOff à 06:25
+		Instant washingMachineSwitchOff = Instant.parse("2025-12-02T06:25:00.00Z");
 
 		// WashingMachine delayedStart test instants (09:10 - 09:25)
-		Instant washingMachineDelayedSwitchOn = Instant.parse("2026-02-03T09:10:00.00Z");
-		Instant washingMachineDelayedStart = Instant.parse("2026-02-03T09:11:00.00Z");
-		// Cycle: délai 2min (09:13) + chauffage ~4min (09:17) + lavage 5min = fin
-		// ~09:22, switchOff à 09:25
-		Instant washingMachineDelayedSwitchOff = Instant.parse("2026-02-03T09:25:00.00Z");
+		Instant washingMachineDelayedSwitchOn = Instant.parse("2025-12-02T09:10:00.00Z");
+		Instant washingMachineDelayedStart = Instant.parse("2025-12-02T09:11:00.00Z");
+		// Cycle: délai 2min (09:13) + chauffage environ 4min (09:17) + lavage 5min =
+		// fin
+		// environ 09:22, switchOff à 09:25
+		Instant washingMachineDelayedSwitchOff = Instant.parse("2025-12-02T09:25:00.00Z");
 
 		// Kettle test instants
-		Instant kettleSwitchOn = Instant.parse("2026-02-03T08:30:00.00Z");
-		Instant hemTestKettle = Instant.parse("2026-02-03T08:35:00.00Z");
-		Instant kettleSwitchOff = Instant.parse("2026-02-03T08:45:00.00Z");
+		Instant kettleSwitchOn = Instant.parse("2025-12-02T08:30:00.00Z");
+		Instant hemTestKettle = Instant.parse("2025-12-02T08:35:00.00Z");
+		Instant kettleSwitchOff = Instant.parse("2025-12-02T08:45:00.00Z");
 
 		return new TestScenarioWithSimulation(
 				CLOCK_URI,
@@ -1383,7 +1351,6 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
-						// HEM test the washing machine (before switchOff)
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1408,7 +1375,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
-						// washingMachineSwitchOff at 06:25 (after generatorStart at 06:15)
+						// washingMachineSwitchOff at 06:25
 						new TestStep(
 								CLOCK_URI,
 								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1603,7 +1570,6 @@ public class CVMIntegrationTest
 								owner -> {
 									try {
 										// delayedStart: delay 2 min (120000ms), temp 40°C, washing 5 min (300000ms)
-										// Washing will start automatically at 09:13
 										((WashingMachineTesterCyPhy) owner).getWmop().delayedStart(
 												120000L, // delay: 2 minutes
 												new Measure<Double>(40.0, MeasurementUnit.CELSIUS),

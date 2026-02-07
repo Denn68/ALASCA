@@ -56,13 +56,6 @@ import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.Heat;
 import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.SwitchOffHeater;
 import fr.sorbonne_u.components.hem2025e2.equipments.heater.mil.events.SwitchOnHeater;
 import fr.sorbonne_u.components.hem2025e3.equipments.heater.sil.events.SIL_SetPowerHeater;
-import fr.sorbonne_u.components.hem2025e3.equipments.batteries.sil.events.SIL_StartCharging;
-import fr.sorbonne_u.components.hem2025e3.equipments.batteries.sil.events.SIL_StopCharging;
-import fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.events.SunriseEvent;
-import fr.sorbonne_u.components.hem2025e2.equipments.solar_panel.mil.events.SunsetEvent;
-import fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.events.Start;
-import fr.sorbonne_u.components.hem2025e2.equipments.generator.mil.events.Stop;
-import fr.sorbonne_u.components.hem2025e3.equipments.generator.sil.events.SIL_Refill;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SwitchOnWashingMachine;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SwitchOffWashingMachine;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.StartWashing;
@@ -257,13 +250,6 @@ import java.util.function.Supplier;
 						SwitchOffHeater.class,
 						Heat.class,
 						DoNotHeat.class,
-						SIL_StartCharging.class, // Batteries events
-						SIL_StopCharging.class,
-						SunriseEvent.class, // SolarPanel events
-						SunsetEvent.class,
-						Start.class, // Generator events
-						Stop.class,
-						SIL_Refill.class,
 						SwitchOnWashingMachine.class, // WashingMachine events
 						SwitchOffWashingMachine.class,
 						StartWashing.class,

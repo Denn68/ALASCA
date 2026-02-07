@@ -3,8 +3,13 @@ package fr.sorbonne_u.components.hem2025e1.equipments.washing_machine;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
+import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
+import fr.sorbonne_u.components.hem2025.bases.RegistrationCI;
+import fr.sorbonne_u.components.hem2025e1.equipments.hem.HEM;
+import fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationConnector;
+import fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationOutboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineExternalControlJava4InboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineInternalControlInboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineUserJava4InboundPort;
@@ -28,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.alasca.physical_data.SignalData;
 
-@RequiredInterfaces(required = { ClocksServerCI.class })
+@RequiredInterfaces(required = { ClocksServerCI.class, RegistrationCI.class })
 @OfferedInterfaces(offered = { WashingMachineUserJava4CI.class, WashingMachineInternalControlCI.class,
 		WashingMachineExternalControlJava4CI.class })
 public class WashingMachine extends AbstractComponent implements WashingMachineUserI, WashingMachineInternalControlI {
@@ -50,6 +55,15 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 	public static final String INTERNAL_CONTROL_INBOUND_PORT_URI = "WASHING-MACHINE-INTERNAL-CONTROL-INBOUND-PORT-URI";
 
 	public static final String EXTERNAL_CONTROL_INBOUND_PORT_URI = "WASHING-MACHINE-EXTERNAL-CONTROL-INBOUND-PORT-URI";
+
+	// === Enregistrement dynamique auprès du HEM ===
+	/** identifiant unique de la machine à laver pour l'enregistrement. */
+	protected static final String WM_UID = "WM10000";
+	/** chemin vers le descripteur XML du connecteur adapté. */
+	protected static final String XML_WM_DESCRIPTOR = "hem-adapter/washingmachineci-descriptor.xml";
+	/** port sortant pour l'enregistrement auprès du HEM. */
+	protected RegistrationOutboundPort registrationPort;
+	protected boolean registrationConnected = false;
 
 	protected WashingMachineUserJava4InboundPort wmip;
 
@@ -202,6 +216,17 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 					ClocksServerConnector.class.getCanonicalName());
 
 			this.clock = this.csop.getClock(CVMIntegrationTest.CLOCK_URI);
+
+			if (AbstractCVM.isPublishedInLocalRegistry(
+					HEM.REGISTRATION_INBOUND_PORT_URI)) {
+				this.registrationPort = new RegistrationOutboundPort(this);
+				this.registrationPort.publishPort();
+				this.doPortConnection(
+						this.registrationPort.getPortURI(),
+						HEM.REGISTRATION_INBOUND_PORT_URI,
+						RegistrationConnector.class.getCanonicalName());
+				this.registrationConnected = true;
+			}
 		} catch (Exception e) {
 			throw new ComponentStartException(e);
 		}
@@ -216,6 +241,10 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 
 	@Override
 	public synchronized void finalise() throws Exception {
+		if (this.registrationConnected) {
+			this.doPortDisconnection(this.registrationPort.getPortURI());
+			this.registrationConnected = false;
+		}
 		if (this.csop != null && this.csop.connected()) {
 			this.doPortDisconnection(this.csop.getPortURI());
 		}
@@ -227,6 +256,15 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 		try {
 			if (this.csop != null && this.csop.isPublished()) {
 				this.csop.unpublishPort();
+			}
+			if (this.registrationPort != null) {
+				if (this.registrationConnected) {
+					this.doPortDisconnection(this.registrationPort.getPortURI());
+					this.registrationConnected = false;
+				}
+				if (this.registrationPort.isPublished()) {
+					this.registrationPort.unpublishPort();
+				}
 			}
 
 			try {
@@ -263,6 +301,18 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 
 		this.currentState = WashingMachineState.ON;
 
+		// Enregistrement auprès du HEM lors de la mise en marche
+		if (this.registrationConnected) {
+			this.registrationPort.register(
+					WM_UID,
+					this.wmecip.getPortURI(),
+					XML_WM_DESCRIPTOR);
+			if (WashingMachine.VERBOSE) {
+				this.traceMessage("WashingMachine registered with HEM as "
+						+ WM_UID + ".\n");
+			}
+		}
+
 		assert this.on() : new PostconditionException("on()");
 	}
 
@@ -273,6 +323,21 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 		}
 
 		assert this.on() : new PreconditionException("on()");
+
+		// Désenregistrement auprès du HEM avant l'arrêt
+		if (this.registrationConnected) {
+			try {
+				this.registrationPort.unregister(WM_UID);
+				if (WashingMachine.VERBOSE) {
+					this.traceMessage("WashingMachine unregistered from HEM.\n");
+				}
+			} catch (Exception e) {
+				if (WashingMachine.VERBOSE) {
+					this.traceMessage("WashingMachine unregister warning: "
+							+ e.getMessage() + "\n");
+				}
+			}
+		}
 
 		this.currentState = WashingMachineState.OFF;
 

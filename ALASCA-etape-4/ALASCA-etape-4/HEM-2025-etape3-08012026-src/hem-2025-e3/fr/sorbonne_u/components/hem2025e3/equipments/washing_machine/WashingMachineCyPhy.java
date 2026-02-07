@@ -1,8 +1,42 @@
 package fr.sorbonne_u.components.hem2025e3.equipments.washing_machine;
 
+// Copyright Jacques Malenfant, Sorbonne Universite.
+// Jacques.Malenfant@lip6.fr
+//
+// This software is a computer program whose purpose is to implement a mock-up
+// of household energy management system.
+//
+// This software is governed by the CeCILL-C license under French law and
+// abiding by the rules of distribution of free software.  You can use,
+// modify and/ or redistribute the software under the terms of the
+// CeCILL-C license as circulated by CEA, CNRS and INRIA at the following
+// URL "http://www.cecill.info".
+//
+// As a counterpart to the access to the source code and  rights to copy,
+// modify and redistribute granted by the license, users are provided only
+// with a limited warranty  and the software's author,  the holder of the
+// economic rights,  and the successive licensors  have only  limited
+// liability. 
+//
+// In this respect, the user's attention is drawn to the risks associated
+// with loading,  using,  modifying and/or developing or reproducing the
+// software by the user in light of its specific status of free software,
+// that may mean  that it is complicated to manipulate,  and  that  also
+// therefore means  that it is reserved for developers  and  experienced
+// professionals having in-depth computer knowledge. Users are therefore
+// encouraged to load and test the software's suitability as regards their
+// requirements in conditions enabling the security of their systems and/or 
+// data to be ensured and,  more generally, to use and operate it in the 
+// same conditions as regards security. 
+//
+// The fact that you are presently reading this means that you have had
+// knowledge of the CeCILL-C license and that you accept its terms.
+
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.AbstractPort;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
+import fr.sorbonne_u.components.annotations.RequiredInterfaces;
+import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.cyphy.AbstractCyPhyComponent;
 import fr.sorbonne_u.components.cyphy.ExecutionMode;
 import fr.sorbonne_u.components.cyphy.annotations.LocalArchitecture;
@@ -14,6 +48,7 @@ import fr.sorbonne_u.components.cyphy.plugins.devs.RTAtomicSimulatorPlugin;
 import fr.sorbonne_u.components.cyphy.utils.aclocks.ClocksServerWithSimulation;
 import fr.sorbonne_u.components.cyphy.utils.tests.TestScenarioWithSimulation;
 import fr.sorbonne_u.components.exceptions.BCMException;
+import fr.sorbonne_u.components.exceptions.BCMRuntimeException;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 
@@ -28,6 +63,10 @@ import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.WashingMach
 import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineUserJava4InboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineInternalControlInboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.washing_machine.connections.WashingMachineExternalControlJava4InboundPort;
+import fr.sorbonne_u.components.hem2025.bases.RegistrationCI;
+import fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationConnector;
+import fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationOutboundPort;
+import fr.sorbonne_u.components.hem2025e3.equipments.hem.HEMCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.sil.Local_SIL_SimulationArchitectures;
 import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.sil.WashingMachineTemperatureSILModel;
 import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.connections.WashingMachineActuatorInboundPort;
@@ -66,9 +105,81 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import fr.sorbonne_u.alasca.physical_data.Measure;
+import fr.sorbonne_u.alasca.physical_data.MeasureI;
 import fr.sorbonne_u.alasca.physical_data.SignalData;
 import fr.sorbonne_u.alasca.physical_data.TimedMeasure;
 
+// -----------------------------------------------------------------------------
+/**
+ * The class <code>WashingMachineCyPhy</code> implements a washing machine
+ * component following the CyPhy pattern.
+ *
+ * <p>
+ * <strong>Description</strong>
+ * </p>
+ * 
+ * <p>
+ * This component is modelled after {@code HeaterCyPhy} and adds washing
+ * machine specific features: washing cycles with delayed start, water
+ * heating phase, and program data sensors.
+ * </p>
+ * 
+ * <p>
+ * <strong>Implementation Invariants</strong>
+ * </p>
+ * 
+ * <pre>
+ * invariant	{@code
+ * currentState != null
+ * }
+ * invariant	{@code
+ * targetTemperature == null || targetTemperature.getMeasurementUnit().equals(TEMPERATURE_UNIT)
+ * }
+ * invariant	{@code
+ * targetTemperature == null || targetTemperature.getData() >= MIN_TARGET_TEMPERATURE.getData()
+ * 		&& targetTemperature.getData() <= MAX_TARGET_TEMPERATURE.getData()
+ * }
+ * invariant	{@code
+ * currentPowerLevel == null || currentPowerLevel.getMeasurementUnit().equals(POWER_UNIT)
+ * }
+ * invariant	{@code
+ * currentPowerLevel == null
+ * 		|| currentPowerLevel.getData() >= 0.0 && currentPowerLevel.getData() <= MAX_POWER_LEVEL.getData()
+ * }
+ * </pre>
+ * 
+ * <p>
+ * <strong>Invariants</strong>
+ * </p>
+ * 
+ * <pre>
+ * invariant	{@code
+ * REFLECTION_INBOUND_PORT_URI != null && !REFLECTION_INBOUND_PORT_URI.isEmpty()
+ * }
+ * invariant	{@code
+ * USER_INBOUND_PORT_URI != null && !USER_INBOUND_PORT_URI.isEmpty()
+ * }
+ * invariant	{@code
+ * INTERNAL_CONTROL_INBOUND_PORT_URI != null && !INTERNAL_CONTROL_INBOUND_PORT_URI.isEmpty()
+ * }
+ * invariant	{@code
+ * EXTERNAL_CONTROL_INBOUND_PORT_URI != null && !EXTERNAL_CONTROL_INBOUND_PORT_URI.isEmpty()
+ * }
+ * invariant	{@code
+ * X_RELATIVE_POSITION >= 0
+ * }
+ * invariant	{@code
+ * Y_RELATIVE_POSITION >= 0
+ * }
+ * </pre>
+ * 
+ * <p>
+ * Created on : 2025
+ * </p>
+ * 
+ * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
+ */
+// -----------------------------------------------------------------------------
 @SIL_Simulation_Architectures({
 		@LocalArchitecture(uri = "silUnitTests", rootModelURI = "WashingMachineCoupledModel", simulatedTimeUnit = TimeUnit.HOURS, externalEvents = @ModelExternalEvents()),
 		@LocalArchitecture(uri = "silIntegrationTests", rootModelURI = "WashingMachineCoupledModel", simulatedTimeUnit = TimeUnit.HOURS, externalEvents = @ModelExternalEvents(exported = {
@@ -87,6 +198,7 @@ import fr.sorbonne_u.alasca.physical_data.TimedMeasure;
 		WashingMachineExternalControlJava4CI.class,
 		WashingMachineSensorDataCI.WashingMachineSensorOfferedPullCI.class,
 		WashingMachineActuatorCI.class })
+@RequiredInterfaces(required = { RegistrationCI.class })
 // -----------------------------------------------------------------------------
 public class WashingMachineCyPhy
 		extends AbstractCyPhyComponent
@@ -104,6 +216,17 @@ public class WashingMachineCyPhy
 	public static final String ACTUATOR_INBOUND_PORT_URI = "WASHING-MACHINE-ACTUATOR-INBOUND-PORT-URI";
 
 	public static final String WASHING_MACHINE_STATE_MODEL_URI = "WashingMachineStateModel";
+
+	// ---- Dynamic registration fields ----
+
+	/** UID unique du lave-linge pour l'enregistrement auprès du HEM. */
+	protected static final String WM_UID = "WM10000";
+	/** Chemin vers le descripteur XML pour le connecteur dynamique. */
+	protected static final String XML_WM_DESCRIPTOR = "hem-adapter/washingmachineci-descriptor.xml";
+	/** Port sortant pour l'enregistrement auprès du HEM. */
+	protected RegistrationOutboundPort registrationPort;
+	/** Indicateur de connexion effective au port d'enregistrement. */
+	protected boolean registrationConnected = false;
 
 	protected WashingMachineUserJava4InboundPort wmip;
 	protected WashingMachineInternalControlInboundPort wmicip;
@@ -147,23 +270,141 @@ public class WashingMachineCyPhy
 	// Invariants
 	// -------------------------------------------------------------------------
 
+	/**
+	 * return true if the implementation invariants are observed, false
+	 * otherwise.
+	 * 
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 * 
+	 * <pre>
+	 * pre	{@code
+	 * h != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
+	 * </pre>
+	 *
+	 * @param h instance to be tested.
+	 * @return true if the implementation invariants are observed, false otherwise.
+	 */
 	protected static boolean implementationInvariants(WashingMachineCyPhy h) {
 		assert h != null : new PreconditionException("h != null");
+
 		boolean ret = true;
 		ret &= AssertionChecking.checkImplementationInvariant(
 				h.currentState != null,
 				WashingMachineCyPhy.class, h,
 				"h.currentState != null");
+		ret &= AssertionChecking.checkImplementationInvariant(
+				h.targetTemperature == null ||
+						h.targetTemperature.getData() >= MIN_TARGET_TEMPERATURE.getData() &&
+								h.targetTemperature.getData() <= MAX_TARGET_TEMPERATURE.getData(),
+				WashingMachineCyPhy.class, h,
+				"targetTemperature == null || targetTemperature.getData() >= "
+						+ "MIN_TARGET_TEMPERATURE.getData() && "
+						+ "targetTemperature.getData() <= MAX_TARGET_TEMPERATURE.getData()");
+		ret &= AssertionChecking.checkImplementationInvariant(
+				h.currentPowerLevel == null ||
+						h.currentPowerLevel.getData() >= 0.0 &&
+								h.currentPowerLevel.getData() <= MAX_POWER_LEVEL.getData(),
+				WashingMachineCyPhy.class, h,
+				"currentPowerLevel == null || currentPowerLevel.getData() >= 0.0"
+						+ " && currentPowerLevel.getData() <= MAX_POWER_LEVEL.getData()");
 		return ret;
 	}
 
+	/**
+	 * return true if the static invariants are observed, false otherwise.
+	 * 
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 * 
+	 * <pre>
+	 * pre	{@code
+	 * true
+	 * }	// no precondition.
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
+	 * </pre>
+	 *
+	 * @return true if the static invariants are observed, false otherwise.
+	 */
+	public static boolean staticInvariants() {
+		boolean ret = true;
+		ret &= AssertionChecking.checkStaticInvariant(
+				REFLECTION_INBOUND_PORT_URI != null &&
+						!REFLECTION_INBOUND_PORT_URI.isEmpty(),
+				WashingMachineCyPhy.class,
+				"REFLECTION_INBOUND_PORT_URI != null && "
+						+ "!REFLECTION_INBOUND_PORT_URI.isEmpty()");
+		ret &= AssertionChecking.checkStaticInvariant(
+				USER_INBOUND_PORT_URI != null && !USER_INBOUND_PORT_URI.isEmpty(),
+				WashingMachineCyPhy.class,
+				"USER_INBOUND_PORT_URI != null && !USER_INBOUND_PORT_URI.isEmpty()");
+		ret &= AssertionChecking.checkStaticInvariant(
+				INTERNAL_CONTROL_INBOUND_PORT_URI != null &&
+						!INTERNAL_CONTROL_INBOUND_PORT_URI.isEmpty(),
+				WashingMachineCyPhy.class,
+				"INTERNAL_CONTROL_INBOUND_PORT_URI != null && "
+						+ "!INTERNAL_CONTROL_INBOUND_PORT_URI.isEmpty()");
+		ret &= AssertionChecking.checkStaticInvariant(
+				EXTERNAL_CONTROL_INBOUND_PORT_URI != null &&
+						!EXTERNAL_CONTROL_INBOUND_PORT_URI.isEmpty(),
+				WashingMachineCyPhy.class,
+				"EXTERNAL_CONTROL_INBOUND_PORT_URI != null &&"
+						+ "!EXTERNAL_CONTROL_INBOUND_PORT_URI.isEmpty()");
+		ret &= AssertionChecking.checkStaticInvariant(
+				SENSOR_INBOUND_PORT_URI != null &&
+						!SENSOR_INBOUND_PORT_URI.isEmpty(),
+				WashingMachineCyPhy.class,
+				"SENSOR_INBOUND_PORT_URI != null && "
+						+ "!SENSOR_INBOUND_PORT_URI.isEmpty()");
+		ret &= AssertionChecking.checkStaticInvariant(
+				ACTUATOR_INBOUND_PORT_URI != null &&
+						!ACTUATOR_INBOUND_PORT_URI.isEmpty(),
+				WashingMachineCyPhy.class,
+				"ACTUATOR_INBOUND_PORT_URI != null && "
+						+ "!ACTUATOR_INBOUND_PORT_URI.isEmpty()");
+		ret &= AssertionChecking.checkStaticInvariant(
+				X_RELATIVE_POSITION >= 0,
+				WashingMachineCyPhy.class,
+				"X_RELATIVE_POSITION >= 0");
+		ret &= AssertionChecking.checkStaticInvariant(
+				Y_RELATIVE_POSITION >= 0,
+				WashingMachineCyPhy.class,
+				"Y_RELATIVE_POSITION >= 0");
+		return ret;
+	}
+
+	/**
+	 * return true if the invariants are observed, false otherwise.
+	 * 
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 * 
+	 * <pre>
+	 * pre	{@code
+	 * h != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
+	 * </pre>
+	 *
+	 * @param h instance to be tested.
+	 * @return true if the invariants are observed, false otherwise.
+	 */
 	protected static boolean invariants(WashingMachineCyPhy h) {
 		assert h != null : new PreconditionException("h != null");
+
 		boolean ret = true;
-		ret &= AssertionChecking.checkInvariant(
-				X_RELATIVE_POSITION >= 0,
-				WashingMachineCyPhy.class, h,
-				"X_RELATIVE_POSITION >= 0");
+		ret &= staticInvariants();
 		return ret;
 	}
 
@@ -391,14 +632,95 @@ public class WashingMachineCyPhy
 	}
 
 	// -------------------------------------------------------------------------
+	// Component internal methods
+	// -------------------------------------------------------------------------
+
+	/**
+	 * return true if the current power level is equal to {@code powerLevel},
+	 * otherwise false.
+	 * 
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 * 
+	 * <pre>
+	 * pre	{@code
+	 * powerLevel != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
+	 * </pre>
+	 *
+	 * @param powerLevel a power level to be tested.
+	 * @return true if the current power level is equal to {@code powerLevel},
+	 *         otherwise false.
+	 */
+	public boolean isCurrentPowerLevel(MeasureI<Double> powerLevel) {
+		assert powerLevel != null : new PreconditionException("powerLevel != null");
+
+		return this.currentPowerLevel.equals(powerLevel);
+	}
+
+	/**
+	 * return true if the current temperature is equal to {@code temperature},
+	 * otherwise false.
+	 * 
+	 * <p>
+	 * <strong>Contract</strong>
+	 * </p>
+	 * 
+	 * <pre>
+	 * pre	{@code
+	 * temperature != null
+	 * }
+	 * post	{@code
+	 * true
+	 * }	// no postcondition.
+	 * </pre>
+	 *
+	 * @param temperature a temperature to be tested.
+	 * @return true if the current temperature is equal to {@code temperature},
+	 *         otherwise false.
+	 */
+	public boolean isCurrentTemperature(Measure<Double> temperature) {
+		assert temperature != null : new PreconditionException("temperature != null");
+
+		try {
+			return this.getCurrentTemperature().getMeasure().equals(temperature);
+		} catch (Exception e) {
+			throw new BCMRuntimeException(e);
+		}
+	}
+
+	// -------------------------------------------------------------------------
 	// Component life-cycle
 	// -------------------------------------------------------------------------
 
+	/**
+	 * @see fr.sorbonne_u.components.AbstractComponent#start()
+	 */
 	@Override
 	public synchronized void start() throws ComponentStartException {
 		super.start();
 
+		assert WashingMachineCyPhy.implementationInvariants(this) : new ImplementationInvariantException(
+				"WashingMachineCyPhy.implementationInvariants(this)");
+		assert WashingMachineCyPhy.invariants(this) : new InvariantException("WashingMachineCyPhy.invariants(this)");
+
 		try {
+			if (AbstractCVM.isPublishedInLocalRegistry(
+					HEMCyPhy.REGISTRATION_INBOUND_PORT_URI)) {
+				this.registrationPort = new RegistrationOutboundPort(this);
+				this.registrationPort.publishPort();
+				this.doPortConnection(
+						this.registrationPort.getPortURI(),
+						HEMCyPhy.REGISTRATION_INBOUND_PORT_URI,
+						RegistrationConnector.class
+								.getCanonicalName());
+				this.registrationConnected = true;
+			}
+
 			switch (this.getExecutionMode()) {
 				case STANDARD:
 				case UNIT_TEST:
@@ -411,11 +733,19 @@ public class WashingMachineCyPhy
 					this.asp = new RTAtomicSimulatorPlugin() {
 						private static final long serialVersionUID = 1L;
 
+						/**
+						 * @see fr.sorbonne_u.components.cyphy.plugins.devs.AtomicSimulatorPlugin#getModelStateValue(java.lang.String,
+						 *      java.lang.String)
+						 */
 						@Override
 						public VariableValue<Double> getModelVariableValue(
 								String modelURI,
 								String name) throws Exception {
-							return null;
+							assert modelURI.equals(WashingMachineTemperatureSILModel.URI);
+							assert name.equals(CURRENT_TEMPERATURE_NAME);
+
+							return ((WashingMachineTemperatureSILModel) this.atomicSimulators.get(modelURI)
+									.getSimulatedModel()).getCurrentTemperature();
 						}
 					};
 					((RTAtomicSimulatorPlugin) this.asp).setPluginURI(architecture.getRootModelURI());
@@ -426,17 +756,28 @@ public class WashingMachineCyPhy
 							(TestScenarioWithSimulation) this.testScenario,
 							new HashMap<>());
 					break;
+				case UNIT_TEST_WITH_HIL_SIMULATION:
+				case INTEGRATION_TEST_WITH_HIL_SIMULATION:
+					throw new BCMException("HIL simulation not implemented yet!");
 				default:
 			}
 		} catch (Exception e) {
 			throw new ComponentStartException(e);
 		}
+
+		assert WashingMachineCyPhy.implementationInvariants(this) : new ImplementationInvariantException(
+				"WashingMachineCyPhy.implementationInvariants(this)");
+		assert WashingMachineCyPhy.invariants(this) : new InvariantException("WashingMachineCyPhy.invariants(this)");
 	}
 
 	@Override
 	public void execute() throws Exception {
 		if (VERBOSE)
 			this.traceMessage("WashingMachine CyPhy executes.\n");
+
+		assert WashingMachineCyPhy.implementationInvariants(this) : new ImplementationInvariantException(
+				"WashingMachineCyPhy.implementationInvariants(this)");
+		assert WashingMachineCyPhy.invariants(this) : new InvariantException("WashingMachineCyPhy.invariants(this)");
 
 		switch (this.getExecutionMode()) {
 			case STANDARD:
@@ -514,6 +855,16 @@ public class WashingMachineCyPhy
 	}
 
 	@Override
+	public synchronized void finalise() throws Exception {
+		if (this.registrationConnected) {
+			this.doPortDisconnection(
+					this.registrationPort.getPortURI());
+			this.registrationConnected = false;
+		}
+		super.finalise();
+	}
+
+	@Override
 	public synchronized void shutdown() throws ComponentShutdownException {
 		try {
 			this.wmip.unpublishPort();
@@ -521,6 +872,16 @@ public class WashingMachineCyPhy
 			this.wmecip.unpublishPort();
 			this.sensorInboundPort.unpublishPort();
 			this.actuatorInboundPort.unpublishPort();
+			if (this.registrationPort != null) {
+				if (this.registrationConnected) {
+					this.doPortDisconnection(
+							this.registrationPort.getPortURI());
+					this.registrationConnected = false;
+				}
+				if (this.registrationPort.isPublished()) {
+					this.registrationPort.unpublishPort();
+				}
+			}
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
 		}
@@ -554,6 +915,13 @@ public class WashingMachineCyPhy
 		} else {
 			this.sensorInboundPort.send(new WashingMachineStateSensorData(this.currentState));
 		}
+
+		if (this.registrationConnected) {
+			this.registrationPort.register(
+					WM_UID,
+					this.wmecip.getPortURI(),
+					XML_WM_DESCRIPTOR);
+		}
 	}
 
 	@Override
@@ -561,6 +929,10 @@ public class WashingMachineCyPhy
 		if (VERBOSE)
 			this.traceMessage("WashingMachine switches off.\n");
 		assert this.on() : new PreconditionException("on()");
+
+		if (this.registrationConnected) {
+			this.registrationPort.unregister(WM_UID);
+		}
 
 		this.currentState = WashingMachineState.OFF;
 

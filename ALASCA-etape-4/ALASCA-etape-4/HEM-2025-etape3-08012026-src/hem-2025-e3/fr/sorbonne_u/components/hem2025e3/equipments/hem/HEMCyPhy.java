@@ -33,6 +33,7 @@ package fr.sorbonne_u.components.hem2025e3.equipments.hem;
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 import fr.sorbonne_u.components.AbstractComponent;
+import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.components.cyphy.ExecutionMode;
 import fr.sorbonne_u.components.cyphy.utils.aclocks.ClocksServerWithSimulation;
@@ -40,6 +41,10 @@ import fr.sorbonne_u.components.exceptions.BCMException;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.components.hem2025.bases.AdjustableCI;
+import fr.sorbonne_u.components.hem2025.bases.RegistrationCI;
+import fr.sorbonne_u.components.hem2025.bases.connector_generator.AdapterDescriptor;
+import fr.sorbonne_u.components.hem2025.bases.connector_generator.DescriptorReader;
+import fr.sorbonne_u.components.hem2025.bases.connector_generator.DynamicConnectorFactory;
 import fr.sorbonne_u.components.hem2025e1.equipments.batteries.BatteriesCI;
 import fr.sorbonne_u.components.hem2025e1.equipments.batteries.connections.BatteriesConnector;
 import fr.sorbonne_u.components.hem2025e1.equipments.batteries.connections.BatteriesOutboundPort;
@@ -50,7 +55,8 @@ import fr.sorbonne_u.components.hem2025e1.equipments.generator.connections.Gener
 import fr.sorbonne_u.components.hem2025e1.equipments.heater.Heater;
 import fr.sorbonne_u.components.hem2025e1.equipments.hem.AdjustableOutboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.hem.HeaterConnector;
-import fr.sorbonne_u.components.hem2025e1.equipments.hem.WashingMachineConnector;
+//import fr.sorbonne_u.components.hem2025e1.equipments.hem.WashingMachineConnector;
+import fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationInboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.meter.ElectricMeterCI;
 import fr.sorbonne_u.components.hem2025e1.equipments.meter.ElectricMeterUnitTester;
 import fr.sorbonne_u.components.hem2025e1.equipments.meter.connections.ElectricMeterConnector;
@@ -66,22 +72,16 @@ import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.SolarPanelCyPhy
 import fr.sorbonne_u.components.hem2025e3.equipments.solar_panel.SolarPanelUnitTesterCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.washing_machine.WashingMachineCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.kettle.KettleCyPhy;
-import fr.sorbonne_u.components.hem2025e1.equipments.hem.KettleConnector;
+//import fr.sorbonne_u.components.hem2025e1.equipments.hem.KettleConnector;
 import fr.sorbonne_u.components.utils.tests.TestScenario;
 import fr.sorbonne_u.components.utils.tests.TestsStatistics;
+import java.util.Map;
+import java.util.HashMap;
 import fr.sorbonne_u.exceptions.ImplementationInvariantException;
 import fr.sorbonne_u.exceptions.AssertionChecking;
 import fr.sorbonne_u.exceptions.InvariantException;
 import fr.sorbonne_u.exceptions.PreconditionException;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
-
-// Import des flags de test
-import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_BATTERIES;
-import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_SOLARPANEL;
-import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_GENERATOR;
-import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_HEATER;
-import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_WASHINGMACHINE;
-import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_KETTLE;
 
 // -----------------------------------------------------------------------------
 /**
@@ -129,13 +129,15 @@ import static fr.sorbonne_u.components.hem2025e3.CVMIntegrationTest.ENABLE_KETTL
  * 
  * @author <a href="mailto:Jacques.Malenfant@lip6.fr">Jacques Malenfant</a>
  */
+@OfferedInterfaces(offered = { RegistrationCI.class })
 @RequiredInterfaces(required = { AdjustableCI.class,
 		ElectricMeterCI.class,
 		BatteriesCI.class,
 		SolarPanelCI.class,
 		GeneratorCI.class })
 public class HEMCyPhy
-		extends AbstractComponent {
+		extends AbstractComponent
+		implements RegistrationInboundPort.RegistrationImplementorI {
 	// -------------------------------------------------------------------------
 	// Constants and variables
 	// -------------------------------------------------------------------------
@@ -171,10 +173,19 @@ public class HEMCyPhy
 	protected boolean isPreFirstStep;
 	/** port to connect to the heater when managed in a customised way. */
 	protected AdjustableOutboundPort heaterop;
-	/** port to connect to the washing machine for energy management. */
-	protected AdjustableOutboundPort washingMachineop;
-	/** port to connect to the kettle for energy management. */
-	protected AdjustableOutboundPort kettleop;
+
+	// protected AdjustableOutboundPort kettleop;
+
+	// protected AdjustableOutboundPort washingMachineop;
+
+	/** URI du port entrant pour l'enregistrement des équipements. */
+	public static final String REGISTRATION_INBOUND_PORT_URI = "HEM-REGISTRATION-INBOUND-PORT-URI";
+	/** port entrant pour recevoir les demandes d'enregistrement. */
+	protected RegistrationInboundPort registrationInboundPort;
+	/** équipements enregistrés dynamiquement : uid -> AdjustableOutboundPort. */
+	protected Map<String, AdjustableOutboundPort> registeredEquipments;
+	/** compteur pour générer des noms de classes uniques pour les connecteurs. */
+	protected int connectorCounter = 0;
 
 	// Execution/Simulation
 
@@ -341,6 +352,16 @@ public class HEMCyPhy
 		this.executionMode = ExecutionMode.STANDARD;
 		this.testScenario = null;
 
+		// Initialisation de l'infrastructure d'enregistrement dynamique
+		this.registeredEquipments = new HashMap<>();
+		try {
+			this.registrationInboundPort = new RegistrationInboundPort(
+					REGISTRATION_INBOUND_PORT_URI, this);
+			this.registrationInboundPort.publishPort();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
 		assert HEMCyPhy.implementationInvariants(this) : new ImplementationInvariantException(
 				"HEMCyPhy.implementationInvariants(this)");
 		assert HEMCyPhy.invariants(this) : new InvariantException("HEMCyPhy.invariants(this)");
@@ -399,6 +420,12 @@ public class HEMCyPhy
 		// and manage the heater in a customised way.
 		this.isPreFirstStep = true;
 
+		// Initialisation de l'infrastructure d'enregistrement dynamique
+		this.registeredEquipments = new HashMap<>();
+		this.registrationInboundPort = new RegistrationInboundPort(
+				REGISTRATION_INBOUND_PORT_URI, this);
+		this.registrationInboundPort.publishPort();
+
 		if (VERBOSE) {
 			this.tracer.get().setTitle("Home Energy Manager component");
 			this.tracer.get().setRelativePosition(X_RELATIVE_POSITION,
@@ -429,32 +456,26 @@ public class HEMCyPhy
 					this.meterop.getPortURI(),
 					ElectricMeterCyPhy.ELECTRIC_METER_INBOUND_PORT_URI,
 					ElectricMeterConnector.class.getCanonicalName());
-			if (ENABLE_BATTERIES) {
-				this.batteriesop = new BatteriesOutboundPort(this);
-				this.batteriesop.publishPort();
-				this.doPortConnection(
-						batteriesop.getPortURI(),
-						BatteriesCyPhy.STANDARD_INBOUND_PORT_URI,
-						BatteriesConnector.class.getCanonicalName());
-			}
-			if (ENABLE_SOLARPANEL) {
-				this.solarPanelop = new SolarPanelOutboundPort(this);
-				this.solarPanelop.publishPort();
-				this.doPortConnection(
-						this.solarPanelop.getPortURI(),
-						SolarPanelCyPhy.STANDARD_INBOUND_PORT_URI,
-						SolarPanelConnector.class.getCanonicalName());
-			}
-			if (ENABLE_GENERATOR) {
-				this.generatorop = new GeneratorOutboundPort(this);
-				this.generatorop.publishPort();
-				this.doPortConnection(
-						this.generatorop.getPortURI(),
-						GeneratorCyPhy.STANDARD_INBOUND_PORT_URI,
-						GeneratorConnector.class.getCanonicalName());
-			}
+			this.batteriesop = new BatteriesOutboundPort(this);
+			this.batteriesop.publishPort();
+			this.doPortConnection(
+					batteriesop.getPortURI(),
+					BatteriesCyPhy.STANDARD_INBOUND_PORT_URI,
+					BatteriesConnector.class.getCanonicalName());
+			this.solarPanelop = new SolarPanelOutboundPort(this);
+			this.solarPanelop.publishPort();
+			this.doPortConnection(
+					this.solarPanelop.getPortURI(),
+					SolarPanelCyPhy.STANDARD_INBOUND_PORT_URI,
+					SolarPanelConnector.class.getCanonicalName());
+			this.generatorop = new GeneratorOutboundPort(this);
+			this.generatorop.publishPort();
+			this.doPortConnection(
+					this.generatorop.getPortURI(),
+					GeneratorCyPhy.STANDARD_INBOUND_PORT_URI,
+					GeneratorConnector.class.getCanonicalName());
 
-			if (this.isPreFirstStep && ENABLE_HEATER) {
+			if (this.isPreFirstStep) {
 				// in this case, connect using the statically customised
 				// heater connector and keep a specific outbound port to
 				// call the heater.
@@ -466,25 +487,23 @@ public class HEMCyPhy
 						HeaterConnector.class.getCanonicalName());
 			}
 
-			// Connect to WashingMachine for energy management (Étape 4)
-			if (ENABLE_WASHINGMACHINE) {
-				this.washingMachineop = new AdjustableOutboundPort(this);
-				this.washingMachineop.publishPort();
-				this.doPortConnection(
-						this.washingMachineop.getPortURI(),
-						WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-						WashingMachineConnector.class.getCanonicalName());
-			}
-
-			// Connect to Kettle for energy management (Étape 4)
-			if (ENABLE_KETTLE) {
-				this.kettleop = new AdjustableOutboundPort(this);
-				this.kettleop.publishPort();
-				this.doPortConnection(
-						this.kettleop.getPortURI(),
-						KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-						KettleConnector.class.getCanonicalName());
-			}
+			// Connect to WashingMachine for energy management
+			/*
+			 * this.washingMachineop = new AdjustableOutboundPort(this);
+			 * this.washingMachineop.publishPort();
+			 * this.doPortConnection(
+			 * this.washingMachineop.getPortURI(),
+			 * WashingMachineCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+			 * WashingMachineConnector.class.getCanonicalName());
+			 * 
+			 * // Connect to Kettle for energy management
+			 * this.kettleop = new AdjustableOutboundPort(this);
+			 * this.kettleop.publishPort();
+			 * this.doPortConnection(
+			 * this.kettleop.getPortURI(),
+			 * KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+			 * KettleConnector.class.getCanonicalName());
+			 */
 		} catch (Throwable e) {
 			throw new ComponentStartException(e);
 		}
@@ -546,25 +565,23 @@ public class HEMCyPhy
 	@Override
 	public synchronized void finalise() throws Exception {
 		this.doPortDisconnection(this.meterop.getPortURI());
-		if (ENABLE_BATTERIES) {
-			this.doPortDisconnection(this.batteriesop.getPortURI());
-		}
-		if (ENABLE_SOLARPANEL) {
-			this.doPortDisconnection(this.solarPanelop.getPortURI());
-		}
-		if (ENABLE_GENERATOR) {
-			this.doPortDisconnection(this.generatorop.getPortURI());
-		}
-		if (this.isPreFirstStep && ENABLE_HEATER) {
+		this.doPortDisconnection(this.batteriesop.getPortURI());
+		this.doPortDisconnection(this.solarPanelop.getPortURI());
+		this.doPortDisconnection(this.generatorop.getPortURI());
+		if (this.isPreFirstStep) {
 			this.doPortDisconnection(this.heaterop.getPortURI());
 		}
-		// Disconnect WashingMachine (Étape 4)
-		if (ENABLE_WASHINGMACHINE) {
-			this.doPortDisconnection(this.washingMachineop.getPortURI());
-		}
-		// Disconnect Kettle (Étape 4)
-		if (ENABLE_KETTLE) {
-			this.doPortDisconnection(this.kettleop.getPortURI());
+		// this.doPortDisconnection(this.washingMachineop.getPortURI());
+		// this.doPortDisconnection(this.kettleop.getPortURI());
+		for (Map.Entry<String, AdjustableOutboundPort> entry : this.registeredEquipments.entrySet()) {
+			try {
+				AdjustableOutboundPort port = entry.getValue();
+				if (port.connected()) {
+					this.doPortDisconnection(port.getPortURI());
+				}
+			} catch (Throwable e) {
+				// ignorer les erreurs de déconnexion
+			}
 		}
 		super.finalise();
 	}
@@ -576,30 +593,123 @@ public class HEMCyPhy
 	public synchronized void shutdown() throws ComponentShutdownException {
 		try {
 			this.meterop.unpublishPort();
-			if (ENABLE_BATTERIES) {
-				this.batteriesop.unpublishPort();
-			}
-			if (ENABLE_SOLARPANEL) {
-				this.solarPanelop.unpublishPort();
-			}
-			if (ENABLE_GENERATOR) {
-				this.generatorop.unpublishPort();
-			}
-			if (this.isPreFirstStep && ENABLE_HEATER) {
+			this.batteriesop.unpublishPort();
+			this.solarPanelop.unpublishPort();
+			this.generatorop.unpublishPort();
+			if (this.isPreFirstStep) {
 				this.heaterop.unpublishPort();
 			}
-			// Unpublish WashingMachine port (Étape 4)
-			if (ENABLE_WASHINGMACHINE) {
-				this.washingMachineop.unpublishPort();
+			// this.washingMachineop.unpublishPort();
+			// this.kettleop.unpublishPort();
+			for (AdjustableOutboundPort port : this.registeredEquipments.values()) {
+				try {
+					if (port.isPublished()) {
+						port.unpublishPort();
+					}
+				} catch (Throwable e) {
+					// ignorer
+				}
 			}
-			// Unpublish Kettle port (Étape 4)
-			if (ENABLE_KETTLE) {
-				this.kettleop.unpublishPort();
+			// Dépublication du port d'enregistrement
+			if (this.registrationInboundPort.isPublished()) {
+				this.registrationInboundPort.unpublishPort();
 			}
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
 		}
 		super.shutdown();
+	}
+
+	// -------------------------------------------------------------------------
+	// Registration methods (RegistrationImplementorI) — Étape 4
+	// -------------------------------------------------------------------------
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationInboundPort.RegistrationImplementorI#registered(String)
+	 */
+	@Override
+	public boolean registered(String uid) throws Exception {
+		if (uid == null || uid.isEmpty()) {
+			return false;
+		}
+		return this.registeredEquipments.containsKey(uid);
+	}
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationInboundPort.RegistrationImplementorI#register(String,
+	 *      String, String)
+	 */
+	@Override
+	public boolean register(
+			String uid,
+			String controlPortURI,
+			String xmlControlAdapter) throws Exception {
+		assert uid != null && !uid.isEmpty()
+				: new PreconditionException("uid != null && !uid.isEmpty()");
+		assert controlPortURI != null && !controlPortURI.isEmpty()
+				: new PreconditionException(
+						"controlPortURI != null && !controlPortURI.isEmpty()");
+
+		if (this.registeredEquipments.containsKey(uid)) {
+			this.traceMessage("HEMCyPhy: equipment " + uid
+					+ " already registered, skipping.\n");
+			return false;
+		}
+
+		this.traceMessage("HEMCyPhy: registering equipment " + uid + "...\n");
+
+		try {
+			// Lecture du descripteur XML et génération du connecteur dynamique
+			AdapterDescriptor descriptor = DescriptorReader.readFrom(xmlControlAdapter);
+			String generatedClassName = "fr.sorbonne_u.components.hem2025e3.generated."
+					+ "DynConnector_" + uid + "_"
+					+ (++this.connectorCounter);
+			Class<?> connectorClass = DynamicConnectorFactory.fabricate(
+					descriptor, generatedClassName);
+
+			// Création du port sortant et connexion dynamique
+			AdjustableOutboundPort aop = new AdjustableOutboundPort(this);
+			aop.publishPort();
+			this.doPortConnection(
+					aop.getPortURI(),
+					controlPortURI,
+					connectorClass.getName());
+
+			this.registeredEquipments.put(uid, aop);
+
+			this.traceMessage("HEMCyPhy: equipment " + uid
+					+ " registered successfully via dynamic connector "
+					+ connectorClass.getSimpleName() + ".\n");
+			return true;
+		} catch (Exception e) {
+			this.traceMessage("HEMCyPhy: registration failed for " + uid
+					+ " — " + e.getMessage() + "\n");
+			return false;
+		}
+	}
+
+	/**
+	 * @see fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationInboundPort.RegistrationImplementorI#unregister(String)
+	 */
+	@Override
+	public void unregister(String uid) throws Exception {
+		assert uid != null && !uid.isEmpty()
+				: new PreconditionException("uid != null && !uid.isEmpty()");
+
+		AdjustableOutboundPort port = this.registeredEquipments.remove(uid);
+		if (port != null) {
+			if (port.connected()) {
+				this.doPortDisconnection(port.getPortURI());
+			}
+			if (port.isPublished()) {
+				port.unpublishPort();
+			}
+			this.traceMessage("HEMCyPhy: equipment " + uid
+					+ " unregistered successfully.\n");
+		} else {
+			this.traceMessage("HEMCyPhy: equipment " + uid
+					+ " was not registered.\n");
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -1241,27 +1351,38 @@ public class HEMCyPhy
 	// }
 
 	// -------------------------------------------------------------------------
-	// WashingMachine control methods (Étape 4)
+	// WashingMachine control methods
 	// -------------------------------------------------------------------------
+
+	/** UID de la WashingMachine pour l'enregistrement dynamique. */
+	public static final String WM_UID = "WM10000";
 
 	/**
 	 * Test the WashingMachine AdjustableCI interface via HEM.
+	 * Uses the dynamically registered port.
 	 * 
 	 * @throws Exception if an error occurs
 	 */
 	public void testWashingMachine() throws Exception {
 		this.logMessage("WashingMachine HEM tests start.");
+		AdjustableOutboundPort wmop = this.registeredEquipments.get(WM_UID);
+		if (wmop == null) {
+			this.logMessage("WashingMachine not registered yet, skipping tests.");
+			return;
+		}
 		TestsStatistics statistics = new TestsStatistics();
 		try {
 			this.logMessage("Feature: adjustable appliance mode management for WashingMachine");
 
 			this.logMessage("  Scenario: getting the max mode index");
-			final int maxMode = washingMachineop.maxMode();
+			// final int maxMode = washingMachineop.maxMode();
+			final int maxMode = wmop.maxMode();
 			this.logMessage("    Max mode: " + maxMode);
 			statistics.updateStatistics();
 
 			this.logMessage("  Scenario: checking if suspended when not");
-			boolean isSuspended = washingMachineop.suspended();
+			// boolean isSuspended = washingMachineop.suspended();
+			boolean isSuspended = wmop.suspended();
 			if (isSuspended) {
 				this.logMessage("    ERROR: should not be suspended initially");
 				statistics.incorrectResult();
@@ -1271,7 +1392,8 @@ public class HEMCyPhy
 			statistics.updateStatistics();
 
 			this.logMessage("  Scenario: suspending the washing machine");
-			boolean suspendResult = washingMachineop.suspend();
+			// boolean suspendResult = washingMachineop.suspend();
+			boolean suspendResult = wmop.suspend();
 			if (suspendResult) {
 				this.logMessage("    OK: suspend() returned true");
 			} else {
@@ -1281,7 +1403,8 @@ public class HEMCyPhy
 			statistics.updateStatistics();
 
 			this.logMessage("  Scenario: checking if suspended after suspend");
-			isSuspended = washingMachineop.suspended();
+			// isSuspended = washingMachineop.suspended();
+			isSuspended = wmop.suspended();
 			if (isSuspended) {
 				this.logMessage("    OK: is suspended after suspend()");
 			} else {
@@ -1291,12 +1414,14 @@ public class HEMCyPhy
 			statistics.updateStatistics();
 
 			this.logMessage("  Scenario: getting emergency level when suspended");
-			double emergency = washingMachineop.emergency();
+			// double emergency = washingMachineop.emergency();
+			double emergency = wmop.emergency();
 			this.logMessage("    Emergency level: " + emergency);
 			statistics.updateStatistics();
 
 			this.logMessage("  Scenario: resuming the washing machine");
-			boolean resumeResult = washingMachineop.resume();
+			// boolean resumeResult = washingMachineop.resume();
+			boolean resumeResult = wmop.resume();
 			if (resumeResult) {
 				this.logMessage("    OK: resume() returned true");
 			} else {
@@ -1306,7 +1431,8 @@ public class HEMCyPhy
 			statistics.updateStatistics();
 
 			this.logMessage("  Scenario: checking if not suspended after resume");
-			isSuspended = washingMachineop.suspended();
+			// isSuspended = washingMachineop.suspended();
+			isSuspended = wmop.suspended();
 			if (!isSuspended) {
 				this.logMessage("    OK: not suspended after resume()");
 			} else {
@@ -1323,27 +1449,38 @@ public class HEMCyPhy
 	}
 
 	// -------------------------------------------------------------------------
-	// Kettle control methods (Étape 4)
+	// Kettle control methods
 	// -------------------------------------------------------------------------
+
+	/** UID de la Kettle pour l'enregistrement dynamique. */
+	public static final String KT_UID = "KT10000";
 
 	/**
 	 * Test the Kettle AdjustableCI interface via HEM.
+	 * Uses the dynamically registered port.
 	 * 
 	 * @throws Exception if an error occurs
 	 */
 	public void testKettle() throws Exception {
 		this.logMessage("Kettle HEM tests start.");
+		AdjustableOutboundPort ktop = this.registeredEquipments.get(KT_UID);
+		if (ktop == null) {
+			this.logMessage("Kettle not registered yet, skipping tests.");
+			return;
+		}
 		TestsStatistics statistics = new TestsStatistics();
 		try {
 			this.logMessage("Feature: adjustable appliance mode management for Kettle");
 
 			this.logMessage("  Scenario: getting the max mode index");
-			final int maxMode = kettleop.maxMode();
+			// final int maxMode = kettleop.maxMode();
+			final int maxMode = ktop.maxMode();
 			this.logMessage("    Max mode: " + maxMode);
 			statistics.updateStatistics();
 
 			this.logMessage("  Scenario: checking if suspended when not");
-			boolean isSuspended = kettleop.suspended();
+			// boolean isSuspended = kettleop.suspended();
+			boolean isSuspended = ktop.suspended();
 			if (isSuspended) {
 				this.logMessage("    ERROR: should not be suspended initially");
 				statistics.incorrectResult();
@@ -1353,7 +1490,8 @@ public class HEMCyPhy
 			statistics.updateStatistics();
 
 			this.logMessage("  Scenario: suspending the kettle");
-			boolean suspendResult = kettleop.suspend();
+			// boolean suspendResult = kettleop.suspend();
+			boolean suspendResult = ktop.suspend();
 			if (suspendResult) {
 				this.logMessage("    OK: suspend() returned true");
 			} else {
@@ -1363,7 +1501,8 @@ public class HEMCyPhy
 			statistics.updateStatistics();
 
 			this.logMessage("  Scenario: checking if suspended after suspend");
-			isSuspended = kettleop.suspended();
+			// isSuspended = kettleop.suspended();
+			isSuspended = ktop.suspended();
 			if (isSuspended) {
 				this.logMessage("    OK: is suspended after suspend()");
 			} else {
@@ -1373,12 +1512,14 @@ public class HEMCyPhy
 			statistics.updateStatistics();
 
 			this.logMessage("  Scenario: getting emergency level when suspended");
-			double emergency = kettleop.emergency();
+			// double emergency = kettleop.emergency();
+			double emergency = ktop.emergency();
 			this.logMessage("    Emergency level: " + emergency);
 			statistics.updateStatistics();
 
 			this.logMessage("  Scenario: resuming the kettle");
-			boolean resumeResult = kettleop.resume();
+			//
+			boolean resumeResult = ktop.resume();
 			if (resumeResult) {
 				this.logMessage("    OK: resume() returned true");
 			} else {
@@ -1388,7 +1529,8 @@ public class HEMCyPhy
 			statistics.updateStatistics();
 
 			this.logMessage("  Scenario: checking if not suspended after resume");
-			isSuspended = kettleop.suspended();
+			// isSuspended = kettleop.suspended();
+			isSuspended = ktop.suspended();
 			if (!isSuspended) {
 				this.logMessage("    OK: not suspended after resume()");
 			} else {
@@ -1407,11 +1549,19 @@ public class HEMCyPhy
 	/**
 	 * Energy management control loop - suspends WashingMachine when
 	 * production is lower than consumption.
+	 * Uses the dynamically registered WashingMachine port.
 	 * 
 	 * @throws Exception if an error occurs
 	 */
 	public void manageEnergy() throws Exception {
 		this.logMessage("HEM Energy Management starts.");
+
+		AdjustableOutboundPort wmop = this.registeredEquipments.get(WM_UID);
+		if (wmop == null) {
+			this.logMessage("  WashingMachine not registered, cannot manage energy.");
+			this.logMessage("HEM Energy Management ends.");
+			return;
+		}
 
 		// Get current power levels from meter
 		double totalConsumption = this.meterop.getCurrentConsumption().getMeasure().getData();
@@ -1424,9 +1574,11 @@ public class HEMCyPhy
 			this.logMessage("  WARNING: Consumption > Production!");
 
 			// Try to suspend WashingMachine if not already suspended
-			if (!this.washingMachineop.suspended()) {
+			// if (!this.washingMachineop.suspended()) {
+			if (!wmop.suspended()) {
 				this.logMessage("  Attempting to suspend WashingMachine...");
-				boolean result = this.washingMachineop.suspend();
+				// boolean result = this.washingMachineop.suspend();
+				boolean result = wmop.suspend();
 				if (result) {
 					this.logMessage("  WashingMachine suspended successfully.");
 				} else {
@@ -1439,14 +1591,17 @@ public class HEMCyPhy
 			this.logMessage("  Production >= Consumption, OK.");
 
 			// Resume WashingMachine if suspended
-			if (this.washingMachineop.suspended()) {
-				double emergency = this.washingMachineop.emergency();
+			// if (this.washingMachineop.suspended()) {
+			// double emergency = this.washingMachineop.emergency();
+			if (wmop.suspended()) {
+				double emergency = wmop.emergency();
 				this.logMessage("  WashingMachine emergency level: " + emergency);
 
 				// Resume if there's enough margin or high emergency
 				if (totalProduction - totalConsumption > 500.0 || emergency > 0.5) {
 					this.logMessage("  Resuming WashingMachine...");
-					boolean result = this.washingMachineop.resume();
+					// boolean result = this.washingMachineop.resume();
+					boolean result = wmop.resume();
 					if (result) {
 						this.logMessage("  WashingMachine resumed successfully.");
 					} else {

@@ -4,7 +4,14 @@ import fr.sorbonne_u.alasca.physical_data.Measure;
 import fr.sorbonne_u.alasca.physical_data.SignalData;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
+import fr.sorbonne_u.components.annotations.RequiredInterfaces;
+import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
+import fr.sorbonne_u.components.exceptions.ComponentStartException;
+import fr.sorbonne_u.components.hem2025.bases.RegistrationCI;
+import fr.sorbonne_u.components.hem2025e1.equipments.hem.HEM;
+import fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationConnector;
+import fr.sorbonne_u.components.hem2025e1.equipments.hem.RegistrationOutboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections.KettleExternalControlJava4InboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections.KettleInternalControlInboundPort;
 import fr.sorbonne_u.components.hem2025e1.equipments.kettle.connections.KettleUserJava4InboundPort;
@@ -79,6 +86,7 @@ import fr.sorbonne_u.exceptions.PreconditionException;
 @OfferedInterfaces(offered = { KettleUserJava4CI.class,
 		KettleInternalControlCI.class,
 		KettleExternalControlJava4CI.class })
+@RequiredInterfaces(required = { RegistrationCI.class })
 public class Kettle
 		extends AbstractComponent
 		implements KettleUserI,
@@ -113,6 +121,15 @@ public class Kettle
 	public static final String INTERNAL_CONTROL_INBOUND_PORT_URI = "KETTLE-INTERNAL-CONTROL-INBOUND-PORT-URI";
 	/** URI of the kettle port for internal control. */
 	public static final String EXTERNAL_CONTROL_INBOUND_PORT_URI = "KETTLE-EXTERNAL-CONTROL-INBOUND-PORT-URI";
+
+	// === Enregistrement dynamique auprès du HEM ===
+	/** identifiant unique de la bouilloire pour l'enregistrement. */
+	protected static final String KETTLE_UID = "KT10000";
+	/** chemin vers le descripteur XML du connecteur adapté. */
+	protected static final String XML_KETTLE_DESCRIPTOR = "hem-adapter/kettleci-descriptor.xml";
+	/** port sortant pour l'enregistrement auprès du HEM. */
+	protected RegistrationOutboundPort registrationPort;
+	protected boolean registrationConnected = false;
 
 	/** inbound port offering the <code>KettleUserCI</code> interface. */
 	protected KettleUserJava4InboundPort kip;
@@ -276,12 +293,53 @@ public class Kettle
 		assert Kettle.invariants(this) : new InvariantException("Kettle.invariants(this)");
 	}
 
+	// -------------------------------------------------------------------------
+	// Component life-cycle
+	// -------------------------------------------------------------------------
+
+	@Override
+	public synchronized void start() throws ComponentStartException {
+		super.start();
+		try {
+			if (AbstractCVM.isPublishedInLocalRegistry(
+					HEM.REGISTRATION_INBOUND_PORT_URI)) {
+				this.registrationPort = new RegistrationOutboundPort(this);
+				this.registrationPort.publishPort();
+				this.doPortConnection(
+						this.registrationPort.getPortURI(),
+						HEM.REGISTRATION_INBOUND_PORT_URI,
+						RegistrationConnector.class.getCanonicalName());
+				this.registrationConnected = true;
+			}
+		} catch (Exception e) {
+			throw new ComponentStartException(e);
+		}
+	}
+
+	@Override
+	public synchronized void finalise() throws Exception {
+		if (this.registrationConnected) {
+			this.doPortDisconnection(this.registrationPort.getPortURI());
+			this.registrationConnected = false;
+		}
+		super.finalise();
+	}
+
 	@Override
 	public synchronized void shutdown() throws ComponentShutdownException {
 		try {
 			this.kip.unpublishPort();
 			this.kicip.unpublishPort();
 			this.kecip.unpublishPort();
+			if (this.registrationPort != null) {
+				if (this.registrationConnected) {
+					this.doPortDisconnection(this.registrationPort.getPortURI());
+					this.registrationConnected = false;
+				}
+				if (this.registrationPort.isPublished()) {
+					this.registrationPort.unpublishPort();
+				}
+			}
 		} catch (Throwable e) {
 			throw new ComponentShutdownException(e);
 		}
@@ -309,6 +367,18 @@ public class Kettle
 
 		this.currentState = KettleState.ON;
 
+		// Enregistrement auprès du HEM lors de la mise en marche
+		if (this.registrationConnected) {
+			this.registrationPort.register(
+					KETTLE_UID,
+					this.kecip.getPortURI(),
+					XML_KETTLE_DESCRIPTOR);
+			if (Kettle.VERBOSE) {
+				this.traceMessage("Kettle registered with HEM as "
+						+ KETTLE_UID + ".\n");
+			}
+		}
+
 		assert this.on() : new PostconditionException("on()");
 	}
 
@@ -319,6 +389,21 @@ public class Kettle
 		}
 
 		assert this.on() : new PreconditionException("on()");
+
+		// Désenregistrement auprès du HEM avant l'arrêt
+		if (this.registrationConnected) {
+			try {
+				this.registrationPort.unregister(KETTLE_UID);
+				if (Kettle.VERBOSE) {
+					this.traceMessage("Kettle unregistered from HEM.\n");
+				}
+			} catch (Exception e) {
+				if (Kettle.VERBOSE) {
+					this.traceMessage("Kettle unregister warning: "
+							+ e.getMessage() + "\n");
+				}
+			}
+		}
 
 		this.currentState = KettleState.OFF;
 
