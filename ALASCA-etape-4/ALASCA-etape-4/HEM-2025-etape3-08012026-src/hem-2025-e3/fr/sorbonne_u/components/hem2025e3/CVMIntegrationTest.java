@@ -86,6 +86,15 @@ import fr.sorbonne_u.components.hem2025e3.equipments.kettle.KettleTesterCyPhy;
 import fr.sorbonne_u.components.hem2025e3.equipments.kettle.KettleController;
 import fr.sorbonne_u.components.hem2025e3.equipments.kettle.sil.KettleElectricitySILModel;
 import fr.sorbonne_u.components.hem2025e3.equipments.kettle.sil.KettleTemperatureSILModel;
+import fr.sorbonne_u.components.hem2025e3.equipments.fan.FanController;
+import fr.sorbonne_u.components.hem2025e3.equipments.fan.FanCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.fan.FanTesterCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.fan.sil.FanStateSILModel;
+import fr.sorbonne_u.components.hem2025e3.equipments.fan.sil.FanElectricitySILModel;
+import fr.sorbonne_u.components.hem2025e3.equipments.vacuum_cleaner.VacuumCleanerCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.vacuum_cleaner.VacuumCleanerTesterCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.vacuum_cleaner.sil.VacuumCleanerStateSILModel;
+import fr.sorbonne_u.components.hem2025e3.equipments.vacuum_cleaner.sil.VacuumCleanerElectricitySILModel;
 import fr.sorbonne_u.components.utils.tests.TestScenario;
 import fr.sorbonne_u.components.utils.tests.TestStep;
 import fr.sorbonne_u.components.utils.tests.TestStepI;
@@ -353,6 +362,22 @@ public class CVMIntegrationTest
 		KettleController.X_RELATIVE_POSITION = 3;
 		KettleController.Y_RELATIVE_POSITION = 2;
 
+		// Fan configuration
+		FanTesterCyPhy.VERBOSE = true;
+		FanTesterCyPhy.X_RELATIVE_POSITION = 0;
+		FanTesterCyPhy.Y_RELATIVE_POSITION = 5;
+		FanCyPhy.VERBOSE = true;
+		FanCyPhy.X_RELATIVE_POSITION = 1;
+		FanCyPhy.Y_RELATIVE_POSITION = 5;
+
+		// VacuumCleaner configuration
+		VacuumCleanerTesterCyPhy.VERBOSE = true;
+		VacuumCleanerTesterCyPhy.X_RELATIVE_POSITION = 2;
+		VacuumCleanerTesterCyPhy.Y_RELATIVE_POSITION = 5;
+		VacuumCleanerCyPhy.VERBOSE = true;
+		VacuumCleanerCyPhy.X_RELATIVE_POSITION = 3;
+		VacuumCleanerCyPhy.Y_RELATIVE_POSITION = 5;
+
 		BatteriesStateSILModel.VERBOSE = false;
 		BatteriesStateSILModel.DEBUG = false;
 		BatteriesPowerSILModel.VERBOSE = false;
@@ -375,7 +400,7 @@ public class CVMIntegrationTest
 		HeaterTemperatureSILModel.DEBUG = false;
 		ExternalTemperatureSILModel.VERBOSE = false;
 		ExternalTemperatureSILModel.DEBUG = false;
-		ElectricMeterElectricitySILModel.VERBOSE = false; // TODO
+		ElectricMeterElectricitySILModel.VERBOSE = false;
 		ElectricMeterElectricitySILModel.DEBUG = true;
 		DeterministicSunRiseAndSetModel.VERBOSE = false;
 		DeterministicSunRiseAndSetModel.DEBUG = false;
@@ -391,6 +416,12 @@ public class CVMIntegrationTest
 		// Kettle SIL models
 		KettleElectricitySILModel.VERBOSE = false;
 		KettleTemperatureSILModel.VERBOSE = false;
+		// Fan SIL models
+		FanStateSILModel.VERBOSE = false;
+		FanElectricitySILModel.VERBOSE = false;
+		// VacuumCleaner SIL models
+		VacuumCleanerStateSILModel.VERBOSE = false;
+		VacuumCleanerElectricitySILModel.VERBOSE = false;
 
 		assert CVMIntegrationTest.implementationInvariants(this) : new InvariantException(
 				"CVMIntegrationTest.glassBoxInvariants(this)");
@@ -520,6 +551,40 @@ public class CVMIntegrationTest
 							KettleCyPhy.USER_INBOUND_PORT_URI,
 							KettleCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
 							KettleCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
+
+			// Fan components
+			AbstractComponent.createComponent(
+					FanCyPhy.class.getCanonicalName(),
+					new Object[] {
+							FanCyPhy.USER_INBOUND_PORT_URI,
+							FanCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							FanCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST
+					});
+			AbstractComponent.createComponent(
+					FanTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							FanCyPhy.USER_INBOUND_PORT_URI,
+							FanCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							FanCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
+
+			// VacuumCleaner components
+			AbstractComponent.createComponent(
+					VacuumCleanerCyPhy.class.getCanonicalName(),
+					new Object[] {
+							VacuumCleanerCyPhy.INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST
+					});
+			AbstractComponent.createComponent(
+					VacuumCleanerTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							VacuumCleanerCyPhy.INBOUND_PORT_URI,
 							ExecutionMode.INTEGRATION_TEST,
 							testScenario
 					});
@@ -740,6 +805,60 @@ public class CVMIntegrationTest
 							testScenario
 					});
 
+			// Fan components
+			AbstractComponent.createComponent(
+					FanCyPhy.class.getCanonicalName(),
+					new Object[] {
+							FanCyPhy.REFLECTION_INBOUND_PORT_URI,
+							FanCyPhy.USER_INBOUND_PORT_URI,
+							FanCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							FanCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							FanCyPhy.SENSOR_INBOUND_PORT_URI,
+							FanCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							FanCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					FanController.class.getCanonicalName(),
+					new Object[] {
+							FanCyPhy.SENSOR_INBOUND_PORT_URI,
+							FanCyPhy.ACTUATOR_INBOUND_PORT_URI,
+							FanController.STANDARD_CONTROL_PERIOD,
+							FanController.ControlMode.PULL,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					FanTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							FanCyPhy.USER_INBOUND_PORT_URI,
+							FanCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+							FanCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
+
+			// VacuumCleaner components
+			AbstractComponent.createComponent(
+					VacuumCleanerCyPhy.class.getCanonicalName(),
+					new Object[] {
+							VacuumCleanerCyPhy.REFLECTION_INBOUND_PORT_URI,
+							VacuumCleanerCyPhy.INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
+							testScenario,
+							VacuumCleanerCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
+							ACCELERATION_FACTOR
+					});
+			AbstractComponent.createComponent(
+					VacuumCleanerTesterCyPhy.class.getCanonicalName(),
+					new Object[] {
+							VacuumCleanerCyPhy.INBOUND_PORT_URI,
+							ExecutionMode.INTEGRATION_TEST,
+							testScenario
+					});
+
 		}
 
 		super.deploy();
@@ -815,6 +934,19 @@ public class CVMIntegrationTest
 		Instant kettleSwitchOn = START_INSTANT.plusSeconds(1800);
 		Instant hemTestKettle = START_INSTANT.plusSeconds(2000);
 		Instant kettleSwitchOff = START_INSTANT.plusSeconds(2400);
+
+		// Fan test instants
+		Instant fanSwitchOn = START_INSTANT.plusSeconds(2700);
+		Instant fanSetHigh = START_INSTANT.plusSeconds(2760);
+		Instant hemTestFan = START_INSTANT.plusSeconds(2800);
+		Instant fanSetLow = START_INSTANT.plusSeconds(2820);
+		Instant fanSwitchOff = START_INSTANT.plusSeconds(2880);
+
+		// VacuumCleaner test instants
+		Instant vacuumCleanerTurnOn = START_INSTANT.plusSeconds(3000);
+		Instant vacuumCleanerSetHigh = START_INSTANT.plusSeconds(3060);
+		Instant vacuumCleanerSetLow = START_INSTANT.plusSeconds(3120);
+		Instant vacuumCleanerTurnOff = START_INSTANT.plusSeconds(3180);
 
 		Instant hairDryerTurnOn = START_INSTANT.plusSeconds(600);
 		Instant hairDryerSetHigh = START_INSTANT.plusSeconds(660);
@@ -1036,6 +1168,110 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// Fan test steps
+						new TestStep(
+								CLOCK_URI,
+								FanTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								fanSwitchOn,
+								owner -> {
+									try {
+										((FanTesterCyPhy) owner).switchOnFan();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								FanTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								fanSetHigh,
+								owner -> {
+									try {
+										((FanTesterCyPhy) owner).setHighSpeedFan();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// HEM test the fan
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hemTestFan,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testFan();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								FanTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								fanSetLow,
+								owner -> {
+									try {
+										((FanTesterCyPhy) owner).setLowSpeedFan();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								FanTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								fanSwitchOff,
+								owner -> {
+									try {
+										((FanTesterCyPhy) owner).switchOffFan();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+
+						// VacuumCleaner test steps
+						new TestStep(
+								CLOCK_URI,
+								VacuumCleanerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								vacuumCleanerTurnOn,
+								owner -> {
+									try {
+										((VacuumCleanerTesterCyPhy) owner).turnOnVacuumCleaner();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								VacuumCleanerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								vacuumCleanerSetHigh,
+								owner -> {
+									try {
+										((VacuumCleanerTesterCyPhy) owner).setHighVacuumCleaner();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								VacuumCleanerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								vacuumCleanerSetLow,
+								owner -> {
+									try {
+										((VacuumCleanerTesterCyPhy) owner).setLowVacuumCleaner();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						new TestStep(
+								CLOCK_URI,
+								VacuumCleanerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								vacuumCleanerTurnOff,
+								owner -> {
+									try {
+										((VacuumCleanerTesterCyPhy) owner).turnOffVacuumCleaner();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+
 						new TestStep(
 								CLOCK_URI,
 								HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1098,38 +1334,82 @@ public class CVMIntegrationTest
 
 		Instant generatorStop = Instant.parse("2025-12-02T07:30:00.00Z");
 
+		// ====== VERSION SÉQUENTIELLE (sans chevauchement) ======
+		// WashingMachine 1er cycle : 06:06 -> 06:25
+		Instant washingMachineSwitchOn = Instant.parse("2025-12-02T06:06:00.00Z");
+		Instant washingMachineStartWashing = Instant.parse("2025-12-02T06:07:00.00Z");
+		Instant hemTestWashingMachine = Instant.parse("2025-12-02T06:10:00.00Z");
+		Instant washingMachineSwitchOff = Instant.parse("2025-12-02T06:25:00.00Z");
+
+		// HairDryer 2ème cycle : 08:15 -> 08:25
 		Instant hairDryerTurnOn2 = Instant.parse("2025-12-02T08:15:00.00Z");
 		Instant hairDryerSetHigh2 = Instant.parse("2025-12-02T08:15:20.00Z");
 		Instant hairDryerSetLow2 = Instant.parse("2025-12-02T08:20:00.00Z");
 		Instant hairDryerTurnOff2 = Instant.parse("2025-12-02T08:25:00.00Z");
 
+		// Kettle : 08:30 -> 08:45
+		Instant kettleSwitchOn = Instant.parse("2025-12-02T08:30:00.00Z");
+		Instant hemTestKettle = Instant.parse("2025-12-02T08:35:00.00Z");
+		Instant kettleSwitchOff = Instant.parse("2025-12-02T08:45:00.00Z");
+
+		// Heater OFF
 		Instant heaterSwitchOff = Instant.parse("2025-12-02T09:00:00.00Z");
+
+		// Fan : 09:30 -> 09:40
+		Instant fanSwitchOn = Instant.parse("2025-12-02T09:30:00.00Z");
+		Instant fanSetHigh = Instant.parse("2025-12-02T09:32:00.00Z");
+		Instant hemTestFan = Instant.parse("2025-12-02T09:34:00.00Z");
+		Instant fanSetLow = Instant.parse("2025-12-02T09:36:00.00Z");
+		Instant fanSwitchOff = Instant.parse("2025-12-02T09:40:00.00Z");
+
+		// VacuumCleaner : 09:42 -> 09:48
+		Instant vacuumCleanerTurnOn = Instant.parse("2025-12-02T09:42:00.00Z");
+		Instant vacuumCleanerSetHigh = Instant.parse("2025-12-02T09:43:00.00Z");
+		Instant vacuumCleanerSetLow = Instant.parse("2025-12-02T09:45:00.00Z");
+		Instant vacuumCleanerTurnOff = Instant.parse("2025-12-02T09:48:00.00Z");
+
+		// WashingMachine delayedStart : 09:50 -> 09:55
+		Instant washingMachineDelayedSwitchOn = Instant.parse("2025-12-02T09:50:00.00Z");
+		Instant washingMachineDelayedStart = Instant.parse("2025-12-02T09:51:00.00Z");
+		Instant washingMachineDelayedSwitchOff = Instant.parse("2025-12-02T09:55:00.00Z");
 
 		Instant batteriesStartCharging = Instant.parse("2025-12-02T10:00:00.00Z");
 		Instant batteriesTest2 = Instant.parse("2025-12-02T10:30:00.00Z");
 		Instant batteriesStopCharging = Instant.parse("2025-12-02T11:00:00.00Z");
 		Instant batteriesTest3 = Instant.parse("2025-12-02T11:30:00.00Z");
 
-		// WashingMachine test instants
-		Instant washingMachineSwitchOn = Instant.parse("2025-12-02T06:06:00.00Z");
-		Instant washingMachineStartWashing = Instant.parse("2025-12-02T06:07:00.00Z");
-		Instant hemTestWashingMachine = Instant.parse("2025-12-02T06:12:00.00Z");
-		// Cycle: chauffage eniron 4min (06:11) + lavage 10min = fin environ 06:21,
-		// switchOff à 06:25
-		Instant washingMachineSwitchOff = Instant.parse("2025-12-02T06:25:00.00Z");
-
-		// WashingMachine delayedStart test instants (09:10 - 09:25)
-		Instant washingMachineDelayedSwitchOn = Instant.parse("2025-12-02T09:10:00.00Z");
-		Instant washingMachineDelayedStart = Instant.parse("2025-12-02T09:11:00.00Z");
-		// Cycle: délai 2min (09:13) + chauffage environ 4min (09:17) + lavage 5min =
-		// fin
-		// environ 09:22, switchOff à 09:25
-		Instant washingMachineDelayedSwitchOff = Instant.parse("2025-12-02T09:25:00.00Z");
-
-		// Kettle test instants
-		Instant kettleSwitchOn = Instant.parse("2025-12-02T08:30:00.00Z");
-		Instant hemTestKettle = Instant.parse("2025-12-02T08:35:00.00Z");
-		Instant kettleSwitchOff = Instant.parse("2025-12-02T08:45:00.00Z");
+		/*
+		 * ====== VERSION AVEC CHEVAUCHEMENT (commentée) ======
+		 * Instant hairDryerTurnOn2 = Instant.parse("2025-12-02T08:15:00.00Z");
+		 * Instant hairDryerSetHigh2 = Instant.parse("2025-12-02T08:15:20.00Z");
+		 * Instant hairDryerSetLow2 = Instant.parse("2025-12-02T08:40:00.00Z");
+		 * Instant hairDryerTurnOff2 = Instant.parse("2025-12-02T08:52:00.00Z");
+		 * Instant kettleSwitchOn = Instant.parse("2025-12-02T08:20:00.00Z");
+		 * Instant hemTestKettle = Instant.parse("2025-12-02T08:34:00.00Z");
+		 * Instant kettleSwitchOff = Instant.parse("2025-12-02T08:45:00.00Z");
+		 * Instant washingMachineSwitchOn = Instant.parse("2025-12-02T08:22:00.00Z");
+		 * Instant washingMachineStartWashing =
+		 * Instant.parse("2025-12-02T08:23:00.00Z");
+		 * Instant hemTestWashingMachine = Instant.parse("2025-12-02T08:30:00.00Z");
+		 * Instant washingMachineSwitchOff = Instant.parse("2025-12-02T08:50:00.00Z");
+		 * Instant fanSwitchOn = Instant.parse("2025-12-02T08:25:00.00Z");
+		 * Instant fanSetHigh = Instant.parse("2025-12-02T08:28:00.00Z");
+		 * Instant hemTestFan = Instant.parse("2025-12-02T08:32:00.00Z");
+		 * Instant fanSetLow = Instant.parse("2025-12-02T08:38:00.00Z");
+		 * Instant fanSwitchOff = Instant.parse("2025-12-02T08:46:00.00Z");
+		 * Instant vacuumCleanerTurnOn = Instant.parse("2025-12-02T08:26:00.00Z");
+		 * Instant vacuumCleanerSetHigh = Instant.parse("2025-12-02T08:29:00.00Z");
+		 * Instant vacuumCleanerSetLow = Instant.parse("2025-12-02T08:36:00.00Z");
+		 * Instant vacuumCleanerTurnOff = Instant.parse("2025-12-02T08:41:00.00Z");
+		 * Instant heaterSwitchOff = Instant.parse("2025-12-02T09:30:00.00Z");
+		 * Instant washingMachineDelayedSwitchOn =
+		 * Instant.parse("2025-12-02T09:40:00.00Z");
+		 * Instant washingMachineDelayedStart =
+		 * Instant.parse("2025-12-02T09:41:00.00Z");
+		 * Instant washingMachineDelayedSwitchOff =
+		 * Instant.parse("2025-12-02T09:55:00.00Z");
+		 * ====== FIN VERSION AVEC CHEVAUCHEMENT ======
+		 */
 
 		return new TestScenarioWithSimulation(
 				CLOCK_URI,
@@ -1313,6 +1593,7 @@ public class CVMIntegrationTest
 							GeneratorSimulationConfiguration.INITIAL_TANK_LEVEL);
 				},
 				new TestStepI[] {
+						// 06:01 - Heater ON
 						new TestStep(
 								CLOCK_URI,
 								HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1325,7 +1606,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
-						// WashingMachine test steps (06:06 - 06:09)
+						// 06:06 - WashingMachine ON (1er cycle)
 						new TestStep(
 								CLOCK_URI,
 								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1337,13 +1618,13 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
+						// 06:07 - WashingMachine startWashing
 						new TestStep(
 								CLOCK_URI,
 								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 								washingMachineStartWashing,
 								owner -> {
 									try {
-										// Start washing for 10 minutes (600000 ms) at 40°C
 										((WashingMachineTesterCyPhy) owner).getWmop().startWashing(
 												600000L,
 												new Measure<Double>(40.0, MeasurementUnit.CELSIUS));
@@ -1351,6 +1632,7 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
+						// 06:10 - HEM test WashingMachine
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1363,6 +1645,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// 06:15 - Generator start
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1375,7 +1658,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
-						// washingMachineSwitchOff at 06:25
+						// 06:25 - WashingMachine OFF (fin 1er cycle)
 						new TestStep(
 								CLOCK_URI,
 								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1388,6 +1671,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// 07:15 - HairDryer 1st cycle ON
 						new TestStep(
 								CLOCK_URI,
 								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1399,6 +1683,7 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
+						// 07:15:20 - HairDryer setHigh
 						new TestStep(
 								CLOCK_URI,
 								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1411,6 +1696,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// 07:17:30 - Batteries test 1
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1423,6 +1709,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// 07:20 - HairDryer setLow
 						new TestStep(
 								CLOCK_URI,
 								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1434,6 +1721,7 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
+						// 07:25 - HairDryer OFF
 						new TestStep(
 								CLOCK_URI,
 								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1446,6 +1734,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// 07:30 - Generator stop
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1458,6 +1747,8 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// ====== VERSION SÉQUENTIELLE (sans chevauchement) ======
+						// 08:15 - HairDryer 2nd cycle ON
 						new TestStep(
 								CLOCK_URI,
 								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1469,6 +1760,7 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
+						// 08:15:20 - HairDryer setHigh
 						new TestStep(
 								CLOCK_URI,
 								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1480,6 +1772,7 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
+						// 08:20 - HairDryer setLow
 						new TestStep(
 								CLOCK_URI,
 								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1491,6 +1784,7 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
+						// 08:25 - HairDryer OFF
 						new TestStep(
 								CLOCK_URI,
 								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1502,8 +1796,7 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
-
-						// Kettle test steps
+						// 08:30 - Kettle ON
 						new TestStep(
 								CLOCK_URI,
 								KettleTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1515,7 +1808,7 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
-						// HEM test the kettle
+						// 08:35 - HEM test Kettle
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1527,6 +1820,7 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
+						// 08:45 - Kettle OFF
 						new TestStep(
 								CLOCK_URI,
 								KettleTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1539,6 +1833,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// 09:00 - Heater OFF
 						new TestStep(
 								CLOCK_URI,
 								HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1551,7 +1846,116 @@ public class CVMIntegrationTest
 									}
 								}),
 
-						// WashingMachine delayedStart test steps (09:10 - 09:17)
+						// 09:30 - Fan ON
+						new TestStep(
+								CLOCK_URI,
+								FanTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								fanSwitchOn,
+								owner -> {
+									try {
+										((FanTesterCyPhy) owner).switchOnFan();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// 09:32 - Fan setHigh
+						new TestStep(
+								CLOCK_URI,
+								FanTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								fanSetHigh,
+								owner -> {
+									try {
+										((FanTesterCyPhy) owner).setHighSpeedFan();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// 09:34 - HEM test Fan
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hemTestFan,
+								owner -> {
+									try {
+										((HEMCyPhy) owner).testFan();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// 09:36 - Fan setLow
+						new TestStep(
+								CLOCK_URI,
+								FanTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								fanSetLow,
+								owner -> {
+									try {
+										((FanTesterCyPhy) owner).setLowSpeedFan();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// 09:40 - Fan OFF
+						new TestStep(
+								CLOCK_URI,
+								FanTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								fanSwitchOff,
+								owner -> {
+									try {
+										((FanTesterCyPhy) owner).switchOffFan();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// 09:42 - VacuumCleaner ON
+						new TestStep(
+								CLOCK_URI,
+								VacuumCleanerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								vacuumCleanerTurnOn,
+								owner -> {
+									try {
+										((VacuumCleanerTesterCyPhy) owner).turnOnVacuumCleaner();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// 09:43 - VacuumCleaner setHigh
+						new TestStep(
+								CLOCK_URI,
+								VacuumCleanerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								vacuumCleanerSetHigh,
+								owner -> {
+									try {
+										((VacuumCleanerTesterCyPhy) owner).setHighVacuumCleaner();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// 09:45 - VacuumCleaner setLow
+						new TestStep(
+								CLOCK_URI,
+								VacuumCleanerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								vacuumCleanerSetLow,
+								owner -> {
+									try {
+										((VacuumCleanerTesterCyPhy) owner).setLowVacuumCleaner();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+						// 09:48 - VacuumCleaner OFF
+						new TestStep(
+								CLOCK_URI,
+								VacuumCleanerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								vacuumCleanerTurnOff,
+								owner -> {
+									try {
+										((VacuumCleanerTesterCyPhy) owner).turnOffVacuumCleaner();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+
+						// 09:50 - WashingMachine delayedStart cycle
 						new TestStep(
 								CLOCK_URI,
 								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1563,21 +1967,22 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
+						// 09:51
 						new TestStep(
 								CLOCK_URI,
 								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 								washingMachineDelayedStart,
 								owner -> {
 									try {
-										// delayedStart: delay 2 min (120000ms), temp 40°C, washing 5 min (300000ms)
 										((WashingMachineTesterCyPhy) owner).getWmop().delayedStart(
-												120000L, // delay: 2 minutes
+												120000L,
 												new Measure<Double>(40.0, MeasurementUnit.CELSIUS),
-												300000L); // washing: 5 minutes
+												300000L);
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}
 								}),
+						// 09:55
 						new TestStep(
 								CLOCK_URI,
 								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1590,6 +1995,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// 10:00 - Batteries
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1602,6 +2008,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// 10:30
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1614,6 +2021,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// 11:00
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1626,6 +2034,7 @@ public class CVMIntegrationTest
 									}
 								}),
 
+						// 11:30
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
@@ -1637,6 +2046,24 @@ public class CVMIntegrationTest
 										throw new BCMRuntimeException(e);
 									}
 								}),
+
+				/*
+				 * ====== VERSION AVEC CHEVAUCHEMENT (TestSteps commentés) ======
+				 * Ordre avec chevauchement à 08:15-08:52 :
+				 * 08:15 HairDryer ON, 08:15:20 HairDryer setHigh,
+				 * 08:20 Kettle ON, 08:22 WashingMachine ON, 08:23 WashingMachine startWashing,
+				 * 08:25 Fan ON, 08:26 VacuumCleaner ON, 08:28 Fan setHigh,
+				 * 08:29 VacuumCleaner setHigh, 08:30 hemTestWashingMachine,
+				 * 08:32 hemTestFan, 08:34 hemTestKettle,
+				 * 08:36 VacuumCleaner setLow, 08:38 Fan setLow, 08:40 HairDryer setLow,
+				 * 08:41 VacuumCleaner OFF, 08:45 Kettle OFF, 08:46 Fan OFF,
+				 * 08:50 WashingMachine OFF, 08:52 HairDryer OFF,
+				 * 09:30 Heater OFF,
+				 * 09:40 WashingMachine delayed ON, 09:41 delayed start, 09:55 OFF
+				 * Pic de consommation : 34.36A (6 appareils simultanés) vs ~17A solaire
+				 * => batteries montent à 17.07A pour compenser le déficit
+				 * ====== FIN VERSION AVEC CHEVAUCHEMENT ======
+				 */
 
 				});
 	}

@@ -81,6 +81,16 @@ import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.DoNotHeat
 import fr.sorbonne_u.components.hem2025e3.equipments.kettle.sil.events.SIL_SetPowerKettle;
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.StartKeepingWarmKettle;
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.StopKeepingWarmKettle;
+import fr.sorbonne_u.components.hem2025e3.equipments.fan.sil.FanElectricitySILModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SwitchOnFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SwitchOffFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SetHighSpeedFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SetLowSpeedFan;
+import fr.sorbonne_u.components.hem2025e3.equipments.vacuum_cleaner.sil.VacuumCleanerElectricitySILModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SwitchOnVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SwitchOffVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SetHighVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SetLowVacuumCleaner;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetDelayedStart;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.SetPowerWashingMachine;
 import fr.sorbonne_u.components.hem2025e2.equipments.washing_machine.mil.events.StartWashing;
@@ -269,6 +279,22 @@ public abstract class LocalSimulationArchitectures {
 						simulatedTimeUnit,
 						null,
 						accelerationFactor));
+		atomicModelDescriptors.put(
+				FanElectricitySILModel.URI,
+				RTAtomicHIOA_Descriptor.create(
+						FanElectricitySILModel.class,
+						FanElectricitySILModel.URI,
+						simulatedTimeUnit,
+						null,
+						accelerationFactor));
+		atomicModelDescriptors.put(
+				VacuumCleanerElectricitySILModel.URI,
+				RTAtomicHIOA_Descriptor.create(
+						VacuumCleanerElectricitySILModel.class,
+						VacuumCleanerElectricitySILModel.URI,
+						simulatedTimeUnit,
+						null,
+						accelerationFactor));
 
 		// map that will contain the coupled model descriptors to construct
 		// the simulation architecture
@@ -286,6 +312,8 @@ public abstract class LocalSimulationArchitectures {
 		submodels.add(GeneratorPowerSILModel.URI);
 		submodels.add(WashingMachineElectricitySILModel.URI);
 		submodels.add(KettleElectricitySILModel.URI);
+		submodels.add(FanElectricitySILModel.URI);
+		submodels.add(VacuumCleanerElectricitySILModel.URI);
 
 		// events imported by the coupled model and passed to submodels
 		Map<Class<? extends EventI>, EventSink[]> imported = new HashMap<>();
@@ -482,6 +510,58 @@ public abstract class LocalSimulationArchitectures {
 								StopKeepingWarmKettle.class)
 				});
 
+		// Fan events
+		imported.put(
+				SwitchOnFan.class,
+				new EventSink[] {
+						new EventSink(FanElectricitySILModel.URI,
+								SwitchOnFan.class)
+				});
+		imported.put(
+				SwitchOffFan.class,
+				new EventSink[] {
+						new EventSink(FanElectricitySILModel.URI,
+								SwitchOffFan.class)
+				});
+		imported.put(
+				SetLowSpeedFan.class,
+				new EventSink[] {
+						new EventSink(FanElectricitySILModel.URI,
+								SetLowSpeedFan.class)
+				});
+		imported.put(
+				SetHighSpeedFan.class,
+				new EventSink[] {
+						new EventSink(FanElectricitySILModel.URI,
+								SetHighSpeedFan.class)
+				});
+
+		// VacuumCleaner events
+		imported.put(
+				SwitchOnVacuumCleaner.class,
+				new EventSink[] {
+						new EventSink(VacuumCleanerElectricitySILModel.URI,
+								SwitchOnVacuumCleaner.class)
+				});
+		imported.put(
+				SwitchOffVacuumCleaner.class,
+				new EventSink[] {
+						new EventSink(VacuumCleanerElectricitySILModel.URI,
+								SwitchOffVacuumCleaner.class)
+				});
+		imported.put(
+				SetLowVacuumCleaner.class,
+				new EventSink[] {
+						new EventSink(VacuumCleanerElectricitySILModel.URI,
+								SetLowVacuumCleaner.class)
+				});
+		imported.put(
+				SetHighVacuumCleaner.class,
+				new EventSink[] {
+						new EventSink(VacuumCleanerElectricitySILModel.URI,
+								SetHighVacuumCleaner.class)
+				});
+
 		// events emitted by submodels reexported by the coupled model
 		Map<Class<? extends EventI>, ReexportedEvent> reexported = new HashMap<>();
 
@@ -638,6 +718,24 @@ public abstract class LocalSimulationArchitectures {
 						KettleElectricitySILModel.URI),
 				new VariableSink[] {
 						new VariableSink("currentKettleIntensity",
+								Double.class,
+								ElectricMeterElectricitySILModel.URI)
+				});
+		bindings.put(
+				new VariableSource("currentIntensity",
+						Double.class,
+						FanElectricitySILModel.URI),
+				new VariableSink[] {
+						new VariableSink("currentFanIntensity",
+								Double.class,
+								ElectricMeterElectricitySILModel.URI)
+				});
+		bindings.put(
+				new VariableSource("currentIntensity",
+						Double.class,
+						VacuumCleanerElectricitySILModel.URI),
+				new VariableSink[] {
+						new VariableSink("currentVacuumCleanerIntensity",
 								Double.class,
 								ElectricMeterElectricitySILModel.URI)
 				});

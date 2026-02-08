@@ -1454,6 +1454,7 @@ public class HEMCyPhy
 
 	/** UID de la Kettle pour l'enregistrement dynamique. */
 	public static final String KT_UID = "KT10000";
+	public static final String FAN_UID = "FN10000";
 
 	/**
 	 * Test the Kettle AdjustableCI interface via HEM.
@@ -1544,6 +1545,89 @@ public class HEMCyPhy
 			statistics.incorrectResult();
 		}
 		this.logMessage("Kettle HEM tests end. " + statistics);
+	}
+
+	/**
+	 * test the fan through the HEM adjustable interface.
+	 * 
+	 * @throws Exception if an error occurs.
+	 */
+	public void testFan() throws Exception {
+		this.logMessage("Fan HEM tests start.");
+		AdjustableOutboundPort fnop = this.registeredEquipments.get(FAN_UID);
+		if (fnop == null) {
+			this.logMessage("Fan not registered yet, skipping tests.");
+			return;
+		}
+		TestsStatistics statistics = new TestsStatistics();
+		try {
+			this.logMessage("Feature: adjustable appliance mode management for Fan");
+
+			this.logMessage("  Scenario: getting the max mode index");
+			final int maxMode = fnop.maxMode();
+			this.logMessage("    Max mode: " + maxMode);
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: checking if suspended when not");
+			boolean isSuspended = fnop.suspended();
+			if (isSuspended) {
+				this.logMessage("    ERROR: should not be suspended initially");
+				statistics.incorrectResult();
+			} else {
+				this.logMessage("    OK: not suspended initially");
+			}
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: suspending the fan");
+			boolean suspendResult = fnop.suspend();
+			if (suspendResult) {
+				this.logMessage("    OK: suspend() returned true");
+			} else {
+				this.logMessage("    ERROR: suspend() returned false");
+				statistics.incorrectResult();
+			}
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: checking if suspended after suspend");
+			isSuspended = fnop.suspended();
+			if (isSuspended) {
+				this.logMessage("    OK: is suspended after suspend()");
+			} else {
+				this.logMessage("    ERROR: should be suspended");
+				statistics.incorrectResult();
+			}
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: getting emergency level when suspended");
+			double emergency = fnop.emergency();
+			this.logMessage("    Emergency level: " + emergency);
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: resuming the fan");
+			boolean resumeResult = fnop.resume();
+			if (resumeResult) {
+				this.logMessage("    OK: resume() returned true");
+			} else {
+				this.logMessage("    ERROR: resume() returned false");
+				statistics.incorrectResult();
+			}
+			statistics.updateStatistics();
+
+			this.logMessage("  Scenario: checking if not suspended after resume");
+			isSuspended = fnop.suspended();
+			if (!isSuspended) {
+				this.logMessage("    OK: not suspended after resume()");
+			} else {
+				this.logMessage("    ERROR: should not be suspended");
+				statistics.incorrectResult();
+			}
+			statistics.updateStatistics();
+
+		} catch (Exception e) {
+			this.logMessage("Exception during Fan test: " + e.getMessage());
+			statistics.incorrectResult();
+		}
+		this.logMessage("Fan HEM tests end. " + statistics);
 	}
 
 	/**

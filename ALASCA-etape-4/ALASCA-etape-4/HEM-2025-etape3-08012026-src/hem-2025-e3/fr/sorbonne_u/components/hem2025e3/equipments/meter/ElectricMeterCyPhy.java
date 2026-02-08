@@ -68,6 +68,14 @@ import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SwitchOnK
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.SwitchOffKettle;
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.HeatKettle;
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.DoNotHeatKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SwitchOnFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SwitchOffFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SetHighSpeedFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SetLowSpeedFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SwitchOnVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SwitchOffVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SetHighVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SetLowVacuumCleaner;
 import fr.sorbonne_u.components.hem2025e3.equipments.meter.sil.LocalSimulationArchitectures;
 import fr.sorbonne_u.components.utils.tests.TestScenario;
 import fr.sorbonne_u.devs_simulation.architectures.RTArchitecture;
@@ -260,7 +268,15 @@ import java.util.function.Supplier;
 						SwitchOnKettle.class, // Kettle events
 						SwitchOffKettle.class,
 						HeatKettle.class,
-						DoNotHeatKettle.class }))
+						DoNotHeatKettle.class,
+						SwitchOnFan.class, // Fan events
+						SwitchOffFan.class,
+						SetLowSpeedFan.class,
+						SetHighSpeedFan.class,
+						SwitchOnVacuumCleaner.class, // VacuumCleaner events
+						SwitchOffVacuumCleaner.class,
+						SetLowVacuumCleaner.class,
+						SetHighVacuumCleaner.class }))
 })
 // -----------------------------------------------------------------------------
 @OfferedInterfaces(offered = { ElectricMeterCI.class })

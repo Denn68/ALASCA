@@ -158,6 +158,8 @@ import java.text.NumberFormat;
 		@ModelImportedVariable(name = "currentHairDryerIntensity", type = Double.class),
 		@ModelImportedVariable(name = "currentWashingMachineIntensity", type = Double.class),
 		@ModelImportedVariable(name = "currentKettleIntensity", type = Double.class),
+		@ModelImportedVariable(name = "currentFanIntensity", type = Double.class),
+		@ModelImportedVariable(name = "currentVacuumCleanerIntensity", type = Double.class),
 		@ModelImportedVariable(name = "solarPanelOutputPower", type = Double.class),
 		@ModelImportedVariable(name = "batteriesInputPower", type = Double.class),
 		@ModelImportedVariable(name = "batteriesOutputPower", type = Double.class),
@@ -253,6 +255,12 @@ public class ElectricMeterElectricitySILModel
 	/** current intensity of the kettle in amperes. */
 	@ImportedVariable(type = Double.class)
 	protected Value<Double> currentKettleIntensity;
+	/** current intensity of the fan in amperes. */
+	@ImportedVariable(type = Double.class)
+	protected Value<Double> currentFanIntensity;
+	/** current intensity of the vacuum cleaner in amperes. */
+	@ImportedVariable(type = Double.class)
+	protected Value<Double> currentVacuumCleanerIntensity;
 
 	/**
 	 * current total power production of the house in the power unit
@@ -560,6 +568,14 @@ public class ElectricMeterElectricitySILModel
 				this.currentKettleIntensity.isInitialised()) {
 			total += this.currentKettleIntensity.getValue();
 		}
+		if (this.currentFanIntensity != null &&
+				this.currentFanIntensity.isInitialised()) {
+			total += this.currentFanIntensity.getValue();
+		}
+		if (this.currentVacuumCleanerIntensity != null &&
+				this.currentVacuumCleanerIntensity.isInitialised()) {
+			total += this.currentVacuumCleanerIntensity.getValue();
+		}
 		return total;
 	}
 
@@ -583,7 +599,7 @@ public class ElectricMeterElectricitySILModel
 	 */
 	protected double computeTotalPowerProduction() {
 		return this.solarPanelOutputPower.getValue() +
-		// this.generatorOutputPower.getValue() +
+				this.generatorOutputPower.getValue() +
 				this.batteriesOutputPower.getValue();
 	}
 
@@ -647,7 +663,13 @@ public class ElectricMeterElectricitySILModel
 				&& this.currentHairDryerIntensity.isInitialised()
 				&& this.currentHeaterIntensity.isInitialised()
 				&& (this.currentWashingMachineIntensity == null ||
-						this.currentWashingMachineIntensity.isInitialised())) {
+						this.currentWashingMachineIntensity.isInitialised())
+				&& (this.currentKettleIntensity == null ||
+						this.currentKettleIntensity.isInitialised())
+				&& (this.currentFanIntensity == null ||
+						this.currentFanIntensity.isInitialised())
+				&& (this.currentVacuumCleanerIntensity == null ||
+						this.currentVacuumCleanerIntensity.isInitialised())) {
 			double i = this.computeTotalIntensity();
 			this.currentIntensity.initialise(i);
 			this.cumulativeConsumption.initialise(0.0);
@@ -839,6 +861,16 @@ public class ElectricMeterElectricitySILModel
 				if (this.currentKettleIntensity != null && this.currentKettleIntensity.isInitialised()) {
 					message.append("Kettle=");
 					message.append(nf.format(this.currentKettleIntensity.getValue()));
+					message.append("A ");
+				}
+				if (this.currentFanIntensity != null && this.currentFanIntensity.isInitialised()) {
+					message.append("Fan=");
+					message.append(nf.format(this.currentFanIntensity.getValue()));
+					message.append("A ");
+				}
+				if (this.currentVacuumCleanerIntensity != null && this.currentVacuumCleanerIntensity.isInitialised()) {
+					message.append("VacuumCleaner=");
+					message.append(nf.format(this.currentVacuumCleanerIntensity.getValue()));
 					message.append("A ");
 				}
 				message.append("| Total=");

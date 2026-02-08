@@ -96,6 +96,18 @@ import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.DoNotHeat
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.StartKeepingWarmKettle;
 import fr.sorbonne_u.components.hem2025e2.equipments.kettle.mil.events.StopKeepingWarmKettle;
 import fr.sorbonne_u.components.hem2025e3.equipments.kettle.sil.events.SIL_SetPowerKettle;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SwitchOnFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SwitchOffFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SetHighSpeedFan;
+import fr.sorbonne_u.components.hem2025e2.equipments.fan.mil.events.SetLowSpeedFan;
+import fr.sorbonne_u.components.hem2025e3.equipments.fan.FanCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.fan.sil.FanStateSILModel;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SwitchOnVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SwitchOffVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SetHighVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e2.equipments.vacuum_cleaner.mil.events.SetLowVacuumCleaner;
+import fr.sorbonne_u.components.hem2025e3.equipments.vacuum_cleaner.VacuumCleanerCyPhy;
+import fr.sorbonne_u.components.hem2025e3.equipments.vacuum_cleaner.sil.VacuumCleanerStateSILModel;
 import fr.sorbonne_u.devs_simulation.models.architectures.AbstractAtomicModelDescriptor;
 import fr.sorbonne_u.devs_simulation.models.architectures.CoupledModelDescriptor;
 import fr.sorbonne_u.devs_simulation.models.events.EventI;
@@ -293,6 +305,34 @@ public abstract class ComponentSimulationArchitectures {
 						simulatedTimeUnit,
 						KettleCyPhy.REFLECTION_INBOUND_PORT_URI));
 
+		// Fan state SIL model descriptor
+		atomicModelDescriptors.put(
+				FanStateSILModel.URI,
+				RTComponentAtomicModelDescriptor.create(
+						FanStateSILModel.URI,
+						(Class<? extends EventI>[]) new Class<?>[] {},
+						(Class<? extends EventI>[]) new Class<?>[] {
+								SwitchOnFan.class,
+								SwitchOffFan.class,
+								SetLowSpeedFan.class,
+								SetHighSpeedFan.class },
+						simulatedTimeUnit,
+						FanCyPhy.REFLECTION_INBOUND_PORT_URI));
+
+		// VacuumCleaner state SIL model descriptor
+		atomicModelDescriptors.put(
+				VacuumCleanerStateSILModel.URI,
+				RTComponentAtomicModelDescriptor.create(
+						VacuumCleanerStateSILModel.URI,
+						(Class<? extends EventI>[]) new Class<?>[] {},
+						(Class<? extends EventI>[]) new Class<?>[] {
+								SwitchOnVacuumCleaner.class,
+								SwitchOffVacuumCleaner.class,
+								SetLowVacuumCleaner.class,
+								SetHighVacuumCleaner.class },
+						simulatedTimeUnit,
+						VacuumCleanerCyPhy.REFLECTION_INBOUND_PORT_URI));
+
 		// The electric meter also has a SIL simulation model
 		atomicModelDescriptors.put(
 				ElectricMeterCoupledModel.URI,
@@ -330,7 +370,17 @@ public abstract class ComponentSimulationArchitectures {
 								HeatKettle.class,
 								DoNotHeatKettle.class,
 								StartKeepingWarmKettle.class,
-								StopKeepingWarmKettle.class },
+								StopKeepingWarmKettle.class,
+								// Fan events
+								SwitchOnFan.class,
+								SwitchOffFan.class,
+								SetLowSpeedFan.class,
+								SetHighSpeedFan.class,
+								// VacuumCleaner events
+								SwitchOnVacuumCleaner.class,
+								SwitchOffVacuumCleaner.class,
+								SetLowVacuumCleaner.class,
+								SetHighVacuumCleaner.class },
 						(Class<? extends EventI>[]) new Class<?>[] {
 								CurrentBatteriesLevel.class,
 								PowerProductionLevel.class,
@@ -356,6 +406,8 @@ public abstract class ComponentSimulationArchitectures {
 		submodels.add(GeneratorStateSILModel.URI);
 		submodels.add(WashingMachineCoupledModel.URI);
 		submodels.add(KettleCoupledModel.URI);
+		submodels.add(FanStateSILModel.URI);
+		submodels.add(VacuumCleanerStateSILModel.URI);
 
 		// event exchanging connections between exporting and importing
 		// models
@@ -632,6 +684,66 @@ public abstract class ComponentSimulationArchitectures {
 				new EventSink[] {
 						new EventSink(ElectricMeterCoupledModel.URI,
 								StopKeepingWarmKettle.class)
+				});
+
+		// events going from the fan to the electric meter
+		connections.put(
+				new EventSource(FanStateSILModel.URI,
+						SwitchOnFan.class),
+				new EventSink[] {
+						new EventSink(ElectricMeterCoupledModel.URI,
+								SwitchOnFan.class)
+				});
+		connections.put(
+				new EventSource(FanStateSILModel.URI,
+						SwitchOffFan.class),
+				new EventSink[] {
+						new EventSink(ElectricMeterCoupledModel.URI,
+								SwitchOffFan.class)
+				});
+		connections.put(
+				new EventSource(FanStateSILModel.URI,
+						SetLowSpeedFan.class),
+				new EventSink[] {
+						new EventSink(ElectricMeterCoupledModel.URI,
+								SetLowSpeedFan.class)
+				});
+		connections.put(
+				new EventSource(FanStateSILModel.URI,
+						SetHighSpeedFan.class),
+				new EventSink[] {
+						new EventSink(ElectricMeterCoupledModel.URI,
+								SetHighSpeedFan.class)
+				});
+
+		// events going from the vacuum cleaner to the electric meter
+		connections.put(
+				new EventSource(VacuumCleanerStateSILModel.URI,
+						SwitchOnVacuumCleaner.class),
+				new EventSink[] {
+						new EventSink(ElectricMeterCoupledModel.URI,
+								SwitchOnVacuumCleaner.class)
+				});
+		connections.put(
+				new EventSource(VacuumCleanerStateSILModel.URI,
+						SwitchOffVacuumCleaner.class),
+				new EventSink[] {
+						new EventSink(ElectricMeterCoupledModel.URI,
+								SwitchOffVacuumCleaner.class)
+				});
+		connections.put(
+				new EventSource(VacuumCleanerStateSILModel.URI,
+						SetLowVacuumCleaner.class),
+				new EventSink[] {
+						new EventSink(ElectricMeterCoupledModel.URI,
+								SetLowVacuumCleaner.class)
+				});
+		connections.put(
+				new EventSource(VacuumCleanerStateSILModel.URI,
+						SetHighVacuumCleaner.class),
+				new EventSink[] {
+						new EventSink(ElectricMeterCoupledModel.URI,
+								SetHighVacuumCleaner.class)
 				});
 
 		// coupled model descriptor
