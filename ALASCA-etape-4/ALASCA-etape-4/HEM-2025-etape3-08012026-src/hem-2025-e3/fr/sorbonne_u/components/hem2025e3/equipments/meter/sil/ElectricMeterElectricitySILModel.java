@@ -751,6 +751,13 @@ public class ElectricMeterElectricitySILModel
 		if (Math.abs(totalProduction - this.powerProduction.getValue()) >= TOLERANCE) {
 			somethingHasChanged = true;
 		}
+		// Push only renewable (solar) production to the component so that
+		// the HEM can make energy management decisions based on sustainable
+		// production rather than battery-compensated totals.
+		double renewableProduction = this.solarPanelOutputPower.getValue();
+		this.ownerComponent.setCurrentPowerProduction(
+				renewableProduction,
+				this.getCurrentStateTime());
 		this.powerProduction.setNewValue(totalProduction,
 				this.getCurrentStateTime());
 		// recompute the current total intensity

@@ -195,7 +195,7 @@ public class KettleCyPhy
         /** UID unique de la bouilloire pour l'enregistrement auprès du HEM. */
         protected static final String KETTLE_UID = "KT10000";
         /** Chemin vers le descripteur XML pour le connecteur dynamique. */
-        protected static final String XML_KETTLE_DESCRIPTOR = "hem-adapter/kettleci-descriptor.xml";
+        protected static final String XML_KETTLE_DESCRIPTOR = "ALASCA-etape-4/HEM-2025-etape3-08012026-src/hem-adapter/kettleci-descriptor.xml";
         /** Port sortant pour l'enregistrement auprès du HEM. */
         protected RegistrationOutboundPort registrationPort;
         /** Indicateur de connexion effective au port d'enregistrement. */

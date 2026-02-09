@@ -650,9 +650,15 @@ public class HEMCyPhy
 				: new PreconditionException(
 						"controlPortURI != null && !controlPortURI.isEmpty()");
 
+		// System.out.println(">>>>>> [HEM_DEBUG] register() called for uid='" + uid +
+		// "', portURI='" + controlPortURI + "'");
+		// System.out.println(">>>>>> [HEM_DEBUG] registeredEquipments keys: " +
+		// this.registeredEquipments.keySet());
+
 		if (this.registeredEquipments.containsKey(uid)) {
 			this.traceMessage("HEMCyPhy: equipment " + uid
 					+ " already registered, skipping.\n");
+			// System.out.println(">>>>>> [HEM_DEBUG] Already registered, skipping.");
 			return false;
 		}
 
@@ -677,11 +683,15 @@ public class HEMCyPhy
 
 			this.registeredEquipments.put(uid, aop);
 
+			// System.out.println(">>>>>> [HEM_DEBUG] Equipment '" + uid + "' registered
+			// SUCCESSFULLY. Keys now: " + this.registeredEquipments.keySet());
 			this.traceMessage("HEMCyPhy: equipment " + uid
 					+ " registered successfully via dynamic connector "
 					+ connectorClass.getSimpleName() + ".\n");
 			return true;
 		} catch (Exception e) {
+			System.out.println(">>>>>> [HEM_DEBUG] Registration FAILED for '" + uid + "': " + e.getMessage());
+			e.printStackTrace();
 			this.traceMessage("HEMCyPhy: registration failed for " + uid
 					+ " — " + e.getMessage() + "\n");
 			return false;
@@ -1639,9 +1649,16 @@ public class HEMCyPhy
 	 */
 	public void manageEnergy() throws Exception {
 		this.logMessage("HEM Energy Management starts.");
+		System.out.println("\n>>>>>> [MANAGE_ENERGY] ============================================");
+		System.out.println(">>>>>> [MANAGE_ENERGY] Energy management cycle starting...");
 
+		System.out.println(">>>>>> [MANAGE_ENERGY] registeredEquipments keys: " +
+		this.registeredEquipments.keySet());
 		AdjustableOutboundPort wmop = this.registeredEquipments.get(WM_UID);
 		if (wmop == null) {
+			System.out.println(">>>>>> [MANAGE_ENERGY] ERROR: WashingMachine not registered! (WM_UID='" + WM_UID + "')");
+			System.out.println(">>>>>> [MANAGE_ENERGY] Available keys: " +
+			this.registeredEquipments.keySet());
 			this.logMessage("  WashingMachine not registered, cannot manage energy.");
 			this.logMessage("HEM Energy Management ends.");
 			return;
@@ -1651,50 +1668,194 @@ public class HEMCyPhy
 		double totalConsumption = this.meterop.getCurrentConsumption().getMeasure().getData();
 		double totalProduction = this.meterop.getCurrentProduction().getMeasure().getData();
 
+		System.out.println(">>>>>> [MANAGE_ENERGY] Consumption: " +
+		String.format("%.2f", totalConsumption) + " A | Production: " +
+		String.format("%.2f", totalProduction) + " A");
 		this.logMessage("  Current consumption: " + totalConsumption + " W");
 		this.logMessage("  Current production: " + totalProduction + " W");
 
 		if (totalConsumption > totalProduction) {
+			System.out.println(">>>>>> [MANAGE_ENERGY] *** DEFICIT DETECTED! *** (" +
+			String.format("%.2f", totalConsumption - totalProduction) + " A deficit)");
 			this.logMessage("  WARNING: Consumption > Production!");
 
+			// ---------------------------------------------------------------
+			// 1) Heater — modulable simple : baisser la puissance (downMode)
+			// ---------------------------------------------------------------
+			// if (this.heaterop != null) {
+			// int heaterMode = this.heaterop.currentMode();
+			// if (heaterMode > 1) {
+			// this.logMessage(" Attempting to downMode Heater (current mode: " + heaterMode
+			// + ")...");
+			// boolean hResult = this.heaterop.downMode();
+			// if (hResult) {
+			// this.logMessage(" Heater downMode successful, new mode: " +
+			// this.heaterop.currentMode());
+			// } else {
+			// this.logMessage(" Failed to downMode Heater.");
+			// }
+			// } else {
+			// this.logMessage(" Heater already at lowest mode.");
+			// }
+			// }
+
+			// ---------------------------------------------------------------
+			// 2) Fan — modulable simple : baisser la puissance (downMode)
+			// ---------------------------------------------------------------
+			// AdjustableOutboundPort fanop = this.registeredEquipments.get(FAN_UID);
+			// if (fanop != null) {
+			// int fanMode = fanop.currentMode();
+			// if (fanMode > 1) {
+			// this.logMessage(" Attempting to downMode Fan (current mode: " + fanMode +
+			// ")...");
+			// boolean fResult = fanop.downMode();
+			// if (fResult) {
+			// this.logMessage(" Fan downMode successful, new mode: " +
+			// fanop.currentMode());
+			// } else {
+			// this.logMessage(" Failed to downMode Fan.");
+			// }
+			// } else {
+			// this.logMessage(" Fan already at lowest mode.");
+			// }
+			// }
+
+			// ---------------------------------------------------------------
+			// 3) Kettle — modulable non-programmable : baisser puissance
+			// (downMode) mais PAS suspend — la Kettle ne supporte pas
+			// la suspension car elle est non-programmable.
+			// ---------------------------------------------------------------
+			// AdjustableOutboundPort ktop = this.registeredEquipments.get(KT_UID);
+			// if (ktop != null) {
+			// int kettleMode = ktop.currentMode();
+			// if (kettleMode > 1) {
+			// this.logMessage(" Attempting to downMode Kettle (current mode: " + kettleMode
+			// + ")...");
+			// boolean kResult = ktop.downMode();
+			// if (kResult) {
+			// this.logMessage(" Kettle downMode successful, new mode: " +
+			// ktop.currentMode());
+			// } else {
+			// this.logMessage(" Failed to downMode Kettle.");
+			// }
+			// } else {
+			// this.logMessage(" Kettle already at lowest mode.");
+			// }
+			// }
+
+			// ---------------------------------------------------------------
+			// 4) WashingMachine — modulable programmable : suspend
+			// ---------------------------------------------------------------
 			// Try to suspend WashingMachine if not already suspended
 			// if (!this.washingMachineop.suspended()) {
 			if (!wmop.suspended()) {
+				System.out.println(">>>>>> [MANAGE_ENERGY] >>> SUSPENDING WashingMachine...");
 				this.logMessage("  Attempting to suspend WashingMachine...");
 				// boolean result = this.washingMachineop.suspend();
 				boolean result = wmop.suspend();
 				if (result) {
+					System.out.println(">>>>>> [MANAGE_ENERGY] >>> WashingMachine SUSPENDED OK <<<");
 					this.logMessage("  WashingMachine suspended successfully.");
 				} else {
+					System.out.println(">>>>>> [MANAGE_ENERGY] >>> FAILED to suspend WashingMachine");
 					this.logMessage("  Failed to suspend WashingMachine.");
 				}
 			} else {
+				System.out.println(">>>>>> [MANAGE_ENERGY] WashingMachine already suspended, nothing to do.");
 				this.logMessage("  WashingMachine already suspended.");
 			}
 		} else {
+			System.out.println(">>>>>> [MANAGE_ENERGY] OK — Surplus of " +
+			String.format("%.2f", totalProduction - totalConsumption) + " A");
 			this.logMessage("  Production >= Consumption, OK.");
 
+			// ---------------------------------------------------------------
+			// 1) Heater — remonter la puissance (upMode) quand surplus
+			// ---------------------------------------------------------------
+			// if (this.heaterop != null) {
+			// int heaterMode = this.heaterop.currentMode();
+			// int heaterMax = this.heaterop.maxMode();
+			// if (heaterMode < heaterMax) {
+			// this.logMessage(" Restoring Heater upMode (current mode: " + heaterMode +
+			// ")...");
+			// boolean hResult = this.heaterop.upMode();
+			// if (hResult) {
+			// this.logMessage(" Heater upMode successful, new mode: " +
+			// this.heaterop.currentMode());
+			// }
+			// }
+			// }
+
+			// ---------------------------------------------------------------
+			// 2) Fan — remonter la puissance (upMode) quand surplus
+			// Décommenter pour activer.
+			// ---------------------------------------------------------------
+			// AdjustableOutboundPort fanop = this.registeredEquipments.get(FAN_UID);
+			// if (fanop != null) {
+			// int fanMode = fanop.currentMode();
+			// int fanMax = fanop.maxMode();
+			// if (fanMode < fanMax) {
+			// this.logMessage(" Restoring Fan upMode (current mode: " + fanMode + ")...");
+			// boolean fResult = fanop.upMode();
+			// if (fResult) {
+			// this.logMessage(" Fan upMode successful, new mode: " + fanop.currentMode());
+			// }
+			// }
+			// }
+
+			// ---------------------------------------------------------------
+			// 3) Kettle — remonter la puissance (upMode) quand surplus
+			// Décommenter pour activer.
+			// ---------------------------------------------------------------
+			// AdjustableOutboundPort ktop = this.registeredEquipments.get(KT_UID);
+			// if (ktop != null) {
+			// int kettleMode = ktop.currentMode();
+			// int kettleMax = ktop.maxMode();
+			// if (kettleMode < kettleMax) {
+			// this.logMessage(" Restoring Kettle upMode (current mode: " + kettleMode +
+			// ")...");
+			// boolean kResult = ktop.upMode();
+			// if (kResult) {
+			// this.logMessage(" Kettle upMode successful, new mode: " +
+			// ktop.currentMode());
+			// }
+			// }
+			// }
+
+			// ---------------------------------------------------------------
+			// 4) WashingMachine — resume quand surplus suffisant
+			// ---------------------------------------------------------------
 			// Resume WashingMachine if suspended
 			// if (this.washingMachineop.suspended()) {
 			// double emergency = this.washingMachineop.emergency();
 			if (wmop.suspended()) {
 				double emergency = wmop.emergency();
+				System.out.println(">>>>>> [MANAGE_ENERGY] WM is suspended, emergency level: " + String.format("%.2f", emergency));
 				this.logMessage("  WashingMachine emergency level: " + emergency);
 
 				// Resume if there's enough margin or high emergency
-				if (totalProduction - totalConsumption > 500.0 || emergency > 0.5) {
+				// Margin in Amps (2A = ~440W of surplus needed to resume)
+				if (totalProduction - totalConsumption > 2.0 || emergency > 0.5) {
+					System.out.println(">>>>>> [MANAGE_ENERGY] >>> RESUMING WashingMachine...");
 					this.logMessage("  Resuming WashingMachine...");
 					// boolean result = this.washingMachineop.resume();
 					boolean result = wmop.resume();
 					if (result) {
+						System.out.println(">>>>>> [MANAGE_ENERGY] >>> WashingMachine RESUMED OK <<<");
 						this.logMessage("  WashingMachine resumed successfully.");
 					} else {
+						System.out.println(">>>>>> [MANAGE_ENERGY] >>> FAILED to resume WashingMachine");
 						this.logMessage("  Failed to resume WashingMachine.");
 					}
+				} else {
+					System.out.println(">>>>>> [MANAGE_ENERGY] Not enough margin to resume (margin: " + String.format("%.2f", totalProduction - totalConsumption) + " A, emergency: " + String.format("%.2f", emergency) + ")");
 				}
+			} else {
+				System.out.println(">>>>>> [MANAGE_ENERGY] WM is running normally, no action needed.");
 			}
 		}
 
+		System.out.println(">>>>>> [MANAGE_ENERGY] ============================================\n");
 		this.logMessage("HEM Energy Management ends.");
 	}
 }

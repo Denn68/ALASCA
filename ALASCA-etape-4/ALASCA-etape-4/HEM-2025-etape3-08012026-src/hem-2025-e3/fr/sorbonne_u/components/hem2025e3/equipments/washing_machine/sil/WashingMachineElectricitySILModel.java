@@ -362,7 +362,16 @@ public class WashingMachineElectricitySILModel
 
 	@Override
 	public void setCurrentPowerLevel(double power) {
-		// Not used in this simple model
+		// When power is set to 0, treat as suspend (save state, go to standby)
+		if (power == 0.0 && (this.currentState == WashingMachineState.WASHING ||
+				this.currentState == WashingMachineState.HEATINGWATER)) {
+			this.suspendWashing();
+		}
+		// When power > 0 and currently suspended (ON with saved state), resume
+		else if (power > 0.0 && this.currentState == WashingMachineState.ON
+				&& this.stateBeforeSuspension != null) {
+			this.resumeWashing();
+		}
 	}
 
 	@Override

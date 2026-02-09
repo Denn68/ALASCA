@@ -98,7 +98,7 @@ public class Fan
 	/** identifiant unique du ventilateur pour l'enregistrement. */
 	protected static final String FAN_UID = "FN10000";
 	/** chemin vers le descripteur XML du connecteur adapté. */
-	protected static final String XML_FAN_DESCRIPTOR = "hem-adapter/fanci-descriptor.xml";
+	protected static final String XML_FAN_DESCRIPTOR = "ALASCA-etape-4/HEM-2025-etape3-08012026-src/hem-adapter/fanci-descriptor.xml";
 	/** port sortant pour l'enregistrement auprès du HEM. */
 	protected RegistrationOutboundPort registrationPort;
 	protected boolean registrationConnected = false;

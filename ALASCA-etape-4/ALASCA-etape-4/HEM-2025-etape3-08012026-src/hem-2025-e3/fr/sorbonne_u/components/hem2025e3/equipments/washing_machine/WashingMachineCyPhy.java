@@ -222,7 +222,7 @@ public class WashingMachineCyPhy
 	/** UID unique du lave-linge pour l'enregistrement auprès du HEM. */
 	protected static final String WM_UID = "WM10000";
 	/** Chemin vers le descripteur XML pour le connecteur dynamique. */
-	protected static final String XML_WM_DESCRIPTOR = "hem-adapter/washingmachineci-descriptor.xml";
+	protected static final String XML_WM_DESCRIPTOR = "ALASCA-etape-4/HEM-2025-etape3-08012026-src/hem-adapter/washingmachineci-descriptor.xml";
 	/** Port sortant pour l'enregistrement auprès du HEM. */
 	protected RegistrationOutboundPort registrationPort;
 	/** Indicateur de connexion effective au port d'enregistrement. */
@@ -709,8 +709,11 @@ public class WashingMachineCyPhy
 		assert WashingMachineCyPhy.invariants(this) : new InvariantException("WashingMachineCyPhy.invariants(this)");
 
 		try {
-			if (AbstractCVM.isPublishedInLocalRegistry(
-					HEMCyPhy.REGISTRATION_INBOUND_PORT_URI)) {
+			boolean hemPublished = AbstractCVM.isPublishedInLocalRegistry(
+					HEMCyPhy.REGISTRATION_INBOUND_PORT_URI);
+			// System.out.println(">>>>>> [WM_DEBUG] start() - HEM registration port
+			// published? " + hemPublished);
+			if (hemPublished) {
 				this.registrationPort = new RegistrationOutboundPort(this);
 				this.registrationPort.publishPort();
 				this.doPortConnection(
@@ -719,6 +722,11 @@ public class WashingMachineCyPhy
 						RegistrationConnector.class
 								.getCanonicalName());
 				this.registrationConnected = true;
+				// System.out.println(">>>>>> [WM_DEBUG] start() - registrationConnected =
+				// true");
+			} else {
+				// System.out.println(">>>>>> [WM_DEBUG] start() - HEM port NOT found,
+				// registrationConnected stays false");
 			}
 
 			switch (this.getExecutionMode()) {
@@ -916,11 +924,18 @@ public class WashingMachineCyPhy
 			this.sensorInboundPort.send(new WashingMachineStateSensorData(this.currentState));
 		}
 
+		// System.out.println(">>>>>> [WM_DEBUG] switchOn() - registrationConnected = "
+		// + this.registrationConnected);
 		if (this.registrationConnected) {
-			this.registrationPort.register(
+			boolean result = this.registrationPort.register(
 					WM_UID,
 					this.wmecip.getPortURI(),
 					XML_WM_DESCRIPTOR);
+			// System.out.println(">>>>>> [WM_DEBUG] switchOn() - register() returned: " +
+			// result);
+		} else {
+			// System.out.println(">>>>>> [WM_DEBUG] switchOn() - NOT registering
+			// (registrationConnected=false)");
 		}
 	}
 

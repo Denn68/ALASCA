@@ -60,7 +60,7 @@ public class WashingMachine extends AbstractComponent implements WashingMachineU
 	/** identifiant unique de la machine à laver pour l'enregistrement. */
 	protected static final String WM_UID = "WM10000";
 	/** chemin vers le descripteur XML du connecteur adapté. */
-	protected static final String XML_WM_DESCRIPTOR = "hem-adapter/washingmachineci-descriptor.xml";
+	protected static final String XML_WM_DESCRIPTOR = "ALASCA-etape-4/HEM-2025-etape3-08012026-src/hem-adapter/washingmachineci-descriptor.xml";
 	/** port sortant pour l'enregistrement auprès du HEM. */
 	protected RegistrationOutboundPort registrationPort;
 	protected boolean registrationConnected = false;

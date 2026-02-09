@@ -830,15 +830,15 @@ public class CVMIntegrationTest
 							ExecutionMode.INTEGRATION_TEST_WITH_SIL_SIMULATION,
 							ACCELERATION_FACTOR
 					});
-			AbstractComponent.createComponent(
-					FanTesterCyPhy.class.getCanonicalName(),
-					new Object[] {
-							FanCyPhy.USER_INBOUND_PORT_URI,
-							FanCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
-							FanCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
-							ExecutionMode.INTEGRATION_TEST,
-							testScenario
-					});
+			// AbstractComponent.createComponent(
+			// FanTesterCyPhy.class.getCanonicalName(),
+			// new Object[] {
+			// FanCyPhy.USER_INBOUND_PORT_URI,
+			// FanCyPhy.INTERNAL_CONTROL_INBOUND_PORT_URI,
+			// FanCyPhy.EXTERNAL_CONTROL_INBOUND_PORT_URI,
+			// ExecutionMode.INTEGRATION_TEST,
+			// testScenario
+			// });
 
 			// VacuumCleaner components
 			AbstractComponent.createComponent(
@@ -851,13 +851,14 @@ public class CVMIntegrationTest
 							VacuumCleanerCyPhy.INTEGRATION_TEST_ARCHITECTURE_URI,
 							ACCELERATION_FACTOR
 					});
-			AbstractComponent.createComponent(
-					VacuumCleanerTesterCyPhy.class.getCanonicalName(),
-					new Object[] {
-							VacuumCleanerCyPhy.INBOUND_PORT_URI,
-							ExecutionMode.INTEGRATION_TEST,
-							testScenario
-					});
+			// integrationWithSimulation() ne contient pas de TestSteps pour le VC
+			// AbstractComponent.createComponent(
+			// VacuumCleanerTesterCyPhy.class.getCanonicalName(),
+			// new Object[] {
+			// VacuumCleanerCyPhy.INBOUND_PORT_URI,
+			// ExecutionMode.INTEGRATION_TEST,
+			// testScenario
+			// });
 
 		}
 
@@ -1320,96 +1321,54 @@ public class CVMIntegrationTest
 				TimeUtils.toNanos(SIMULATION_DURATION));
 		Instant endInstant = START_INSTANT.plusSeconds(d);
 
-		Instant heaterSwitchOn = START_INSTANT.plusSeconds(60);
+		// ====================================================================
+		// SCÉNARIO DE TEST manageEnergy() — Suspend / Resume WashingMachine
+		// ====================================================================
+		// Objectif : démontrer que le HEM peut suspendre la WashingMachine
+		// quand la consommation dépasse la production, et la reprendre
+		// quand la production redevient suffisante.
+		//
+		// Timeline :
+		// 06:01 WashingMachine ON
+		// 06:02 startWashing (3h, 50°C) → HEATING_WATER (9.09A)
+		// 06:15 manageEnergy #1 → ~9A conso vs ~9.5A prod → OK
+		// 06:30 Heater ON → +10A → total ~19A vs ~10.5A → DEFICIT
+		// 06:35 manageEnergy #2 → SUSPEND WM
+		// 06:50 manageEnergy #3 → WM toujours suspendue, Heater seul ~10A
+		// 07:00 Heater OFF → conso chute
+		// 07:05 manageEnergy #4 → surplus → RESUME WM
+		// 07:30 HairDryer ON HIGH → +5A
+		// 07:31 Kettle ON → +10A → total ~17A vs ~14A → DEFICIT
+		// 07:35 manageEnergy #5 → SUSPEND WM
+		// 07:50 HairDryer OFF
+		// 07:51 Kettle OFF → conso chute
+		// 07:55 manageEnergy #6 → surplus → RESUME WM
+		// 09:00 WashingMachine OFF
+		// ====================================================================
 
-		Instant generatorStart = Instant.parse("2025-12-02T06:15:00.00Z");
+		// WashingMachine : long cycle de 06:01 à 09:00
+		Instant washingMachineSwitchOn = Instant.parse("2025-12-02T06:01:00.00Z");
+		Instant washingMachineStartWashing = Instant.parse("2025-12-02T06:02:00.00Z");
+		Instant washingMachineSwitchOff = Instant.parse("2025-12-02T09:00:00.00Z");
 
-		Instant hairDryerTurnOn1 = Instant.parse("2025-12-02T07:15:00.00Z");
-		Instant hairDryerSetHigh1 = Instant.parse("2025-12-02T07:15:20.00Z");
+		// manageEnergy appels planifiés
+		Instant manageEnergy1 = Instant.parse("2025-12-02T06:15:00.00Z");
+		Instant manageEnergy2 = Instant.parse("2025-12-02T06:35:00.00Z");
+		Instant manageEnergy3 = Instant.parse("2025-12-02T06:50:00.00Z");
+		Instant manageEnergy4 = Instant.parse("2025-12-02T07:05:00.00Z");
+		Instant manageEnergy5 = Instant.parse("2025-12-02T07:35:00.00Z");
+		Instant manageEnergy6 = Instant.parse("2025-12-02T07:55:00.00Z");
 
-		Instant batteriesTest1 = Instant.parse("2025-12-02T07:17:30.00Z");
+		// Phase 1 de déficit : Heater ON de 06:30 à 07:00
+		Instant heaterSwitchOn = Instant.parse("2025-12-02T06:30:00.00Z");
+		Instant heaterSwitchOff = Instant.parse("2025-12-02T07:00:00.00Z");
 
-		Instant hairDryerSetLow1 = Instant.parse("2025-12-02T07:20:00.00Z");
-		Instant hairDryerTurnOff1 = Instant.parse("2025-12-02T07:25:00.00Z");
-
-		Instant generatorStop = Instant.parse("2025-12-02T07:30:00.00Z");
-
-		// ====== VERSION SÉQUENTIELLE (sans chevauchement) ======
-		// WashingMachine 1er cycle : 06:06 -> 06:25
-		Instant washingMachineSwitchOn = Instant.parse("2025-12-02T06:06:00.00Z");
-		Instant washingMachineStartWashing = Instant.parse("2025-12-02T06:07:00.00Z");
-		Instant hemTestWashingMachine = Instant.parse("2025-12-02T06:10:00.00Z");
-		Instant washingMachineSwitchOff = Instant.parse("2025-12-02T06:25:00.00Z");
-
-		// HairDryer 2ème cycle : 08:15 -> 08:25
-		Instant hairDryerTurnOn2 = Instant.parse("2025-12-02T08:15:00.00Z");
-		Instant hairDryerSetHigh2 = Instant.parse("2025-12-02T08:15:20.00Z");
-		Instant hairDryerSetLow2 = Instant.parse("2025-12-02T08:20:00.00Z");
-		Instant hairDryerTurnOff2 = Instant.parse("2025-12-02T08:25:00.00Z");
-
-		// Kettle : 08:30 -> 08:45
-		Instant kettleSwitchOn = Instant.parse("2025-12-02T08:30:00.00Z");
-		Instant hemTestKettle = Instant.parse("2025-12-02T08:35:00.00Z");
-		Instant kettleSwitchOff = Instant.parse("2025-12-02T08:45:00.00Z");
-
-		// Heater OFF
-		Instant heaterSwitchOff = Instant.parse("2025-12-02T09:00:00.00Z");
-
-		// Fan : 09:30 -> 09:40
-		Instant fanSwitchOn = Instant.parse("2025-12-02T09:30:00.00Z");
-		Instant fanSetHigh = Instant.parse("2025-12-02T09:32:00.00Z");
-		Instant hemTestFan = Instant.parse("2025-12-02T09:34:00.00Z");
-		Instant fanSetLow = Instant.parse("2025-12-02T09:36:00.00Z");
-		Instant fanSwitchOff = Instant.parse("2025-12-02T09:40:00.00Z");
-
-		// VacuumCleaner : 09:42 -> 09:48
-		Instant vacuumCleanerTurnOn = Instant.parse("2025-12-02T09:42:00.00Z");
-		Instant vacuumCleanerSetHigh = Instant.parse("2025-12-02T09:43:00.00Z");
-		Instant vacuumCleanerSetLow = Instant.parse("2025-12-02T09:45:00.00Z");
-		Instant vacuumCleanerTurnOff = Instant.parse("2025-12-02T09:48:00.00Z");
-
-		// WashingMachine delayedStart : 09:50 -> 09:55
-		Instant washingMachineDelayedSwitchOn = Instant.parse("2025-12-02T09:50:00.00Z");
-		Instant washingMachineDelayedStart = Instant.parse("2025-12-02T09:51:00.00Z");
-		Instant washingMachineDelayedSwitchOff = Instant.parse("2025-12-02T09:55:00.00Z");
-
-		Instant batteriesStartCharging = Instant.parse("2025-12-02T10:00:00.00Z");
-		Instant batteriesTest2 = Instant.parse("2025-12-02T10:30:00.00Z");
-		Instant batteriesStopCharging = Instant.parse("2025-12-02T11:00:00.00Z");
-		Instant batteriesTest3 = Instant.parse("2025-12-02T11:30:00.00Z");
-
-		/*
-		 * ====== VERSION AVEC CHEVAUCHEMENT (commentée) ======
-		 * Instant hairDryerTurnOn2 = Instant.parse("2025-12-02T08:15:00.00Z");
-		 * Instant hairDryerSetHigh2 = Instant.parse("2025-12-02T08:15:20.00Z");
-		 * Instant hairDryerSetLow2 = Instant.parse("2025-12-02T08:40:00.00Z");
-		 * Instant hairDryerTurnOff2 = Instant.parse("2025-12-02T08:52:00.00Z");
-		 * Instant kettleSwitchOn = Instant.parse("2025-12-02T08:20:00.00Z");
-		 * Instant hemTestKettle = Instant.parse("2025-12-02T08:34:00.00Z");
-		 * Instant kettleSwitchOff = Instant.parse("2025-12-02T08:45:00.00Z");
-		 * Instant washingMachineSwitchOn = Instant.parse("2025-12-02T08:22:00.00Z");
-		 * Instant washingMachineStartWashing =
-		 * Instant.parse("2025-12-02T08:23:00.00Z");
-		 * Instant hemTestWashingMachine = Instant.parse("2025-12-02T08:30:00.00Z");
-		 * Instant washingMachineSwitchOff = Instant.parse("2025-12-02T08:50:00.00Z");
-		 * Instant fanSwitchOn = Instant.parse("2025-12-02T08:25:00.00Z");
-		 * Instant fanSetHigh = Instant.parse("2025-12-02T08:28:00.00Z");
-		 * Instant hemTestFan = Instant.parse("2025-12-02T08:32:00.00Z");
-		 * Instant fanSetLow = Instant.parse("2025-12-02T08:38:00.00Z");
-		 * Instant fanSwitchOff = Instant.parse("2025-12-02T08:46:00.00Z");
-		 * Instant vacuumCleanerTurnOn = Instant.parse("2025-12-02T08:26:00.00Z");
-		 * Instant vacuumCleanerSetHigh = Instant.parse("2025-12-02T08:29:00.00Z");
-		 * Instant vacuumCleanerSetLow = Instant.parse("2025-12-02T08:36:00.00Z");
-		 * Instant vacuumCleanerTurnOff = Instant.parse("2025-12-02T08:41:00.00Z");
-		 * Instant heaterSwitchOff = Instant.parse("2025-12-02T09:30:00.00Z");
-		 * Instant washingMachineDelayedSwitchOn =
-		 * Instant.parse("2025-12-02T09:40:00.00Z");
-		 * Instant washingMachineDelayedStart =
-		 * Instant.parse("2025-12-02T09:41:00.00Z");
-		 * Instant washingMachineDelayedSwitchOff =
-		 * Instant.parse("2025-12-02T09:55:00.00Z");
-		 * ====== FIN VERSION AVEC CHEVAUCHEMENT ======
-		 */
+		// Phase 2 de déficit : HairDryer + Kettle de 07:30 à 07:50
+		Instant hairDryerTurnOn1 = Instant.parse("2025-12-02T07:30:00.00Z");
+		Instant hairDryerSetHigh1 = Instant.parse("2025-12-02T07:30:20.00Z");
+		Instant kettleSwitchOn = Instant.parse("2025-12-02T07:31:00.00Z");
+		Instant hairDryerTurnOff1 = Instant.parse("2025-12-02T07:50:00.00Z");
+		Instant kettleSwitchOff = Instant.parse("2025-12-02T07:51:00.00Z");
 
 		return new TestScenarioWithSimulation(
 				CLOCK_URI,
@@ -1593,478 +1552,244 @@ public class CVMIntegrationTest
 							GeneratorSimulationConfiguration.INITIAL_TANK_LEVEL);
 				},
 				new TestStepI[] {
-						// 06:01 - Heater ON
-						new TestStep(
-								CLOCK_URI,
-								HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								heaterSwitchOn,
-								owner -> {
-									try {
-										((HeaterTesterCyPhy) owner).getHop().switchOn();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
+						// ============================================================
+						// SCÉNARIO manageEnergy() — Test Suspend / Resume
+						// ============================================================
 
-						// 06:06 - WashingMachine ON (1er cycle)
+						// 06:01 - WashingMachine ON
 						new TestStep(
 								CLOCK_URI,
 								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 								washingMachineSwitchOn,
 								owner -> {
 									try {
+										System.out.println(">>>>>> [SCENARIO] 06:01 - WashingMachine switchOn");
 										((WashingMachineTesterCyPhy) owner).getWmop().switchOn();
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}
 								}),
-						// 06:07 - WashingMachine startWashing
+
+						// 06:02 - WashingMachine startWashing (3h = 10800000ms, 50°C)
 						new TestStep(
 								CLOCK_URI,
 								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 								washingMachineStartWashing,
 								owner -> {
 									try {
+										System.out.println(
+												">>>>>> [SCENARIO] 06:02 - WashingMachine startWashing (3h, 50°C)");
 										((WashingMachineTesterCyPhy) owner).getWmop().startWashing(
-												600000L,
-												new Measure<Double>(40.0, MeasurementUnit.CELSIUS));
+												10800000L,
+												new Measure<Double>(50.0, MeasurementUnit.CELSIUS));
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}
 								}),
-						// 06:10 - HEM test WashingMachine
+
+						// 06:15 - manageEnergy #1 : WM heating seule (~9A) vs prod (~9.5A) → OK
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-								hemTestWashingMachine,
+								manageEnergy1,
 								owner -> {
 									try {
-										((HEMCyPhy) owner).testWashingMachine();
+										System.out.println(
+												">>>>>> [SCENARIO] 06:15 - manageEnergy #1 (WM seule, devrait être OK)");
+										((HEMCyPhy) owner).manageEnergy();
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}
 								}),
 
-						// 06:15 - Generator start
+						// 06:30 - Heater ON → ajoute ~10A → déficit
+						new TestStep(
+								CLOCK_URI,
+								HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								heaterSwitchOn,
+								owner -> {
+									try {
+										System.out.println(
+												">>>>>> [SCENARIO] 06:30 - Heater switchOn (+10A → DEFICIT attendu)");
+										((HeaterTesterCyPhy) owner).getHop().switchOn();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+
+						// 06:35 - manageEnergy #2 : ~19A vs ~10.7A → DEFICIT → SUSPEND WM ★
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-								generatorStart,
+								manageEnergy2,
 								owner -> {
 									try {
-										((HEMCyPhy) owner).getGeneratorPort().startGenerator();
+										System.out.println(
+												">>>>>> [SCENARIO] 06:35 - manageEnergy #2 (Heater+WM → devrait SUSPEND)");
+										((HEMCyPhy) owner).manageEnergy();
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}
 								}),
 
-						// 06:25 - WashingMachine OFF (fin 1er cycle)
-						new TestStep(
-								CLOCK_URI,
-								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								washingMachineSwitchOff,
-								owner -> {
-									try {
-										((WashingMachineTesterCyPhy) owner).getWmop().switchOff();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-
-						// 07:15 - HairDryer 1st cycle ON
-						new TestStep(
-								CLOCK_URI,
-								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								hairDryerTurnOn1,
-								owner -> {
-									try {
-										((HairDryerTesterCyPhy) owner).turnOnHairDryer();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 07:15:20 - HairDryer setHigh
-						new TestStep(
-								CLOCK_URI,
-								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								hairDryerSetHigh1,
-								owner -> {
-									try {
-										((HairDryerTesterCyPhy) owner).setHighHairDryer();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-
-						// 07:17:30 - Batteries test 1
+						// 06:50 - manageEnergy #3 : WM suspendue, Heater seul ~10A vs ~11.5A
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-								batteriesTest1,
+								manageEnergy3,
 								owner -> {
 									try {
-										((HEMCyPhy) owner).testBatteriesState();
+										System.out.println(
+												">>>>>> [SCENARIO] 06:50 - manageEnergy #3 (vérif WM toujours suspendue)");
+										((HEMCyPhy) owner).manageEnergy();
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}
 								}),
 
-						// 07:20 - HairDryer setLow
-						new TestStep(
-								CLOCK_URI,
-								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								hairDryerSetLow1,
-								owner -> {
-									try {
-										((HairDryerTesterCyPhy) owner).setLowHairDryer();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 07:25 - HairDryer OFF
-						new TestStep(
-								CLOCK_URI,
-								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								hairDryerTurnOff1,
-								owner -> {
-									try {
-										((HairDryerTesterCyPhy) owner).turnOffHairDryer();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-
-						// 07:30 - Generator stop
-						new TestStep(
-								CLOCK_URI,
-								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-								generatorStop,
-								owner -> {
-									try {
-										((HEMCyPhy) owner).getGeneratorPort().stopGenerator();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-
-						// ====== VERSION SÉQUENTIELLE (sans chevauchement) ======
-						// 08:15 - HairDryer 2nd cycle ON
-						new TestStep(
-								CLOCK_URI,
-								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								hairDryerTurnOn2,
-								owner -> {
-									try {
-										((HairDryerTesterCyPhy) owner).turnOnHairDryer();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 08:15:20 - HairDryer setHigh
-						new TestStep(
-								CLOCK_URI,
-								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								hairDryerSetHigh2,
-								owner -> {
-									try {
-										((HairDryerTesterCyPhy) owner).setHighHairDryer();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 08:20 - HairDryer setLow
-						new TestStep(
-								CLOCK_URI,
-								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								hairDryerSetLow2,
-								owner -> {
-									try {
-										((HairDryerTesterCyPhy) owner).setLowHairDryer();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 08:25 - HairDryer OFF
-						new TestStep(
-								CLOCK_URI,
-								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								hairDryerTurnOff2,
-								owner -> {
-									try {
-										((HairDryerTesterCyPhy) owner).turnOffHairDryer();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 08:30 - Kettle ON
-						new TestStep(
-								CLOCK_URI,
-								KettleTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								kettleSwitchOn,
-								owner -> {
-									try {
-										((KettleTesterCyPhy) owner).getKop().switchOn();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 08:35 - HEM test Kettle
-						new TestStep(
-								CLOCK_URI,
-								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-								hemTestKettle,
-								owner -> {
-									try {
-										((HEMCyPhy) owner).testKettle();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 08:45 - Kettle OFF
-						new TestStep(
-								CLOCK_URI,
-								KettleTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								kettleSwitchOff,
-								owner -> {
-									try {
-										((KettleTesterCyPhy) owner).getKop().switchOff();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-
-						// 09:00 - Heater OFF
+						// 07:00 - Heater OFF → consommation chute
 						new TestStep(
 								CLOCK_URI,
 								HeaterTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
 								heaterSwitchOff,
 								owner -> {
 									try {
+										System.out.println(
+												">>>>>> [SCENARIO] 07:00 - Heater switchOff (consommation chute)");
 										((HeaterTesterCyPhy) owner).getHop().switchOff();
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}
 								}),
 
-						// 09:30 - Fan ON
-						new TestStep(
-								CLOCK_URI,
-								FanTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								fanSwitchOn,
-								owner -> {
-									try {
-										((FanTesterCyPhy) owner).switchOnFan();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 09:32 - Fan setHigh
-						new TestStep(
-								CLOCK_URI,
-								FanTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								fanSetHigh,
-								owner -> {
-									try {
-										((FanTesterCyPhy) owner).setHighSpeedFan();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 09:34 - HEM test Fan
+						// 07:05 - manageEnergy #4 : surplus → RESUME WM ★
 						new TestStep(
 								CLOCK_URI,
 								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-								hemTestFan,
+								manageEnergy4,
 								owner -> {
 									try {
-										((HEMCyPhy) owner).testFan();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 09:36 - Fan setLow
-						new TestStep(
-								CLOCK_URI,
-								FanTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								fanSetLow,
-								owner -> {
-									try {
-										((FanTesterCyPhy) owner).setLowSpeedFan();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 09:40 - Fan OFF
-						new TestStep(
-								CLOCK_URI,
-								FanTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								fanSwitchOff,
-								owner -> {
-									try {
-										((FanTesterCyPhy) owner).switchOffFan();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 09:42 - VacuumCleaner ON
-						new TestStep(
-								CLOCK_URI,
-								VacuumCleanerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								vacuumCleanerTurnOn,
-								owner -> {
-									try {
-										((VacuumCleanerTesterCyPhy) owner).turnOnVacuumCleaner();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 09:43 - VacuumCleaner setHigh
-						new TestStep(
-								CLOCK_URI,
-								VacuumCleanerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								vacuumCleanerSetHigh,
-								owner -> {
-									try {
-										((VacuumCleanerTesterCyPhy) owner).setHighVacuumCleaner();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 09:45 - VacuumCleaner setLow
-						new TestStep(
-								CLOCK_URI,
-								VacuumCleanerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								vacuumCleanerSetLow,
-								owner -> {
-									try {
-										((VacuumCleanerTesterCyPhy) owner).setLowVacuumCleaner();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-						// 09:48 - VacuumCleaner OFF
-						new TestStep(
-								CLOCK_URI,
-								VacuumCleanerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								vacuumCleanerTurnOff,
-								owner -> {
-									try {
-										((VacuumCleanerTesterCyPhy) owner).turnOffVacuumCleaner();
+										System.out.println(
+												">>>>>> [SCENARIO] 07:05 - manageEnergy #4 (surplus → devrait RESUME)");
+										((HEMCyPhy) owner).manageEnergy();
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}
 								}),
 
-						// 09:50 - WashingMachine delayedStart cycle
+						// 07:30 - HairDryer ON HIGH → +5A
 						new TestStep(
 								CLOCK_URI,
-								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								washingMachineDelayedSwitchOn,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerTurnOn1,
 								owner -> {
 									try {
-										((WashingMachineTesterCyPhy) owner).getWmop().switchOn();
+										System.out.println(">>>>>> [SCENARIO] 07:30 - HairDryer ON");
+										((HairDryerTesterCyPhy) owner).turnOnHairDryer();
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}
 								}),
-						// 09:51
+						// 07:30:20 - HairDryer setHigh
 						new TestStep(
 								CLOCK_URI,
-								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								washingMachineDelayedStart,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerSetHigh1,
 								owner -> {
 									try {
-										((WashingMachineTesterCyPhy) owner).getWmop().delayedStart(
-												120000L,
-												new Measure<Double>(40.0, MeasurementUnit.CELSIUS),
-												300000L);
+										System.out.println(">>>>>> [SCENARIO] 07:30:20 - HairDryer setHigh (+5A)");
+										((HairDryerTesterCyPhy) owner).setHighHairDryer();
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}
 								}),
-						// 09:55
+
+						// 07:31 - Kettle ON → +10A → gros déficit
+						new TestStep(
+								CLOCK_URI,
+								KettleTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								kettleSwitchOn,
+								owner -> {
+									try {
+										System.out.println(
+												">>>>>> [SCENARIO] 07:31 - Kettle ON (+10A → gros DEFICIT attendu)");
+										((KettleTesterCyPhy) owner).getKop().switchOn();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+
+						// 07:35 - manageEnergy #5 : ~16A+ vs ~14A → DEFICIT → SUSPEND WM ★
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								manageEnergy5,
+								owner -> {
+									try {
+										System.out.println(
+												">>>>>> [SCENARIO] 07:35 - manageEnergy #5 (HairDryer+Kettle+WM → devrait SUSPEND)");
+										((HEMCyPhy) owner).manageEnergy();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+
+						// 07:50 - HairDryer OFF
+						new TestStep(
+								CLOCK_URI,
+								HairDryerTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								hairDryerTurnOff1,
+								owner -> {
+									try {
+										System.out.println(">>>>>> [SCENARIO] 07:50 - HairDryer OFF");
+										((HairDryerTesterCyPhy) owner).turnOffHairDryer();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+
+						// 07:51 - Kettle OFF → consommation chute
+						new TestStep(
+								CLOCK_URI,
+								KettleTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
+								kettleSwitchOff,
+								owner -> {
+									try {
+										System.out.println(">>>>>> [SCENARIO] 07:51 - Kettle OFF (consommation chute)");
+										((KettleTesterCyPhy) owner).getKop().switchOff();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+
+						// 07:55 - manageEnergy #6 : surplus → RESUME WM ★
+						new TestStep(
+								CLOCK_URI,
+								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
+								manageEnergy6,
+								owner -> {
+									try {
+										System.out.println(
+												">>>>>> [SCENARIO] 07:55 - manageEnergy #6 (surplus → devrait RESUME)");
+										((HEMCyPhy) owner).manageEnergy();
+									} catch (Exception e) {
+										throw new BCMRuntimeException(e);
+									}
+								}),
+
+						// 09:00 - WashingMachine OFF (fin)
 						new TestStep(
 								CLOCK_URI,
 								WashingMachineTesterCyPhy.REFLECTION_INBOUND_PORT_URI,
-								washingMachineDelayedSwitchOff,
+								washingMachineSwitchOff,
 								owner -> {
 									try {
+										System.out.println(">>>>>> [SCENARIO] 09:00 - WashingMachine switchOff (FIN)");
 										((WashingMachineTesterCyPhy) owner).getWmop().switchOff();
 									} catch (Exception e) {
 										throw new BCMRuntimeException(e);
 									}
 								}),
-
-						// 10:00 - Batteries
-						new TestStep(
-								CLOCK_URI,
-								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-								batteriesStartCharging,
-								owner -> {
-									try {
-										((HEMCyPhy) owner).startChargingBatteries();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-
-						// 10:30
-						new TestStep(
-								CLOCK_URI,
-								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-								batteriesTest2,
-								owner -> {
-									try {
-										((HEMCyPhy) owner).testBatteriesState();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-
-						// 11:00
-						new TestStep(
-								CLOCK_URI,
-								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-								batteriesStopCharging,
-								owner -> {
-									try {
-										((HEMCyPhy) owner).stopChargingBatteries();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-
-						// 11:30
-						new TestStep(
-								CLOCK_URI,
-								HEMCyPhy.REFLECTION_INBOUND_PORT_URI,
-								batteriesTest3,
-								owner -> {
-									try {
-										((HEMCyPhy) owner).testBatteriesState();
-									} catch (Exception e) {
-										throw new BCMRuntimeException(e);
-									}
-								}),
-
-				/*
-				 * ====== VERSION AVEC CHEVAUCHEMENT (TestSteps commentés) ======
-				 * Ordre avec chevauchement à 08:15-08:52 :
-				 * 08:15 HairDryer ON, 08:15:20 HairDryer setHigh,
-				 * 08:20 Kettle ON, 08:22 WashingMachine ON, 08:23 WashingMachine startWashing,
-				 * 08:25 Fan ON, 08:26 VacuumCleaner ON, 08:28 Fan setHigh,
-				 * 08:29 VacuumCleaner setHigh, 08:30 hemTestWashingMachine,
-				 * 08:32 hemTestFan, 08:34 hemTestKettle,
-				 * 08:36 VacuumCleaner setLow, 08:38 Fan setLow, 08:40 HairDryer setLow,
-				 * 08:41 VacuumCleaner OFF, 08:45 Kettle OFF, 08:46 Fan OFF,
-				 * 08:50 WashingMachine OFF, 08:52 HairDryer OFF,
-				 * 09:30 Heater OFF,
-				 * 09:40 WashingMachine delayed ON, 09:41 delayed start, 09:55 OFF
-				 * Pic de consommation : 34.36A (6 appareils simultanés) vs ~17A solaire
-				 * => batteries montent à 17.07A pour compenser le déficit
-				 * ====== FIN VERSION AVEC CHEVAUCHEMENT ======
-				 */
-
 				});
 	}
 }
